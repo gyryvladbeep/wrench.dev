@@ -1,12 +1,21 @@
+"use client";
+
 import Link from "next/link";
 import { Tool } from "@/lib/types";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { FavoriteButton } from "@/components/FavoriteButton";
-import { Locale, localePath } from "@/lib/i18n/config";
-import { Dictionary } from "@/lib/i18n/dictionary-types";
+import { localePath } from "@/lib/i18n/config";
+import { useDict } from "@/lib/i18n/dict-context";
 
-export function ToolCard({ tool, locale, dict }: { tool: Tool; locale: Locale; dict: Dictionary }) {
+/**
+ * Self-contained — reads locale and dict from DictContext.
+ * No locale/dict props needed, so any call site works regardless
+ * of whether it passes them or not.
+ */
+export function ToolCard({ tool }: { tool: Tool }) {
+  const { locale, dict } = useDict();
+
   return (
     <Link href={localePath(locale, `/tools/${tool.slug}`)} className="block focus-visible:outline-none group">
       <Card className="h-full transition-colors hover:bg-surface-hover relative">

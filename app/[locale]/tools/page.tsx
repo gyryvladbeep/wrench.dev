@@ -42,10 +42,10 @@ export default function ToolsIndexPage({ params }: { params: { locale: string } 
             </div>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {implemented.map((tool) => (
-                <ToolCard key={tool.slug} tool={tool} locale={locale} dict={dict} />
+                <ToolCard key={tool.slug} tool={tool} />
               ))}
               {coming.map((tool) => (
-                <ToolCard key={tool.slug} tool={tool} locale={locale} dict={dict} />
+                <ToolCard key={tool.slug} tool={tool} />
               ))}
             </div>
           </section>
