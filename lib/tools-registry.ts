@@ -678,17 +678,55 @@ export function getRelatedTools(tool: Tool): Tool[] {
 }
 
 /** Full-text search across name, shortDescription, aliases and keywords. */
-export function searchTools(query: string): Tool[] {
+const RU_CATEGORY_NAMES: Record<string, string> = {
+  formatting:  "форматирование форматтер",
+  encoding:    "кодирование декодирование шифрование",
+  text:        "текст текстовые",
+  hash:        "хэш хэши шифрование контрольная сумма",
+  generators:  "генератор генераторы",
+  datetime:    "дата время время дата",
+  web:         "веб сеть интернет",
+  data:        "данные",
+  qa:          "тестирование автоматизация",
+  api:         "апи запросы",
+};
+
+export function searchTools(query: string, locale: "en" | "ru" = "en"): Tool[] {
   const q = query.toLowerCase().trim();
   if (!q) return [];
+
+  // Lazy-load RU content only when searching in Russian
+  let ruContent: Record<string, { name?: string; shortDescription?: string; keywords?: string[] }> = {};
+  if (locale === "ru") {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const { ruToolContent } = require("./i18n/ru-content");
+      ruContent = ruToolContent;
+    } catch {}
+  }
+
   return allTools.filter((t) => {
+    const ru = ruContent[t.slug] ?? {};
+
     const haystack = [
-      t.name, t.shortDescription, t.category,
-      ...(t.aliases ?? []), ...(t.keywords ?? []),
+      // English fields (always searched)
+      t.name,
+      t.shortDescription,
+      t.category,
+      ...(t.aliases ?? []),
+      ...(t.keywords ?? []),
+      // Russian fields (only when locale === "ru")
+      ru.name ?? "",
+      ru.shortDescription ?? "",
+      ...(ru.keywords ?? []),
+      // Russian category name for category-level queries ("генераторы", "текст")
+      locale === "ru" ? (RU_CATEGORY_NAMES[t.category] ?? "") : "",
     ].join(" ").toLowerCase();
+
     return haystack.includes(q);
   });
 }
+
 
 // allTools is the canonical export; tools is a const above — no re-export needed.
 

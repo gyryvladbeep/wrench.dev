@@ -73,11 +73,11 @@ export function SearchModal({ locale, open, onClose }: SearchModalProps) {
 
   useEffect(() => {
     if (!query.trim()) { setResults([]); return; }
-    // Search raw then localize for display
-    const raw = searchTools(query).slice(0, 8);
+    // Pass locale so Russian queries are matched against RU tool names/keywords
+    const raw = searchTools(query, locale).slice(0, 8);
     setResults(raw);
     setSelected(0);
-  }, [query]);
+  }, [query, locale]);
 
   useEffect(() => {
     if (!open) return;
