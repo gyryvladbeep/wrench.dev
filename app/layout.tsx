@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Analytics } from "@vercel/analytics/next";
 import { siteConfig } from "@/lib/seo";
 import "./globals.css";
 
@@ -30,6 +31,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html suppressHydrationWarning className="dark">
       <body className="min-h-screen bg-canvas font-sans text-text-primary antialiased">
         {children}
+        <Analytics />
       </body>
     </html>
   );
