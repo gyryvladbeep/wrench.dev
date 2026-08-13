@@ -1,5 +1,4 @@
 "use client";
-
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
@@ -11,16 +10,11 @@ import { SearchModal } from "@/components/SearchModal";
 
 function NavLink({ href, children }: { href: string; children: React.ReactNode }) {
   const pathname = usePathname() ?? "";
-  const isActive = pathname === href || pathname.startsWith(href + "/");
+  const active   = pathname === href || (href !== "/" && pathname.startsWith(href));
   return (
-    <Link
-      href={href}
-      className={`text-sm transition-colors ${
-        isActive ? "text-text-primary font-medium" : "text-text-muted hover:text-text-primary"
-      }`}
-    >
-      {children}
-    </Link>
+    <Link href={href} className={`text-sm transition-colors duration-150 ${
+      active ? "text-text-primary font-medium" : "text-text-muted hover:text-text-primary"
+    }`}>{children}</Link>
   );
 }
 
@@ -28,133 +22,95 @@ function UserMenu() {
   const { locale, dict } = useDict();
   const { user, signOut } = useAuth();
   const router = useRouter();
-  const t = dict.auth;
-
-  async function handleSignOut() {
-    await signOut();
-    router.push(localePath(locale, "/"));
-    router.refresh();
-  }
+  async function handleSignOut() { await signOut(); router.push(localePath(locale, "/")); router.refresh(); }
 
   if (!user) return (
     <div className="flex items-center gap-2">
-      <Link
-        href={localePath(locale, "/auth/login")}
-        className="text-sm text-text-muted hover:text-text-primary transition-colors"
-      >
-        {t.signIn}
-      </Link>
-      <Link
-        href={localePath(locale, "/auth/signup")}
-        className="rounded-[10px] bg-accent px-3 py-1.5 text-sm font-medium text-accent-fg hover:bg-accent/90 transition-colors"
-      >
-        {t.signUp}
-      </Link>
+      <Link href={localePath(locale, "/auth/login")} className="text-sm text-text-muted hover:text-text-primary transition-colors">{dict.auth.signIn}</Link>
+      <Link href={localePath(locale, "/auth/signup")} className="rounded-md bg-accent px-3 py-1.5 text-sm font-medium text-accent-fg hover:bg-accent/90 transition-colors">{dict.auth.signUp}</Link>
     </div>
   );
 
   return (
     <div className="flex items-center gap-2">
-      <Link
-        href={localePath(locale, "/profile")}
-        className="flex h-8 w-8 items-center justify-center rounded-full bg-accent/20 text-sm font-semibold text-accent hover:bg-accent/30 transition-colors"
-        title={user.email ?? ""}
-      >
-        {(user.email ?? "?")[0].toUpperCase()}
-      </Link>
-      <button
-        onClick={handleSignOut}
-        className="text-sm text-text-muted hover:text-text-primary transition-colors"
-      >
-        {t.signOut}
-      </button>
+      <Link href={localePath(locale, "/profile")}
+        className="flex h-7 w-7 items-center justify-center rounded-full bg-accent/15 text-xs font-semibold text-accent hover:bg-accent/25 transition-colors"
+        title={user.email ?? ""}>{(user.email ?? "?")[0].toUpperCase()}</Link>
+      <button onClick={handleSignOut} className="text-sm text-text-muted hover:text-text-primary transition-colors">{dict.auth.signOut}</button>
     </div>
   );
 }
 
+// Search icon SVG
+const SearchIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden>
+    <circle cx="7" cy="7" r="4.5" stroke="currentColor" strokeWidth="1.5"/>
+    <path d="M10.5 10.5L13 13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+  </svg>
+);
+
 export function Header() {
   const { locale, dict } = useDict();
-  const nav = dict.nav;
-  const home = localePath(locale, "/");
+  const nav    = dict.nav;
+  const home   = localePath(locale, "/");
+  const isRu   = locale === "ru";
   const [searchOpen, setSearchOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
-  const isRu = locale === "ru";
+  const [scrolled, setScrolled]     = useState(false);
 
   useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
-        e.preventDefault();
-        setSearchOpen(true);
-      }
-    }
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, []);
-
-  useEffect(() => {
-    function onScroll() { setScrolled(window.scrollY > 8); }
+    const onScroll = () => setScrolled(window.scrollY > 0);
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") { e.preventDefault(); setSearchOpen(true); }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
   return (
     <>
-      <header
-        className={`sticky top-0 z-40 border-b transition-all duration-200 ${
-          scrolled
-            ? "border-border bg-canvas/98 shadow-sm backdrop-blur-md"
-            : "border-border/60 bg-canvas/95 backdrop-blur"
-        }`}
-      >
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-3">
-
+      <header className={`sticky top-0 z-40 border-b transition-all duration-150 ${
+        scrolled ? "border-border/80 bg-canvas/98 shadow-[0_1px_0_rgba(255,255,255,.04)]" : "border-border/50 bg-canvas/95"
+      } backdrop-blur-md`}>
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 h-14">
           {/* Logo */}
-          <Link href={home} className="flex items-center gap-2 font-semibold text-text-primary shrink-0 hover:opacity-80 transition-opacity">
-            <span className="font-mono text-accent">{`>_`}</span>
-            <span className="hidden sm:inline">Wrench</span>
+          <Link href={home} className="flex items-center gap-2 shrink-0 hover:opacity-75 transition-opacity">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden>
+              <rect x="1" y="1" width="16" height="16" rx="3" stroke="currentColor" strokeWidth="1.5" className="text-accent"/>
+              <path d="M5 9h8M9 5v8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" className="text-accent"/>
+            </svg>
+            <span className="font-semibold text-sm text-text-primary tracking-tight">Wrench-Branch</span>
           </Link>
 
-          {/* Search bar — desktop */}
-          <button
-            onClick={() => setSearchOpen(true)}
-            className="hidden md:flex flex-1 max-w-xs items-center gap-2 rounded-[10px] border border-border bg-surface px-3 py-2 text-sm text-text-muted hover:border-accent/40 hover:text-text-primary transition-all"
-          >
-            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" className="shrink-0">
-              <circle cx="7" cy="7" r="4.5" stroke="currentColor" strokeWidth="1.5"/>
-              <path d="M10.5 10.5L13 13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-            </svg>
-            <span className="flex-1 text-left">{isRu ? "Поиск…" : "Search…"}</span>
-            <kbd className="rounded border border-border px-1.5 py-0.5 text-[10px]">⌘K</kbd>
+          {/* Search — desktop */}
+          <button onClick={() => setSearchOpen(true)}
+            className="hidden md:flex flex-1 max-w-[280px] items-center gap-2 rounded-md border border-border bg-surface px-3 py-1.5 text-xs text-text-muted hover:border-border/80 hover:text-text-primary transition-all">
+            <SearchIcon />
+            <span className="flex-1 text-left">{isRu ? "Поиск инструментов…" : "Search tools…"}</span>
+            <kbd className="rounded border border-border bg-canvas px-1.5 py-px font-mono text-[10px]">⌘K</kbd>
           </button>
 
-          {/* Nav */}
-          <nav className="hidden items-center gap-5 lg:flex">
+          {/* Nav — desktop */}
+          <nav className="hidden items-center gap-5 lg:flex" aria-label="Main navigation">
             <NavLink href={localePath(locale, "/tools")}>{nav.tools}</NavLink>
             <NavLink href={localePath(locale, "/categories/formatting")}>{nav.categories}</NavLink>
-            <Link href={`${home}#ai`} className="text-sm text-text-muted hover:text-text-primary transition-colors">
-              {nav.ai} <span className="text-xs text-accent">{nav.aiSoon}</span>
-            </Link>
           </nav>
 
-          {/* Right controls */}
+          {/* Right */}
           <div className="flex items-center gap-3">
-            {/* Mobile search */}
-            <button
-              onClick={() => setSearchOpen(true)}
-              className="md:hidden rounded-[8px] p-1.5 text-text-muted hover:bg-surface hover:text-text-primary transition-colors"
-              aria-label={isRu ? "Поиск" : "Search"}
-            >
-              <svg width="18" height="18" viewBox="0 0 16 16" fill="none">
-                <circle cx="7" cy="7" r="4.5" stroke="currentColor" strokeWidth="1.5"/>
-                <path d="M10.5 10.5L13 13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-              </svg>
+            <button onClick={() => setSearchOpen(true)} aria-label={isRu ? "Поиск" : "Search"}
+              className="md:hidden rounded-md p-1.5 text-text-muted hover:bg-surface hover:text-text-primary transition-colors">
+              <SearchIcon />
             </button>
             <LocaleSwitcher />
             <UserMenu />
           </div>
         </div>
       </header>
-
       <SearchModal locale={locale} open={searchOpen} onClose={() => setSearchOpen(false)} />
     </>
   );

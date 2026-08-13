@@ -5,26 +5,25 @@ import "./globals.css";
 export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.url),
   title: {
-    default: `${siteConfig.name} — Essential tools for Developers`,
+    default: `${siteConfig.name} — ${siteConfig.tagline}`,
     template: `%s | ${siteConfig.name}`,
   },
-  description: "Fast, free developer tools for formatting, encoding, generating and debugging.",
-  icons: {
-    icon: "/favicon.svg",
+  description: "Fast, privacy-friendly developer tools for formatting, encoding, generating and debugging. All tools run in your browser.",
+  icons: { icon: "/favicon.svg" },
+  openGraph: {
+    title: siteConfig.name,
+    description: siteConfig.tagline,
+    url: siteConfig.url,
+    siteName: siteConfig.name,
+    type: "website",
+  },
+  twitter: {
+    card: "summary",
+    title: siteConfig.name,
+    description: siteConfig.tagline,
   },
 };
 
-/**
- * Root layout — required by Next.js App Router.
- * Renders <html> and <body> exactly once.
- *
- * suppressHydrationWarning on <html> is intentional: the locale-specific
- * layout sets lang={locale} via a client component after hydration, which
- * causes a controlled mismatch on the attribute only — not in the content.
- *
- * All providers (AuthProvider, DictProvider) and site chrome (Header, Footer)
- * live in app/[locale]/layout.tsx so they have access to the locale param.
- */
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html suppressHydrationWarning className="dark">

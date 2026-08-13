@@ -8,11 +8,7 @@ import { Locale, localePath } from "@/lib/i18n/config";
 import { localizeTool } from "@/lib/i18n/localize";
 import { useLocalStorage } from "@/lib/hooks/useLocalStorage";
 import { EmptySearchResults } from "@/components/EmptyState";
-
-const CATEGORY_ICONS: Record<string, string> = {
-  formatting: "{ }", encoding: "⇄", text: "Aa", hash: "#",
-  generators: "⚡", datetime: "⏱", web: "🌐", data: "⊞", qa: "✓", api: "→",
-};
+import { CategoryIcon } from "@/components/CategoryIcon";
 
 const MAX_RECENT = 5;
 
@@ -169,7 +165,7 @@ export function SearchModal({ locale, open, onClose }: SearchModalProps) {
                   onClick={() => handleSelect(tool.slug, "")}
                   className="flex items-center gap-3 rounded-[8px] px-3 py-2 text-sm hover:bg-surface transition-colors"
                 >
-                  <span className="w-6 text-center font-mono text-xs text-text-muted">{CATEGORY_ICONS[tool.category] ?? "→"}</span>
+                  <span className="w-5 shrink-0 text-text-muted opacity-60"><CategoryIcon category={tool.category} size={12} /></span>
                   <span className="text-text-primary">{tool.name}</span>
                 </Link>
               ))}
@@ -194,7 +190,7 @@ export function SearchModal({ locale, open, onClose }: SearchModalProps) {
                 }`}
               >
                 <span className="w-7 text-center font-mono text-xs text-text-muted shrink-0">
-                  {CATEGORY_ICONS[tool.category] ?? "→"}
+                  <span className="text-text-muted opacity-60"><CategoryIcon category={tool.category} size={12} /></span>
                 </span>
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-text-primary truncate">
