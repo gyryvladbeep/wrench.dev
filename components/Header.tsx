@@ -119,6 +119,9 @@ export function Header() {
             <NavLink href={localePath(locale, "/interview")}>
               {isRu ? "Интервью" : "Interview"}
             </NavLink>
+            <NavLink href={localePath(locale, "/playground")}>
+              Playground
+            </NavLink>
             <NavLink href={localePath(locale, "/pro")}>
               <span className="flex items-center gap-1">
                 Pro
