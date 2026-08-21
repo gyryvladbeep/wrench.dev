@@ -4,78 +4,109 @@ import { CopyButton } from "@/components/CopyButton";
 import { Dictionary } from "@/lib/i18n/dictionary-types";
 
 const BASES = [
-  { label:"Binary",      base:2,  prefix:"0b", chars:"0-1" },
-  { label:"Octal",       base:8,  prefix:"0o", chars:"0-7" },
-  { label:"Decimal",     base:10, prefix:"",   chars:"0-9" },
-  { label:"Hexadecimal", base:16, prefix:"0x", chars:"0-9A-F" },
+  { label:"Binary",       labelRu:"Двоичная",        base:2,  prefix:"0b" },
+  { label:"Octal",        labelRu:"Восьмеричная",     base:8,  prefix:"0o" },
+  { label:"Decimal",      labelRu:"Десятичная",       base:10, prefix:""   },
+  { label:"Hexadecimal",  labelRu:"Шестнадцатеричная",base:16, prefix:"0x" },
 ];
 
 export function NumberBaseConverterTool({ dict }: { dict: Dictionary }) {
-  const [input,    setInput]   = useState("255");
-  const [inputBase, setBase]   = useState(10);
   const isRu = dict.common.copy === "Копировать";
+  const [input,    setInput]    = useState("255");
+  const [fromBase, setFromBase] = useState(10);
 
-  const result = useMemo(() => {
-    if (!input.trim()) return null;
-    try {
-      const decimal = parseInt(input.trim(), inputBase);
-      if (isNaN(decimal)) return { error: isRu ? "Неверный ввод для этого основания" : "Invalid input for this base" };
-      return {
-        binary:  decimal.toString(2),
-        octal:   decimal.toString(8),
-        decimal: decimal.toString(10),
-        hex:     decimal.toString(16).toUpperCase(),
-        decimal_val: decimal,
-      };
-    } catch { return { error: isRu ? "Ошибка преобразования" : "Conversion error" }; }
-  }, [input, inputBase, isRu]);
+  const decimal = useMemo(() => {
+    const v = parseInt(input.replace(/^0[bBoOxX]/, ""), fromBase);
+    return isNaN(v) ? null : v;
+  }, [input, fromBase]);
+
+  const conversions = useMemo(() => {
+    if (decimal === null) return [];
+    return BASES.map(b => ({
+      ...b,
+      value:   decimal.toString(b.base).toUpperCase(),
+      withPfx: b.prefix + decimal.toString(b.base).toUpperCase(),
+    }));
+  }, [decimal]);
+
+  // Bit pattern visualization
+  const bits = useMemo(() => {
+    if (decimal === null || decimal < 0) return [];
+    const bin = decimal.toString(2).padStart(Math.max(8, Math.ceil(decimal.toString(2).length / 8) * 8), "0");
+    return bin.split("");
+  }, [decimal]);
+
+  const PRESETS = [255, 256, 1024, 65535, 16777215];
 
   return (
-    <div className="space-y-5">
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div>
-          <label className="input-label">{isRu ? "Входное число" : "Input number"}</label>
-          <input value={input} onChange={(e) => setInput(e.target.value)} spellCheck={false}
-            className="code-surface w-full rounded-[10px] px-3 py-2.5 font-mono text-lg text-text-primary outline-none" />
-        </div>
-        <div>
-          <label className="input-label">{isRu ? "Основание входа" : "Input base"}</label>
-          <div className="flex gap-2">
-            {BASES.map((b) => (
-              <button key={b.base} onClick={() => setBase(b.base)}
-                className={`flex-1 rounded-[8px] py-2 text-xs transition-colors ${inputBase === b.base ? "bg-accent text-accent-fg" : "bg-surface border border-border text-text-muted hover:bg-surface-hover"}`}>
-                {b.base}<span className="block text-[9px] opacity-70">{b.label.slice(0,3)}</span>
-              </button>
+    <div className="space-y-5 max-w-lg">
+      {/* Input */}
+      <div>
+        <label className="input-label">{isRu ? "Входное число" : "Input number"}</label>
+        <div className="flex gap-2">
+          <input value={input} onChange={e => setInput(e.target.value)} spellCheck={false}
+            placeholder="255"
+            className="code-surface flex-1 rounded-lg px-3 py-2.5 font-mono text-lg text-text-primary outline-none" />
+          <select value={fromBase} onChange={e => setFromBase(Number(e.target.value))}
+            className="code-surface rounded-lg px-3 py-2.5 text-sm text-text-primary outline-none">
+            {BASES.map(b => (
+              <option key={b.base} value={b.base}>{isRu ? b.labelRu : b.label}</option>
             ))}
-          </div>
+          </select>
         </div>
       </div>
 
-      {result && "error" in result ? (
-        <div className="text-sm text-red-400">{result.error}</div>
-      ) : result ? (
+      {/* Presets */}
+      <div className="flex flex-wrap gap-1.5">
+        {PRESETS.map(p => (
+          <button key={p} onClick={() => { setInput(String(p)); setFromBase(10); }}
+            className="rounded border border-border bg-surface px-2.5 py-1 font-mono text-xs text-text-muted hover:bg-surface-hover transition-colors">
+            {p}
+          </button>
+        ))}
+      </div>
+
+      {/* Error */}
+      {input && decimal === null && (
+        <div className="rounded-lg border border-red-800/30 bg-red-900/10 px-4 py-2.5 text-sm text-red-400">
+          {isRu ? "Невалидное число для выбранной системы счисления" : "Invalid number for selected base"}
+        </div>
+      )}
+
+      {/* Conversions */}
+      {conversions.length > 0 && (
         <div className="space-y-2">
-          {[
-            { label:"Binary (base 2)",      value:result.binary,  prefix:"0b" },
-            { label:"Octal (base 8)",       value:result.octal,   prefix:"0o" },
-            { label:"Decimal (base 10)",    value:result.decimal, prefix:"" },
-            { label:"Hexadecimal (base 16)",value:result.hex,     prefix:"0x" },
-          ].map(({ label, value, prefix }) => (
-            <div key={label} className={`flex items-center justify-between rounded-[10px] border px-4 py-3 transition-colors ${inputBase === BASES.find(b=>b.prefix===prefix||(!prefix&&b.base===10))?.base ? "border-accent/30 bg-accent/5" : "border-border bg-surface"}`}>
-              <div>
-                <p className="text-xs text-text-muted">{label}</p>
-                <p className="font-mono text-base text-text-primary mt-0.5">
-                  {prefix && <span className="text-text-muted">{prefix}</span>}{value}
-                </p>
+          <label className="input-label">{isRu ? "Результаты конвертации" : "Conversion results"}</label>
+          {conversions.map(c => (
+            <div key={c.base} className={`flex items-center gap-3 rounded-lg border px-4 py-3 ${c.base === fromBase ? "border-accent/30 bg-accent/5" : "border-border bg-surface"}`}>
+              <div className="w-36 shrink-0">
+                <p className="text-xs text-text-muted">{isRu ? c.labelRu : c.label}</p>
+                <p className="text-[10px] text-text-disabled">{isRu ? `Основание ${c.base}` : `Base ${c.base}`}</p>
               </div>
-              <CopyButton value={value} iconOnly />
+              <span className="flex-1 font-mono text-sm font-semibold text-text-primary break-all">{c.withPfx || c.value}</span>
+              <CopyButton value={c.value} iconOnly />
             </div>
           ))}
-          <p className="text-xs text-text-muted pt-1">
-            {isRu ? `Десятичное значение: ${result.decimal_val}` : `Decimal value: ${result.decimal_val}`}
-          </p>
         </div>
-      ) : null}
+      )}
+
+      {/* Bit visualization */}
+      {bits.length > 0 && decimal! <= 0xFFFF && (
+        <div>
+          <label className="input-label">{isRu ? "Битовое представление" : "Bit pattern"}</label>
+          <div className="flex flex-wrap gap-1">
+            {bits.map((bit, i) => (
+              <div key={i} className="flex flex-col items-center">
+                <span className={`flex h-7 w-7 items-center justify-center rounded border font-mono text-xs font-bold ${bit === "1" ? "border-accent/40 bg-accent/20 text-accent" : "border-border bg-surface text-text-disabled"}`}>
+                  {bit}
+                </span>
+                {(i + 1) % 8 === 0 && i !== bits.length - 1 && <div className="w-2" />}
+              </div>
+            ))}
+          </div>
+          <p className="mt-1 text-xs text-text-muted">{bits.length} {isRu ? "бит" : "bits"} · {decimal} {isRu ? "в десятичной" : "decimal"}</p>
+        </div>
+      )}
     </div>
   );
 }
