@@ -98,11 +98,13 @@ export function Header() {
       }`}>
         <div className="mx-auto flex h-12 max-w-6xl items-center gap-6 px-5">
 
+          {/* Logo */}
           <Link href={home} className="flex items-center gap-2 shrink-0 hover:opacity-80 transition-opacity">
             <LOGO />
             <span className="text-sm font-semibold text-text-primary tracking-tight">Wrench</span>
           </Link>
 
+          {/* Nav */}
           <nav className="hidden items-center gap-5 lg:flex" aria-label="Main">
             <NavLink href={localePath(locale, "/tools")}>{dict.nav.tools}</NavLink>
             <NavLink href={localePath(locale, "/categories/qa")}>QA</NavLink>
@@ -123,6 +125,9 @@ export function Header() {
             <NavLink href={localePath(locale, "/knowledge")}>
               {isRu ? "База знаний" : "Knowledge"}
             </NavLink>
+            <NavLink href={localePath(locale, "/map")}>
+              {isRu ? "Карта" : "Map"}
+            </NavLink>
             <NavLink href={localePath(locale, "/pro")}>
               <span className="flex items-center gap-1">
                 Pro
@@ -131,6 +136,7 @@ export function Header() {
             </NavLink>
           </nav>
 
+          {/* Search */}
           <button onClick={() => setOpen(true)}
             className="hidden md:flex flex-1 max-w-[240px] items-center gap-2 rounded-md border border-border bg-surface px-3 py-1.5 text-xs text-text-muted hover:border-border-focus hover:text-text-secondary transition-all">
             <SearchIcon />
