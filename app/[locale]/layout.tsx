@@ -7,6 +7,7 @@ import { getDictionary } from "@/lib/i18n/get-dictionary";
 import { AuthProvider } from "@/lib/auth/auth-context";
 import { DictProvider } from "@/lib/i18n/dict-context";
 import { ToastProvider } from "@/components/ui/Toast";
+import { ThemeProvider } from "@/components/ThemeProvider";
 import { siteConfig } from "@/lib/seo";
 import { LangSetter } from "@/components/LangSetter";
 
@@ -65,11 +66,13 @@ export default function LocaleLayout({
     <AuthProvider>
       <DictProvider dict={dict} locale={locale}>
         <ToastProvider>
+          <ThemeProvider>
           {/* Sets document.documentElement.lang on the client after hydration */}
           <LangSetter lang={locale} />
           <Header />
           <main>{children}</main>
           <Footer />
+          </ThemeProvider>
         </ToastProvider>
       </DictProvider>
     </AuthProvider>

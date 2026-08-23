@@ -11,10 +11,7 @@ import { BADGES, BADGE_COLOR, checkAchievements } from "@/lib/achievements";
 import { useFavorites } from "@/lib/hooks/useFavorites";
 import { allTools } from "@/lib/tools-registry";
 import { WrenchScorePanel } from "@/components/WrenchScorePanel";
-
-const AVATAR_COLORS = [
-  "#f59e0b","#ef4444","#3b82f6","#10b981","#8b5cf6","#f97316","#06b6d4","#ec4899","#84cc16","#6366f1"
-];
+import { THEME_COLORS, applyAndSaveAccent } from "@/components/ThemeProvider";
 
 const ROLE_TAGS = [
   { id:"qa",        label:"QA Engineer",        labelRu:"QA-инженер" },
@@ -460,12 +457,23 @@ export default function ProfilePage() {
 
             {/* Avatar color */}
             <div>
-              <label className="input-label">{isRu ? "Цвет аватара" : "Avatar color"}</label>
+              <label className="input-label">{isRu ? "Цвет интерфейса" : "Interface color"}</label>
+              <p className="text-xs text-text-muted mb-2">{isRu ? "Меняет акцент кнопок, ссылок и аватарки" : "Changes buttons, links and avatar accent"}</p>
               <div className="flex gap-2 flex-wrap">
-                {AVATAR_COLORS.map((color) => (
-                  <button key={color} onClick={() => setProfile(p => ({ ...p, avatar_color: color }))}
-                    className={`h-8 w-8 rounded-full transition-all ${profile.avatar_color === color ? "ring-2 ring-white ring-offset-2 ring-offset-canvas scale-110" : "hover:scale-105"}`}
-                    style={{ background: color }} />
+                {THEME_COLORS.map((theme) => (
+                  <button key={theme.value} onClick={() => {
+                    setProfile(p => ({ ...p, avatar_color: theme.value }));
+                    applyAndSaveAccent(theme.value);
+                  }}
+                    title={isRu ? theme.labelRu : theme.label}
+                    className={`h-9 w-9 rounded-full transition-all flex items-center justify-center ${profile.avatar_color === theme.value ? "ring-2 ring-white ring-offset-2 ring-offset-canvas scale-110" : "hover:scale-105"}`}
+                    style={{ background: theme.value }}>
+                    {profile.avatar_color === theme.value && (
+                      <svg width="12" height="12" viewBox="0 0 16 16" fill="none" style={{ color: theme.fg }}>
+                        <path d="M3 8l3.5 3.5L13 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                      </svg>
+                    )}
+                  </button>
                 ))}
               </div>
             </div>

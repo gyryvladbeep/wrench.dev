@@ -5,6 +5,8 @@
 :root {
   --font-sans: "Inter", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  --accent-hex: #f59e0b;
+  --accent-fg-hex: #09090b;
 }
 
 html { color-scheme: dark; scroll-behavior: smooth; }
