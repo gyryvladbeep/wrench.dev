@@ -10,6 +10,7 @@ import { useSubscription } from "@/lib/hooks/useSubscription";
 import { BADGES, BADGE_COLOR, checkAchievements } from "@/lib/achievements";
 import { useFavorites } from "@/lib/hooks/useFavorites";
 import { allTools } from "@/lib/tools-registry";
+import { WrenchScorePanel } from "@/components/WrenchScorePanel";
 
 const AVATAR_COLORS = [
   "#f59e0b","#ef4444","#3b82f6","#10b981","#8b5cf6","#f97316","#06b6d4","#ec4899","#84cc16","#6366f1"
@@ -251,6 +252,16 @@ export default function ProfilePage() {
       {/* Overview tab */}
       {tab === "overview" && (
         <div className="space-y-6">
+          {/* Wrench Score */}
+          {stats && (
+            <WrenchScorePanel
+              stats={stats}
+              toolsUsed={history.length}
+              badgesCount={badges.length}
+              isRu={isRu}
+            />
+          )}
+
           {/* Activity calendar */}
           <div className="rounded-lg border border-border bg-surface p-5">
             <div className="mb-3 flex items-center justify-between">

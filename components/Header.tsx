@@ -7,6 +7,7 @@ import { useDict } from "@/lib/i18n/dict-context";
 import { useAuth } from "@/lib/auth/auth-context";
 import { LocaleSwitcher } from "@/components/LocaleSwitcher";
 import { SearchModal } from "@/components/SearchModal";
+import { WrenchScoreBadge } from "@/components/WrenchScoreBadge";
 
 const LOGO = () => (
   <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden>
@@ -58,6 +59,7 @@ function UserMenu() {
 
   return (
     <div className="flex items-center gap-2">
+      <WrenchScoreBadge />
       <Link href={localePath(locale, "/profile")}
         className="flex h-7 w-7 items-center justify-center rounded-full bg-accent/15 text-xs font-semibold text-accent hover:bg-accent/25 transition-colors"
         title={user.email ?? ""}>
@@ -124,9 +126,6 @@ export function Header() {
             </NavLink>
             <NavLink href={localePath(locale, "/knowledge")}>
               {isRu ? "База знаний" : "Knowledge"}
-            </NavLink>
-            <NavLink href={localePath(locale, "/map")}>
-              {isRu ? "Карта" : "Map"}
             </NavLink>
             <NavLink href={localePath(locale, "/pro")}>
               <span className="flex items-center gap-1">
