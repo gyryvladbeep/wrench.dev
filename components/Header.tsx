@@ -8,6 +8,7 @@ import { useAuth } from "@/lib/auth/auth-context";
 import { LocaleSwitcher } from "@/components/LocaleSwitcher";
 import { SearchModal } from "@/components/SearchModal";
 import { WrenchScoreBadge } from "@/components/WrenchScoreBadge";
+import { applyAndSaveAccent } from "@/components/ThemeProvider";
 
 const LOGO = () => (
   <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden>
@@ -40,6 +41,8 @@ function UserMenu() {
 
   async function handleSignOut() {
     await signOut();
+    // Reset theme to default on sign out
+    applyAndSaveAccent("#f59e0b");
     router.push(localePath(locale, "/"));
     router.refresh();
   }

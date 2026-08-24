@@ -34,7 +34,11 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      // User signed out — reset to default
+      applyAndSaveAccent(DEFAULT.value);
+      return;
+    }
     const supabase = createClient();
     supabase.from("profiles").select("avatar_color").eq("id", user.id).single()
       .then(({ data }: { data: { avatar_color: string } | null }) => {
