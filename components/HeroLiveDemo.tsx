@@ -109,7 +109,7 @@ export function HeroLiveDemo({ dict }: { dict?: unknown }) {
       </div>
 
       {/* Demo window */}
-      <div className="overflow-hidden rounded-lg border border-border bg-[#0e0e13] shadow-xl">
+      <div className="overflow-hidden rounded-lg border border-border bg-[#0e0e13] shadow-xl transition-colors focus-within:border-[var(--accent)]">
         {/* Title bar */}
         <div className="flex items-center justify-between border-b border-border px-4 py-2.5">
           <div className="flex items-center gap-1.5">
@@ -134,7 +134,7 @@ export function HeroLiveDemo({ dict }: { dict?: unknown }) {
               <span className="text-[10px] font-semibold uppercase tracking-widest text-text-muted">{demo.inputLabel}</span>
             </div>
             <textarea value={input} onChange={e => setInput(e.target.value)} spellCheck={false}
-              className="h-32 w-full resize-none bg-transparent p-3 font-mono text-xs text-text-primary outline-none" />
+              className="h-32 w-full resize-none bg-transparent p-3 font-mono text-xs text-text-primary outline-none focus:outline-none" />
           </div>
           <div className="flex flex-col">
             <div className="border-b border-border px-3 py-1.5">
