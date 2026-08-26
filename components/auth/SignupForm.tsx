@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Dictionary } from "@/lib/i18n/dictionary-types";
 import { Locale, localePath } from "@/lib/i18n/config";
@@ -14,8 +15,8 @@ export function SignupForm({ dict, locale }: { dict: Dictionary; locale: Locale 
   const [confirm, setConfirm] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [done, setDone] = useState(false);
   const supabase = createClient();
+  const router = useRouter();
   const t = dict.auth;
 
   async function handleSubmit(e: React.FormEvent) {
@@ -23,7 +24,7 @@ export function SignupForm({ dict, locale }: { dict: Dictionary; locale: Locale 
     if (password !== confirm) { setError(t.passwordsNoMatch); return; }
     setLoading(true);
     setError("");
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -34,18 +35,10 @@ export function SignupForm({ dict, locale }: { dict: Dictionary; locale: Locale 
       setError(error.message);
       setLoading(false);
     } else {
-      setDone(true);
+      // Trigger confirmed automatically — redirect to home
+      router.push(localePath(locale, "/"));
+      router.refresh();
     }
-  }
-
-  if (done) {
-    return (
-      <div className="py-4 text-center">
-        <p className="text-2xl">📬</p>
-        <p className="mt-3 text-sm text-text-primary">{t.checkEmail}</p>
-        <p className="mt-1 text-xs text-text-muted">{email}</p>
-      </div>
-    );
   }
 
   return (
