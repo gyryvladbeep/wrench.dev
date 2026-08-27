@@ -2,8 +2,9 @@
 
 import { usePathname, useRouter } from "next/navigation";
 import { useDict } from "@/lib/i18n/dict-context";
+import { createClient } from "@/lib/supabase/client";
 
-const COOKIE_NAME = "NEXT_LOCALE";
+const LOCALE_COOKIE = "NEXT_LOCALE";
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
 
 export function LocaleSwitcher() {
@@ -18,17 +19,29 @@ export function LocaleSwitcher() {
   const enHref = withoutLocale || "/";
   const ruHref = `/ru${withoutLocale === "/" ? "" : withoutLocale}`;
 
-  function switchLocale(targetLocale: string, href: string) {
-    document.cookie = `${COOKIE_NAME}=${targetLocale};path=/;max-age=${COOKIE_MAX_AGE};SameSite=Lax`;
-    router.push(href);
-    router.refresh();
+  async function switchLocale(targetLocale: string, href: string) {
+    // Persist current session before navigation
+    const supabase = createClient();
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    // Refresh session to ensure tokens are fresh in cookies
+    if (session) {
+      await supabase.auth.setSession({
+        access_token:  session.access_token,
+        refresh_token: session.refresh_token,
+      });
+    }
+
+    document.cookie = `${LOCALE_COOKIE}=${targetLocale};path=/;max-age=${COOKIE_MAX_AGE};SameSite=Lax`;
+    
+    // Use replace to avoid back-button issues, full reload to get correct locale bundle
+    window.location.replace(href);
   }
 
   return (
     <div className="flex items-center gap-1 text-xs font-medium" aria-label="Language">
       <button
         onClick={() => locale !== "en" && switchLocale("en", enHref)}
-        aria-current={locale === "en" ? "true" : undefined}
         className={`rounded px-1.5 py-0.5 transition-colors ${
           locale === "en"
             ? "bg-surface text-text-primary ring-1 ring-border cursor-default"
@@ -37,7 +50,6 @@ export function LocaleSwitcher() {
       >EN</button>
       <button
         onClick={() => locale !== "ru" && switchLocale("ru", ruHref)}
-        aria-current={locale === "ru" ? "true" : undefined}
         className={`rounded px-1.5 py-0.5 transition-colors ${
           locale === "ru"
             ? "bg-surface text-text-primary ring-1 ring-border cursor-default"
