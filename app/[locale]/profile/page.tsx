@@ -100,6 +100,12 @@ export default function ProfilePage() {
   const [saved,    setSaved]    = useState(false);
   const [tab,      setTab]      = useState<"overview"|"history"|"badges"|"favorites"|"settings">("overview");
 
+  const [hydrated, setHydrated] = useState(false);
+
+  useEffect(() => {
+    setHydrated(true);
+  }, []);
+
   const load = useCallback(async () => {
     if (!user) return;
     const supabase = createClient();
@@ -141,7 +147,7 @@ export default function ProfilePage() {
   }, [user, isPro]);
 
   useEffect(() => {
-    if (!user) { router.push(localePath(locale, "/auth/login")); return; }
+    if (!user && hydrated) { router.push(localePath(locale, "/auth/login")); return; }
     load();
   }, [user, router, locale, load]);
 

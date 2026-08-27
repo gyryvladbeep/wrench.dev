@@ -11,17 +11,18 @@ export function LocaleSwitcher() {
   const pathname   = usePathname() ?? "/";
   const router     = useRouter();
 
+  // Strip both /en and /ru prefixes
   const withoutLocale = pathname.startsWith("/ru")
     ? pathname.slice(3) || "/"
-    : pathname;
+    : pathname.startsWith("/en")
+      ? pathname.slice(3) || "/"
+      : pathname;
 
   const enHref = withoutLocale || "/";
   const ruHref = `/ru${withoutLocale === "/" ? "" : withoutLocale}`;
 
   function switchLocale(targetLocale: string, href: string) {
-    // Set cookie so middleware knows preferred locale on NEXT request
     document.cookie = `${COOKIE_NAME}=${targetLocale};path=/;max-age=${COOKIE_MAX_AGE};SameSite=Lax`;
-    // Client-side navigation — does NOT reset Supabase session
     router.push(href);
   }
 
