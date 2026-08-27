@@ -2,9 +2,8 @@
 
 import { usePathname, useRouter } from "next/navigation";
 import { useDict } from "@/lib/i18n/dict-context";
-import { createClient } from "@/lib/supabase/client";
 
-const LOCALE_COOKIE = "NEXT_LOCALE";
+const COOKIE_NAME = "NEXT_LOCALE";
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
 
 export function LocaleSwitcher() {
@@ -19,23 +18,11 @@ export function LocaleSwitcher() {
   const enHref = withoutLocale || "/";
   const ruHref = `/ru${withoutLocale === "/" ? "" : withoutLocale}`;
 
-  async function switchLocale(targetLocale: string, href: string) {
-    // Persist current session before navigation
-    const supabase = createClient();
-    const { data: { session } } = await supabase.auth.getSession();
-    
-    // Refresh session to ensure tokens are fresh in cookies
-    if (session) {
-      await supabase.auth.setSession({
-        access_token:  session.access_token,
-        refresh_token: session.refresh_token,
-      });
-    }
-
-    document.cookie = `${LOCALE_COOKIE}=${targetLocale};path=/;max-age=${COOKIE_MAX_AGE};SameSite=Lax`;
-    
-    // Use replace to avoid back-button issues, full reload to get correct locale bundle
-    window.location.replace(href);
+  function switchLocale(targetLocale: string, href: string) {
+    // Set cookie so middleware knows preferred locale on NEXT request
+    document.cookie = `${COOKIE_NAME}=${targetLocale};path=/;max-age=${COOKIE_MAX_AGE};SameSite=Lax`;
+    // Client-side navigation — does NOT reset Supabase session
+    router.push(href);
   }
 
   return (

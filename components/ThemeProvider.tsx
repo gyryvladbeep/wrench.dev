@@ -1,5 +1,5 @@
 "use client";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/lib/auth/auth-context";
 
@@ -18,32 +18,46 @@ export const THEME_COLORS = [
 
 const DEFAULT = THEME_COLORS[0];
 
-export function applyAndSaveAccent(value: string) {
+export function applyAndSaveAccent(value: string, save = true) {
   const theme = THEME_COLORS.find(c => c.value === value) ?? DEFAULT;
   document.documentElement.style.setProperty("--accent",    theme.value);
   document.documentElement.style.setProperty("--accent-fg", theme.fg);
-  localStorage.setItem("wrench_accent", value);
+  if (save) localStorage.setItem("wrench_accent", value);
 }
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
+  const prevUser = useRef<string | null>(null);
 
+  // Apply saved color on mount
   useEffect(() => {
     const saved = localStorage.getItem("wrench_accent");
     applyAndSaveAccent(saved ?? DEFAULT.value);
   }, []);
 
   useEffect(() => {
-    if (!user) {
-      // User signed out — reset to default
+    const wasLoggedIn = prevUser.current !== null;
+    const isLoggedIn  = user !== null;
+
+    // User just signed OUT → reset to default
+    if (wasLoggedIn && !isLoggedIn) {
       applyAndSaveAccent(DEFAULT.value);
+      prevUser.current = null;
       return;
     }
-    const supabase = createClient();
-    supabase.from("profiles").select("avatar_color").eq("id", user.id).single()
-      .then(({ data }: { data: { avatar_color: string } | null }) => {
-        if (data?.avatar_color) applyAndSaveAccent(data.avatar_color);
-      });
+
+    // User just signed IN → load their color
+    if (isLoggedIn && user) {
+      prevUser.current = user.id;
+      const supabase = createClient();
+      supabase.from("profiles")
+        .select("avatar_color")
+        .eq("id", user.id)
+        .single()
+        .then(({ data }: { data: { avatar_color: string } | null }) => {
+          if (data?.avatar_color) applyAndSaveAccent(data.avatar_color);
+        });
+    }
   }, [user]);
 
   return <>{children}</>;
