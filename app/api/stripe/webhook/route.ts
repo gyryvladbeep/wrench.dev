@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getStripe } from "@/lib/stripe";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
-export const runtime = "nodejs"; // Webhooks need Node.js runtime
+export const runtime = "nodejs";
 
 export async function POST(req: NextRequest) {
   const body      = await req.text();
@@ -26,9 +26,13 @@ export async function POST(req: NextRequest) {
         const userId  = session.metadata?.user_id;
         if (!userId) break;
 
-        const stripe   = getStripe();
-        const rawSub   = await stripe.subscriptions.retrieve(session.subscription as string);
-        const subData  = rawSub as unknown as { id: string; current_period_end: number };
+        const stripe  = getStripe();
+        const rawSub  = await stripe.subscriptions.retrieve(session.subscription as string);
+        const subData = rawSub as unknown as { id: string; current_period_end: number; status: string };
+
+        const periodEnd = subData.current_period_end
+          ? new Date(subData.current_period_end * 1000).toISOString()
+          : null;
 
         await supabase.from("subscriptions").upsert({
           user_id: userId,
@@ -36,7 +40,7 @@ export async function POST(req: NextRequest) {
           stripe_subscription_id: subData.id,
           plan: "pro",
           status: "active",
-          current_period_end: new Date(subData.current_period_end * 1000).toISOString(),
+          current_period_end: periodEnd,
           updated_at: new Date().toISOString(),
         }, { onConflict: "user_id" });
         break;
@@ -44,17 +48,19 @@ export async function POST(req: NextRequest) {
 
       case "customer.subscription.updated": {
         const subRaw  = event.data.object as unknown as { id: string; status: string; current_period_end: number };
-        const sub     = subRaw;
-        const plan    = sub.status === "active" ? "pro" : "free";
+        const plan    = subRaw.status === "active" ? "pro" : "free";
+        const periodEnd = subRaw.current_period_end
+          ? new Date(subRaw.current_period_end * 1000).toISOString()
+          : null;
 
         await supabase.from("subscriptions")
           .update({
             plan,
-            status: sub.status,
-            current_period_end: new Date(sub.current_period_end * 1000).toISOString(),
+            status: subRaw.status,
+            current_period_end: periodEnd,
             updated_at: new Date().toISOString(),
           })
-          .eq("stripe_subscription_id", sub.id);
+          .eq("stripe_subscription_id", subRaw.id);
         break;
       }
 
