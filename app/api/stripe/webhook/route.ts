@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getStripe } from "@/lib/stripe";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
-export const runtime = "nodejs";
+export const runtime = "nodejs"; // Webhooks need Node.js runtime
 
 export async function POST(req: NextRequest) {
   const body      = await req.text();
@@ -26,9 +26,9 @@ export async function POST(req: NextRequest) {
         const userId  = session.metadata?.user_id;
         if (!userId) break;
 
-        const stripe  = getStripe();
-        const rawSub  = await stripe.subscriptions.retrieve(session.subscription as string);
-        const subData = rawSub as unknown as { id: string; current_period_end: number; status: string };
+        const stripe   = getStripe();
+        const rawSub   = await stripe.subscriptions.retrieve(session.subscription as string);
+        const subData  = rawSub as unknown as { id: string; current_period_end: number; status: string };
 
         const periodEnd = subData.current_period_end
           ? new Date(subData.current_period_end * 1000).toISOString()
@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
           status: "active",
           current_period_end: periodEnd,
           updated_at: new Date().toISOString(),
-        }, { onConflict: "user_id" });
+        }, { onConflict: "user_id", ignoreDuplicates: false });
         break;
       }
 
