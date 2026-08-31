@@ -1,58 +1,62 @@
-"use client";
 import Link from "next/link";
-import { useDict } from "@/lib/i18n/dict-context";
-import { localePath } from "@/lib/i18n/config";
 
 interface EmptyStateProps {
-  icon?: string; title: string; description?: string;
-  action?: { label:string; href?:string; onClick?:()=>void };
-  hint?: string; size?: "sm"|"md"|"lg";
+  icon?:        string;
+  title:        string;
+  description?: string;
+  action?:      { label: string; href: string };
 }
 
-export function EmptyState({ icon="{}", title, description, action, hint, size="md" }: EmptyStateProps) {
-  const pad = size==="sm"?"py-6":size==="lg"?"py-16":"py-10";
-  const ico = size==="sm"?"text-2xl":"text-4xl";
-  const ttl = size==="sm"?"text-sm font-medium":"text-base font-semibold";
+export function EmptyState({ icon = "🔍", title, description, action }: EmptyStateProps) {
   return (
-    <div className={`flex flex-col items-center justify-center text-center ${pad} px-4`}>
-      <span className={`${ico} opacity-25 mb-3`}>{icon}</span>
-      <p className={`${ttl} text-text-primary`}>{title}</p>
-      {description && <p className="mt-1.5 max-w-xs text-sm text-text-muted leading-relaxed">{description}</p>}
-      {action && (
-        <div className="mt-4">
-          {action.href
-            ? <Link href={action.href} className="inline-flex items-center gap-1.5 rounded-[10px] bg-accent px-4 py-2 text-sm font-medium text-accent-fg hover:bg-accent/90 transition-colors">{action.label}</Link>
-            : <button onClick={action.onClick} className="inline-flex items-center gap-1.5 rounded-[10px] bg-accent px-4 py-2 text-sm font-medium text-accent-fg hover:bg-accent/90 transition-colors">{action.label}</button>
-          }
-        </div>
+    <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
+      <div className="relative mb-4">
+        <div className="text-5xl animate-float">{icon}</div>
+        <div className="absolute inset-0 rounded-full blur-xl opacity-20"
+          style={{ background: "var(--accent)" }} />
+      </div>
+      <h3 className="text-base font-semibold text-text-primary">{title}</h3>
+      {description && (
+        <p className="mt-2 max-w-xs text-sm text-text-muted leading-relaxed">{description}</p>
       )}
-      {hint && <p className="mt-3 text-xs text-text-muted opacity-60">{hint}</p>}
+      {action && (
+        <Link href={action.href}
+          className="mt-5 rounded-lg px-4 py-2 text-sm font-medium text-accent-fg transition-all hover:opacity-90"
+          style={{ background: "var(--accent)" }}>
+          {action.label}
+        </Link>
+      )}
     </div>
   );
 }
 
-export function EmptyToolInput() {
-  const { locale } = useDict();
-  const isRu = locale==="ru";
-  return <EmptyState icon="→" size="sm"
-    title={isRu?"Вставьте данные слева":"Paste your data on the left"}
-    description={isRu?"Результат появится автоматически.":"Result appears automatically."} />;
+export function EmptyToolInput({ message = "Paste your input to see the result" }: { message?: string }) {
+  return (
+    <div className="flex flex-col items-center justify-center py-10 text-center opacity-40">
+      <svg width="32" height="32" viewBox="0 0 32 32" fill="none" className="mb-2 text-text-muted" aria-hidden>
+        <rect x="4" y="8" width="24" height="16" rx="3" stroke="currentColor" strokeWidth="1.5"/>
+        <path d="M10 14h12M10 18h8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+      </svg>
+      <p className="text-xs text-text-muted">{message}</p>
+    </div>
+  );
 }
 
-export function EmptyFavorites() {
-  const { locale } = useDict();
-  const isRu = locale==="ru";
-  return <EmptyState icon="☆"
-    title={isRu?"Нет избранного":"No favorites yet"}
-    description={isRu?"Нажмите ☆ на любом инструменте.":"Click ☆ on any tool to save it."}
-    action={{ label:isRu?"Все инструменты":"Browse tools", href:localePath(locale,"/tools") }} />;
+export function EmptySearch({ query }: { query: string }) {
+  return (
+    <div className="flex flex-col items-center justify-center py-16 text-center">
+      <span className="text-4xl mb-3">🔎</span>
+      <h3 className="text-base font-semibold text-text-primary">No results for &ldquo;{query}&rdquo;</h3>
+      <p className="mt-2 text-sm text-text-muted">Try a different search term or browse by category.</p>
+    </div>
+  );
 }
-
-export function EmptySearchResults({ query }: { query:string }) {
-  const { locale } = useDict();
-  const isRu = locale==="ru";
-  return <EmptyState icon="⌕" size="sm"
-    title={isRu?"Ничего не найдено":"No results found"}
-    description={isRu?`По запросу «${query}» ничего нет.`:`No tools match "${query}".`}
-    hint={isRu?"Попробуйте: json, regex, base64, uuid…":"Try: json, regex, base64, uuid…"} />;
+export function EmptySearchResults({ query }: { query: string }) {
+  return (
+    <div className="flex flex-col items-center justify-center py-16 text-center">
+      <span className="text-4xl mb-3">🔎</span>
+      <h3 className="text-base font-semibold text-text-primary">No results for &ldquo;{query}&rdquo;</h3>
+      <p className="mt-2 text-sm text-text-muted">Try a different search term or browse by category.</p>
+    </div>
+  );
 }
