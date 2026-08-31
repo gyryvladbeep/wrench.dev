@@ -5,33 +5,12 @@
 :root {
   --font-sans: "Inter", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
-  --accent:    #f59e0b;
-  --accent-fg: #09090b;
-  --accent-muted: #f59e0b33;
+  /* Default accent — amber. ThemeProvider overrides these at runtime */
+  --accent:        #f59e0b;
+  --accent-fg:     #09090b;
+  --accent-rgb:    245 158 11;
+  --accent-fg-rgb: 9 9 11;
 }
-
-/* Dynamic accent overrides — these replace Tailwind's static amber colors */
-.bg-accent         { background-color: var(--accent) !important; }
-.text-accent       { color: var(--accent) !important; }
-.text-accent-fg    { color: var(--accent-fg) !important; }
-.border-accent     { border-color: var(--accent) !important; }
-.ring-accent       { --tw-ring-color: var(--accent) !important; }
-.bg-accent\/10     { background-color: color-mix(in srgb, var(--accent) 10%, transparent) !important; }
-.bg-accent\/15     { background-color: color-mix(in srgb, var(--accent) 15%, transparent) !important; }
-.bg-accent\/20     { background-color: color-mix(in srgb, var(--accent) 20%, transparent) !important; }
-.bg-accent\/25     { background-color: color-mix(in srgb, var(--accent) 25%, transparent) !important; }
-.bg-accent\/5      { background-color: color-mix(in srgb, var(--accent) 5%, transparent) !important; }
-.border-accent\/30 { border-color: color-mix(in srgb, var(--accent) 30%, transparent) !important; }
-.border-accent\/40 { border-color: color-mix(in srgb, var(--accent) 40%, transparent) !important; }
-.border-accent\/20 { border-color: color-mix(in srgb, var(--accent) 20%, transparent) !important; }
-.hover\:bg-accent:hover  { background-color: var(--accent) !important; }
-.hover\:text-accent:hover { color: var(--accent) !important; }
-.focus\:ring-accent:focus { --tw-ring-color: var(--accent) !important; }
-.hover\:bg-amber-400:hover { background-color: color-mix(in srgb, var(--accent) 85%, white) !important; }
-
-/* Selection */
-::selection { background: color-mix(in srgb, var(--accent) 25%, transparent); }
-
 
 html { color-scheme: dark; scroll-behavior: smooth; }
 
@@ -114,4 +93,166 @@ body {
     animation-duration: .001ms !important;
     transition-duration: .001ms !important;
   }
+}
+
+/* ══════════════════════════════════════════════════════
+   ANIMATIONS & VISUAL ENHANCEMENTS
+   ══════════════════════════════════════════════════════ */
+
+/* Scroll-triggered fade-in */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-16px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 40%, transparent); }
+  50%       { box-shadow: 0 0 0 8px color-mix(in srgb, var(--accent) 0%, transparent); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-6px); }
+}
+
+@keyframes shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position:  200% center; }
+}
+
+/* Utility animation classes */
+.animate-fade-in-up {
+  animation: fadeInUp 0.5s ease both;
+}
+.animate-fade-in {
+  animation: fadeIn 0.4s ease both;
+}
+.animate-scale-in {
+  animation: scaleIn 0.3s ease both;
+}
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* Stagger children */
+.stagger > * { animation: fadeInUp 0.4s ease both; }
+.stagger > *:nth-child(1)  { animation-delay: 0.05s; }
+.stagger > *:nth-child(2)  { animation-delay: 0.10s; }
+.stagger > *:nth-child(3)  { animation-delay: 0.15s; }
+.stagger > *:nth-child(4)  { animation-delay: 0.20s; }
+.stagger > *:nth-child(5)  { animation-delay: 0.25s; }
+.stagger > *:nth-child(6)  { animation-delay: 0.30s; }
+.stagger > *:nth-child(7)  { animation-delay: 0.35s; }
+.stagger > *:nth-child(8)  { animation-delay: 0.40s; }
+.stagger > *:nth-child(9)  { animation-delay: 0.45s; }
+.stagger > *:nth-child(10) { animation-delay: 0.50s; }
+
+/* Scroll reveal — add via IntersectionObserver */
+.reveal {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Tool card hover */
+.tool-card-hover {
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+.tool-card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+  border-color: color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
+/* Shimmer loading skeleton */
+.shimmer {
+  background: linear-gradient(90deg, #1a1a1f 25%, #27272a 50%, #1a1a1f 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* Glow button */
+.btn-glow {
+  position: relative;
+  overflow: hidden;
+}
+.btn-glow::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, transparent 50%);
+  pointer-events: none;
+}
+.btn-glow:hover {
+  box-shadow: 0 0 20px color-mix(in srgb, var(--accent) 40%, transparent);
+}
+
+/* Number counter animation */
+@keyframes countUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.stat-number {
+  animation: countUp 0.6s ease both;
+}
+
+/* Card shine effect */
+.card-shine {
+  position: relative;
+  overflow: hidden;
+}
+.card-shine::before {
+  content: '';
+  position: absolute;
+  top: 0; left: -100%;
+  width: 60%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.03), transparent);
+  transition: left 0.5s ease;
+  pointer-events: none;
+}
+.card-shine:hover::before {
+  left: 150%;
+}
+
+/* Gradient text */
+.gradient-text {
+  background: linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 60%, white));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Neon border */
+.neon-border {
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 40%, transparent),
+              0 0 20px color-mix(in srgb, var(--accent) 10%, transparent);
+}
+
+/* Pulse dot */
+.pulse-dot::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: currentColor;
+  animation: pulse-glow 2s infinite;
 }

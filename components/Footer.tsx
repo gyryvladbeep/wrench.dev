@@ -1,69 +1,98 @@
-"use client";
 import Link from "next/link";
-import { localePath } from "@/lib/i18n/config";
-import { useDict } from "@/lib/i18n/dict-context";
-import { categories } from "@/lib/tools-registry";
-import { localizeCategories } from "@/lib/i18n/localize";
-import { siteConfig } from "@/lib/seo";
+import { Locale, localePath } from "@/lib/i18n/config";
+import { Dictionary } from "@/lib/i18n/dictionary-types";
 
-export function Footer() {
-  const { locale, dict } = useDict();
-  const t = dict.footer;
-  const localizedCats = localizeCategories(categories, locale);
+const LOGO = () => (
+  <svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden>
+    <rect x="1.5" y="1.5" width="17" height="17" rx="3.5" stroke="currentColor" strokeWidth="1.5" className="text-accent"/>
+    <path d="M6 10h8M10 6v8" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" className="text-accent"/>
+  </svg>
+);
+
+interface FooterProps { dict: Dictionary; locale: Locale; }
+
+export function Footer({ dict, locale }: FooterProps) {
+  const isRu = locale === "ru";
+
+  const LINKS = {
+    [isRu ? "Инструменты" : "Tools"]: [
+      { label: isRu ? "Все инструменты" : "All Tools",    href: "/tools" },
+      { label: isRu ? "Форматирование"  : "Formatting",   href: "/categories/formatting" },
+      { label: isRu ? "Кодирование"     : "Encoding",     href: "/categories/encoding" },
+      { label: isRu ? "QA"              : "QA",            href: "/categories/qa" },
+      { label: isRu ? "Генераторы"      : "Generators",   href: "/categories/generators" },
+    ],
+    [isRu ? "Платформа" : "Platform"]: [
+      { label: isRu ? "Челленджи"       : "Challenges",   href: "/challenges" },
+      { label: isRu ? "Интервью"        : "Interview",    href: "/interview" },
+      { label: "Playground",                               href: "/playground" },
+      { label: isRu ? "База знаний"     : "Knowledge",    href: "/knowledge" },
+    ],
+    [isRu ? "Компания" : "Company"]: [
+      { label: isRu ? "Pro план"        : "Pro Plan",     href: "/pro" },
+      { label: isRu ? "Конфиденциальность" : "Privacy",  href: "/privacy" },
+      { label: isRu ? "Условия"         : "Terms",        href: "/terms" },
+      { label: isRu ? "Контакты"        : "Contact",      href: "/contact" },
+    ],
+  };
 
   return (
-    <footer className="border-t border-border mt-auto">
-      <div className="mx-auto max-w-6xl px-6 py-12">
-        <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
-          <div className="col-span-2 md:col-span-1">
-            <Link href={localePath(locale, "/")} className="flex items-center gap-2 hover:opacity-75 transition-opacity">
-              <svg width="16" height="16" viewBox="0 0 18 18" fill="none" aria-hidden>
-                <rect x="1" y="1" width="16" height="16" rx="3" stroke="currentColor" strokeWidth="1.5" className="text-accent"/>
-                <path d="M5 9h8M9 5v8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" className="text-accent"/>
-              </svg>
-              <span className="text-sm font-semibold text-text-primary tracking-tight">Wrench-Branch</span>
+    <footer className="border-t border-border bg-canvas">
+      <div className="mx-auto max-w-6xl px-5 py-12">
+        <div className="grid grid-cols-2 gap-8 sm:grid-cols-4 lg:grid-cols-5">
+          {/* Brand */}
+          <div className="col-span-2 sm:col-span-1 lg:col-span-2">
+            <Link href={localePath(locale, "/")} className="flex items-center gap-2 mb-3 hover:opacity-80 transition-opacity w-fit">
+              <LOGO />
+              <span className="text-sm font-bold text-text-primary">Wrench-Branch</span>
             </Link>
-            <p className="mt-3 text-xs text-text-muted leading-relaxed">{t.tagline}</p>
-            <p className="mt-4 text-xs text-text-muted">
-              © {new Date().getFullYear()} {siteConfig.name}
+            <p className="text-xs text-text-muted leading-relaxed max-w-[220px]">
+              {isRu
+                ? "Незаменимые инструменты для разработчиков, QA-инженеров и DevOps."
+                : "Essential tools for developers, QA engineers and DevOps."}
             </p>
-          </div>
 
-          <div>
-            <h3 className="mb-3 text-[11px] font-semibold uppercase tracking-widest text-text-muted">{t.categoriesHeading}</h3>
-            <ul className="space-y-2">
-              {localizedCats.slice(0, 5).map((c) => (
-                <li key={c.slug}>
-                  <Link href={localePath(locale, `/categories/${c.slug}`)} className="text-xs text-text-muted hover:text-text-primary transition-colors">{c.name}</Link>
-                </li>
+            {/* Stats */}
+            <div className="mt-4 flex gap-4">
+              {[
+                { value: "70+", label: isRu ? "инструментов" : "tools" },
+                { value: "56",  label: isRu ? "задач" : "challenges" },
+              ].map(s => (
+                <div key={s.label}>
+                  <p className="text-sm font-bold text-accent">{s.value}</p>
+                  <p className="text-[10px] text-text-muted">{s.label}</p>
+                </div>
               ))}
-            </ul>
+            </div>
           </div>
 
-          <div>
-            <h3 className="mb-3 text-[11px] font-semibold uppercase tracking-widest text-text-muted">{t.productHeading}</h3>
-            <ul className="space-y-2">
-              <li><Link href={localePath(locale, "/tools")} className="text-xs text-text-muted hover:text-text-primary transition-colors">{t.allTools}</Link></li>
-              <li><Link href={`${localePath(locale, "/")}#ai`} className="text-xs text-text-muted hover:text-text-primary transition-colors">{t.aiToolsComingSoon}</Link></li>
-              <li><Link href={localePath(locale, "/docs")} className="text-xs text-text-muted hover:text-text-primary transition-colors">{t.documentation}</Link></li>
-            </ul>
-          </div>
-
-          <div>
-            <h3 className="mb-3 text-[11px] font-semibold uppercase tracking-widest text-text-muted">{t.companyHeading}</h3>
-            <ul className="space-y-2">
-              <li><Link href={localePath(locale, "/privacy")} className="text-xs text-text-muted hover:text-text-primary transition-colors">{t.privacyPolicy}</Link></li>
-              <li><Link href={localePath(locale, "/terms")} className="text-xs text-text-muted hover:text-text-primary transition-colors">{t.terms}</Link></li>
-              <li><Link href={localePath(locale, "/contact")} className="text-xs text-text-muted hover:text-text-primary transition-colors">{t.contact}</Link></li>
-            </ul>
-          </div>
+          {/* Links */}
+          {Object.entries(LINKS).map(([title, links]) => (
+            <div key={title}>
+              <p className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-text-muted">{title}</p>
+              <ul className="space-y-2">
+                {links.map(({ label, href }) => (
+                  <li key={href}>
+                    <Link href={localePath(locale, href)}
+                      className="text-xs text-text-muted hover:text-text-primary transition-colors">
+                      {label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
         </div>
 
-        <div className="mt-10 flex items-center justify-between border-t border-border pt-6">
-          <p className="text-xs text-text-muted">{t.copyrightNote}</p>
-          <div className="flex items-center gap-1.5 text-xs text-text-muted">
-            <span className="h-1.5 w-1.5 rounded-full bg-green-500/70" />
-            {locale === "ru" ? "Работает в браузере" : "Runs in your browser"}
+        {/* Bottom bar */}
+        <div className="mt-10 flex flex-wrap items-center justify-between gap-4 border-t border-border pt-6">
+          <p className="text-[11px] text-text-muted">
+            © {new Date().getFullYear()} Wrench-Branch.
+            {isRu ? " Все инструменты работают в браузере — данные никуда не отправляются." : " All tools run in your browser — your data is never uploaded."}
+          </p>
+          <div className="flex items-center gap-1.5">
+            <span className="h-1.5 w-1.5 rounded-full bg-success animate-pulse" />
+            <span className="text-[11px] text-text-muted">{isRu ? "Работает в браузере" : "Runs in your browser"}</span>
           </div>
         </div>
       </div>

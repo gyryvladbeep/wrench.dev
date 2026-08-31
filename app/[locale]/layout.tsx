@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
+import { ThemeProvider } from "@/components/ThemeProvider";
+import { OnboardingBanner } from "@/components/OnboardingBanner";
 import { locales, isLocale, defaultLocale, Locale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/get-dictionary";
 import { AuthProvider } from "@/lib/auth/auth-context";
@@ -66,12 +68,14 @@ export default function LocaleLayout({
     <AuthProvider>
       <DictProvider dict={dict} locale={locale}>
         <ToastProvider>
-          {/* Sets document.documentElement.lang on the client after hydration */}
-          <LangSetter lang={locale} />
-          <Header />
-          <main>{children}</main>
-          <EasterEgg />
-          <Footer />
+          <ThemeProvider>
+            <LangSetter lang={locale} />
+            <Header />
+            <OnboardingBanner />
+            <main>{children}</main>
+            <EasterEgg />
+            <Footer dict={dict} locale={locale} />
+          </ThemeProvider>
         </ToastProvider>
       </DictProvider>
     </AuthProvider>
