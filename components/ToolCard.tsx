@@ -11,7 +11,7 @@ export function ToolCard({ tool }: { tool: Tool }) {
 
   return (
     <Link href={localePath(locale, `/tools/${tool.slug}`)}
-      className="group flex flex-col gap-3 p-4 transition-colors duration-100 hover:bg-surface-hover focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent focus-visible:ring-inset">
+      className="card-shine group flex flex-col gap-3 p-4 transition-all duration-150 hover:bg-surface-hover hover:-translate-y-px focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent focus-visible:ring-inset">
 
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-center gap-2.5">
