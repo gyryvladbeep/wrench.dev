@@ -1,43 +1,151 @@
 import { Metadata } from "next";
 import { isLocale, defaultLocale } from "@/lib/i18n/config";
-import { getDictionary } from "@/lib/i18n/get-dictionary";
-import { buildPageMetadata } from "@/lib/seo";
 
 export async function generateMetadata({ params }: { params: { locale: string } }): Promise<Metadata> {
-  const locale = isLocale(params.locale) ? params.locale : defaultLocale;
-  const t = getDictionary(locale).pages.terms;
-  return buildPageMetadata(locale, "/terms", t.heading, t.usingToolsBody.slice(0, 160));
+  const isRu = params.locale === "ru";
+  return {
+    title: isRu ? "Условия использования — Wrench-Branch" : "Terms of Service — Wrench-Branch",
+    description: isRu ? "Условия использования платформы Wrench-Branch." : "Terms of Service for Wrench-Branch.",
+  };
 }
 
 export default function TermsPage({ params }: { params: { locale: string } }) {
   const locale = isLocale(params.locale) ? params.locale : defaultLocale;
-  const t = getDictionary(locale).pages.terms;
+  const isRu   = locale === "ru";
 
   return (
-    <div className="mx-auto max-w-2xl px-6 py-12 text-text-primary">
-      <h1 className="text-2xl font-semibold md:text-3xl">{t.heading}</h1>
-      <p className="mt-2 text-sm text-text-muted">{t.lastUpdated}</p>
-      <div className="mt-8 space-y-6 text-sm leading-relaxed text-text-muted">
-        <section>
-          <h2 className="text-base font-medium text-text-primary">{t.usingToolsHeading}</h2>
-          <p className="mt-2">{t.usingToolsBody}</p>
-        </section>
-        <section>
-          <h2 className="text-base font-medium text-text-primary">{t.acceptableUseHeading}</h2>
-          <p className="mt-2">{t.acceptableUseBody}</p>
-        </section>
-        <section>
-          <h2 className="text-base font-medium text-text-primary">{t.noWarrantyHeading}</h2>
-          <p className="mt-2">{t.noWarrantyBody}</p>
-        </section>
-        <section>
-          <h2 className="text-base font-medium text-text-primary">{t.changesHeading}</h2>
-          <p className="mt-2">{t.changesBody}</p>
-        </section>
-      </div>
-      <p className="mt-10 rounded-[10px] border border-dashed border-border bg-surface p-4 text-xs text-text-muted">
-        {t.disclaimer}
+    <div className="mx-auto max-w-3xl px-5 py-14">
+      <h1 className="text-3xl font-bold text-text-primary mb-2">
+        {isRu ? "Условия использования" : "Terms of Service"}
+      </h1>
+      <p className="text-sm text-text-muted mb-10">
+        {isRu ? "Последнее обновление: 1 сентября 2026" : "Last updated: September 1, 2026"}
       </p>
+
+      <div className="space-y-8 text-sm text-text-secondary leading-relaxed">
+
+        <section>
+          <h2 className="text-base font-semibold text-text-primary mb-2">
+            {isRu ? "Использование инструментов" : "Using the tools"}
+          </h2>
+          <p>
+            {isRu
+              ? "Wrench-Branch предоставляет инструменты бесплатно с платными Pro планами для дополнительных функций (AI инструменты, расширенная история, безлимитные Challenges). Инструменты предоставляются «как есть» — проверяйте сгенерированный контент (отформатированный код, тестовые данные, AI предложения) перед использованием в продакшне."
+              : "Wrench-Branch provides tools free of charge with paid Pro plans for additional features (AI tools, extended history, unlimited Challenges). Tools are provided \"as is\" — review any generated output (formatted code, test data, AI suggestions) before relying on it in production."}
+          </p>
+        </section>
+
+        <section>
+          <h2 className="text-base font-semibold text-text-primary mb-2">
+            {isRu ? "Допустимое использование" : "Acceptable use"}
+          </h2>
+          <p className="mb-3">
+            {isRu ? "Запрещается использовать инструменты для:" : "You may not use the tools to:"}
+          </p>
+          <ul className="space-y-1 text-text-muted">
+            {(isRu ? [
+              "Обработки данных которые вы не имеете права обрабатывать",
+              "Атаки или сканирования систем которыми вы не владеете и не имеете разрешения тестировать",
+              "Нарушения применимого законодательства или прав третьих лиц",
+              "Злоупотребления лимитами запросов или перегрузки инфраструктуры",
+              "Автоматизированного парсинга сервиса без разрешения",
+            ] : [
+              "Process data you don't have the right to handle",
+              "Attack or scan systems you don't own or have permission to test",
+              "Violate applicable law or third-party rights",
+              "Abuse rate limits or overload the infrastructure",
+              "Scrape the service in an automated way without permission",
+            ]).map((item, i) => (
+              <li key={i} className="flex items-start gap-2">
+                <span className="text-error shrink-0">·</span> {item}
+              </li>
+            ))}
+          </ul>
+        </section>
+
+        <section>
+          <h2 className="text-base font-semibold text-text-primary mb-2">
+            {isRu ? "Аккаунты и подписки" : "Accounts and subscriptions"}
+          </h2>
+          <p>
+            {isRu
+              ? "Вы несёте ответственность за сохранность своих учётных данных. Pro подписка выставляется ежемесячно и может быть отменена в любое время — доступ сохраняется до конца оплаченного периода. Возврат средств рассматривается в индивидуальном порядке — напишите нам на gyryseksa@outlook.com."
+              : "You are responsible for keeping your credentials secure. The Pro subscription is billed monthly and can be cancelled at any time — access continues until the end of the paid period. Refunds are handled on a case-by-case basis — contact us at gyryseksa@outlook.com."}
+          </p>
+        </section>
+
+        <section>
+          <h2 className="text-base font-semibold text-text-primary mb-2">
+            {isRu ? "Интеллектуальная собственность" : "Intellectual property"}
+          </h2>
+          <p>
+            {isRu
+              ? "Весь контент генерируемый инструментами (форматированный JSON, сгенерированные UUID, тестовые данные и т.д.) принадлежит вам. Исходный код платформы Wrench-Branch является собственностью Wrench-Branch. Вы не можете копировать, перепродавать или создавать производные работы на основе платформы без письменного разрешения."
+              : "All content generated by the tools (formatted JSON, generated UUIDs, test data, etc.) belongs to you. The Wrench-Branch platform source code is the property of Wrench-Branch. You may not copy, resell, or create derivative works based on the platform without written permission."}
+          </p>
+        </section>
+
+        <section>
+          <h2 className="text-base font-semibold text-text-primary mb-2">
+            {isRu ? "Отказ от гарантий" : "No warranty"}
+          </h2>
+          <p>
+            {isRu
+              ? "Мы делаем всё возможное чтобы инструменты работали точно и были доступны, но не гарантируем бесперебойную работу или абсолютную точность результатов — особенно для AI-генерируемого контента. Используйте инструменты на свой страх и риск."
+              : "We do our best to keep tools accurate and available, but we don't guarantee uninterrupted availability or that every output is correct — particularly for AI-generated content. Use the tools at your own risk."}
+          </p>
+        </section>
+
+        <section>
+          <h2 className="text-base font-semibold text-text-primary mb-2">
+            {isRu ? "Ограничение ответственности" : "Limitation of liability"}
+          </h2>
+          <p>
+            {isRu
+              ? "В максимальной степени предусмотренной применимым законодательством Wrench-Branch не несёт ответственности за косвенный, случайный, специальный или последующий ущерб возникший в результате использования или невозможности использования сервиса."
+              : "To the maximum extent permitted by applicable law, Wrench-Branch shall not be liable for any indirect, incidental, special, or consequential damages arising from your use of or inability to use the service."}
+          </p>
+        </section>
+
+        <section>
+          <h2 className="text-base font-semibold text-text-primary mb-2">
+            {isRu ? "Изменения" : "Changes"}
+          </h2>
+          <p>
+            {isRu
+              ? "Мы можем обновлять эти условия по мере развития продукта. Существенные изменения будут отражены в дате обновления вверху страницы. Продолжение использования сервиса после изменений означает ваше согласие с новыми условиями."
+              : "We may update these terms as the product evolves. Material changes will be reflected by updating the date above. Continued use of the service after changes constitutes your acceptance of the new terms."}
+          </p>
+        </section>
+
+        <section>
+          <h2 className="text-base font-semibold text-text-primary mb-2">
+            {isRu ? "Применимое право" : "Governing law"}
+          </h2>
+          <p>
+            {isRu
+              ? "Настоящие условия регулируются законодательством Республики Армения. Споры разрешаются в судах Республики Армения."
+              : "These terms are governed by the laws of the Republic of Armenia. Disputes shall be resolved in the courts of the Republic of Armenia."}
+          </p>
+        </section>
+
+        <section>
+          <h2 className="text-base font-semibold text-text-primary mb-2">
+            {isRu ? "Контакт" : "Contact"}
+          </h2>
+          <p>
+            {isRu ? "Вопросы об условиях: " : "Questions about these terms: "}
+            <a href="mailto:gyryseksa@outlook.com" className="text-link hover:underline">gyryseksa@outlook.com</a>
+          </p>
+        </section>
+
+        <div className="rounded-lg border border-border bg-surface/50 p-4 text-xs text-text-muted">
+          {isRu
+            ? "Эти условия являются отправной точкой и не являются юридической консультацией. Рекомендуется проверить их с юристом в вашей юрисдикции."
+            : "These terms are a starting point, not legal advice. Have them reviewed by a lawyer familiar with your jurisdiction."}
+        </div>
+
+      </div>
     </div>
   );
 }
