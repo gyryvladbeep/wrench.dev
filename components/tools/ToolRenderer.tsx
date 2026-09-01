@@ -60,8 +60,6 @@ import {
   CronExpressionTool,
 } from "./DateTimeTools";
 import { ComingSoonTool }           from "./ComingSoonTool";
-import { JsonMutatorTool }          from "./JsonMutatorTool";
-import { TestCaseMatrixTool }       from "./TestCaseMatrixTool";
 import { BoundaryValueTool }        from "./BoundaryValueTool";
 import { TestDataGeneratorTool }    from "./TestDataGeneratorTool";
 import { ApiRequestBuilderV2Tool }  from "./ApiRequestBuilderV2Tool";
@@ -85,6 +83,9 @@ import { JwtGeneratorTool }           from "./JwtGeneratorTool";
 import { RegexGeneratorClient as RegexGeneratorTool } from "./RegexGeneratorClient";
 import { TestCaseGeneratorClient as TestCaseGeneratorTool } from "./TestCaseGeneratorClient";
 import { BugReportGeneratorClient as BugReportGeneratorTool } from "./BugReportGeneratorClient";
+import { JsonMutatorTool }          from "./JsonMutatorTool";
+import { TestCaseMatrixTool }       from "./TestCaseMatrixTool";
+import { ApiResponseValidatorTool } from "./ApiResponseValidatorTool";
 
 /**
  * Single "use client" boundary for all interactive tool components.
@@ -149,6 +150,7 @@ export function ToolRenderer({
     case "api-request-builder":       return <ApiRequestBuilderTool dict={dict} />;
     case "json-mutator":              return <JsonMutatorTool dict={dict} />;
     case "test-case-matrix":          return <TestCaseMatrixTool dict={dict} />;
+    case "api-response-validator":    return <ApiResponseValidatorTool dict={dict} />;
     // ── API ─────────────────────────────────────────────────────────────────
     case "curl-generator":            return <CurlGeneratorTool dict={dict} />;
     case "rest-request-builder":      return <RestRequestBuilderTool dict={dict} />;
