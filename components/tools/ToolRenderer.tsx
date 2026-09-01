@@ -61,6 +61,7 @@ import {
 } from "./DateTimeTools";
 import { ComingSoonTool }           from "./ComingSoonTool";
 import { JsonMutatorTool }          from "./JsonMutatorTool";
+import { TestCaseMatrixTool }       from "./TestCaseMatrixTool";
 import { BoundaryValueTool }        from "./BoundaryValueTool";
 import { TestDataGeneratorTool }    from "./TestDataGeneratorTool";
 import { ApiRequestBuilderV2Tool }  from "./ApiRequestBuilderV2Tool";
@@ -147,6 +148,7 @@ export function ToolRenderer({
     case "css-selector-generator":    return <CssSelectorGeneratorTool dict={dict} />;
     case "api-request-builder":       return <ApiRequestBuilderTool dict={dict} />;
     case "json-mutator":              return <JsonMutatorTool dict={dict} />;
+    case "test-case-matrix":          return <TestCaseMatrixTool dict={dict} />;
     // ── API ─────────────────────────────────────────────────────────────────
     case "curl-generator":            return <CurlGeneratorTool dict={dict} />;
     case "rest-request-builder":      return <RestRequestBuilderTool dict={dict} />;

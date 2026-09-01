@@ -601,6 +601,17 @@ export const tools: Tool[] = [
     keywords: ["api request builder", "http request tool", "online rest client"],
   },
   {
+    slug: "test-case-matrix",
+    name: "Test Case Matrix",
+    shortDescription: "Generate pairwise or full combinatorial test case matrices.",
+    longDescription: "Enter parameters and their possible values to generate an optimized pairwise test matrix or full combinatorial set. Export as table, CSV, Gherkin or JSON.",
+    metaDescription: "Free test case matrix generator. Generate pairwise and combinatorial test cases from parameters. Export to CSV, Gherkin, JSON.",
+    category: "qa", isImplemented: true, isPopular: true, isFeatured: true,
+    aliases: ["pairwise testing", "combinatorial testing", "test matrix", "orthogonal array"],
+    relatedSlugs: ["json-mutator", "boundary-value-generator", "test-case-generator"],
+    keywords: ["pairwise testing tool", "test case matrix", "combinatorial testing", "orthogonal array testing"],
+  },
+  {
     slug: "json-mutator",
     name: "JSON Mutator",
     shortDescription: "Generate mutated API payloads for negative testing.",
