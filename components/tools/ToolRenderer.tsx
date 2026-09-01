@@ -60,6 +60,7 @@ import {
   CronExpressionTool,
 } from "./DateTimeTools";
 import { ComingSoonTool }           from "./ComingSoonTool";
+import { JsonMutatorTool }          from "./JsonMutatorTool";
 import { BoundaryValueTool }        from "./BoundaryValueTool";
 import { TestDataGeneratorTool }    from "./TestDataGeneratorTool";
 import { ApiRequestBuilderV2Tool }  from "./ApiRequestBuilderV2Tool";
@@ -145,6 +146,7 @@ export function ToolRenderer({
     case "xpath-generator":           return <XpathGeneratorTool dict={dict} />;
     case "css-selector-generator":    return <CssSelectorGeneratorTool dict={dict} />;
     case "api-request-builder":       return <ApiRequestBuilderTool dict={dict} />;
+    case "json-mutator":              return <JsonMutatorTool dict={dict} />;
     // ── API ─────────────────────────────────────────────────────────────────
     case "curl-generator":            return <CurlGeneratorTool dict={dict} />;
     case "rest-request-builder":      return <RestRequestBuilderTool dict={dict} />;
