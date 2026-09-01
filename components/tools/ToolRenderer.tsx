@@ -86,6 +86,7 @@ import { BugReportGeneratorClient as BugReportGeneratorTool } from "./BugReportG
 import { JsonMutatorTool }          from "./JsonMutatorTool";
 import { TestCaseMatrixTool }       from "./TestCaseMatrixTool";
 import { ApiResponseValidatorTool } from "./ApiResponseValidatorTool";
+import { HttpSecurityHeadersTool }  from "./HttpSecurityHeadersTool";
 
 /**
  * Single "use client" boundary for all interactive tool components.
@@ -151,6 +152,7 @@ export function ToolRenderer({
     case "json-mutator":              return <JsonMutatorTool dict={dict} />;
     case "test-case-matrix":          return <TestCaseMatrixTool dict={dict} />;
     case "api-response-validator":    return <ApiResponseValidatorTool dict={dict} />;
+    case "http-security-headers":     return <HttpSecurityHeadersTool dict={dict} />;
     // ── API ─────────────────────────────────────────────────────────────────
     case "curl-generator":            return <CurlGeneratorTool dict={dict} />;
     case "rest-request-builder":      return <RestRequestBuilderTool dict={dict} />;

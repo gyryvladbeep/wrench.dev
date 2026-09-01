@@ -623,6 +623,17 @@ export const tools: Tool[] = [
     keywords: ["pairwise testing tool", "test case matrix", "combinatorial testing"],
   },
   {
+    slug: "http-security-headers",
+    name: "HTTP Security Headers",
+    shortDescription: "Check your HTTP response headers against security best practices.",
+    longDescription: "Paste HTTP response headers and instantly see which security headers are missing or misconfigured — CSP, HSTS, CORS, X-Frame-Options, and more. Get a security score and actionable recommendations.",
+    metaDescription: "Free HTTP security headers checker. Analyze CSP, HSTS, CORS and other security headers. Get security score and fix recommendations.",
+    category: "qa", isImplemented: true, isPopular: true, isFeatured: true,
+    aliases: ["security headers", "csp checker", "hsts checker", "cors checker"],
+    relatedSlugs: ["api-response-validator", "header-inspector", "api-request-builder"],
+    keywords: ["http security headers", "csp checker", "hsts checker", "security headers analyzer"],
+  },
+  {
     slug: "api-response-validator",
     name: "API Response Validator",
     shortDescription: "Validate API responses against JSON Schema and find mismatches.",
