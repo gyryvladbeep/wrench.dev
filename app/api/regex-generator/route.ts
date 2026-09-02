@@ -1,8 +1,9 @@
+import { checkAiLimit, incrementAiUsage } from "@/lib/rate-limit";
 import { anthropic } from "@ai-sdk/anthropic";
 import { streamText } from "ai";
 import { NextRequest } from "next/server";
 
-export const runtime = "edge";
+export const runtime = "nodejs";
 export const maxDuration = 30;
 
 const rateMap = new Map<string, { count: number; reset: number }>();
@@ -54,6 +55,8 @@ ${testString ? "TEST RESULT:\n[does the regex match the provided test string? ye
 
 TIPS:
 [1-2 practical tips for using this regex]`;
+
+  await incrementAiUsage();
 
   const result = await streamText({
     model: anthropic("claude-sonnet-4-6"),

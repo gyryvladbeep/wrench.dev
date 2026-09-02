@@ -1,8 +1,9 @@
+import { checkAiLimit, incrementAiUsage } from "@/lib/rate-limit";
 import { anthropic } from "@ai-sdk/anthropic";
 import { streamText } from "ai";
 import { NextRequest } from "next/server";
 
-export const runtime = "edge";
+export const runtime = "nodejs";
 export const maxDuration = 60;
 
 const rateMap = new Map<string, { count: number; reset: number }>();
@@ -79,6 +80,8 @@ Actual result: ${actual || "Not specified"}
 Environment: ${environment || "Not specified"}
 
 ${formatGuide}`;
+
+  await incrementAiUsage();
 
   const result = await streamText({
     model: anthropic("claude-sonnet-4-6"),

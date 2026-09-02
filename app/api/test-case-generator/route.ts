@@ -1,32 +1,19 @@
+import { checkAiLimit, incrementAiUsage } from "@/lib/rate-limit";
 import { anthropic } from "@ai-sdk/anthropic";
 import { streamText } from "ai";
 import { NextRequest } from "next/server";
 
-export const runtime = "edge";
+export const runtime = "nodejs";
 export const maxDuration = 60;
 
-// Simple in-memory rate limit (per edge instance)
-const rateMap = new Map<string, { count: number; reset: number }>();
 
-function checkRateLimit(ip: string): boolean {
-  const now = Date.now();
-  const window = 60_000; // 1 minute
-  const limit  = 5;      // 5 requests per minute per IP
-  const entry  = rateMap.get(ip);
-  if (!entry || now > entry.reset) {
-    rateMap.set(ip, { count: 1, reset: now + window });
-    return true;
-  }
-  if (entry.count >= limit) return false;
-  entry.count++;
-  return true;
-}
 
 export async function POST(req: NextRequest) {
-  const ip = req.headers.get("x-forwarded-for") ?? "unknown";
-  if (!checkRateLimit(ip)) {
+  // Server-side AI limit check (works across all Vercel instances)
+  const limit = await checkAiLimit();
+  if (!limit.allowed) {
     return new Response(
-      JSON.stringify({ error: "Rate limit exceeded. Please wait a minute." }),
+      JSON.stringify({ error: "Daily AI limit reached. Upgrade to Pro for unlimited access.", remaining: 0 }),
       { status: 429, headers: { "Content-Type": "application/json" } }
     );
   }
@@ -49,6 +36,9 @@ export async function POST(req: NextRequest) {
     description, testType, outputFormat, count,
     includeEdgeCases, includePriority, includePreconditions,
   });
+
+  // Increment usage counter before streaming
+  await incrementAiUsage();
 
   const result = await streamText({
     model: anthropic("claude-sonnet-4-6"),
