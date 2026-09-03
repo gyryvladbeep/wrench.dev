@@ -70,6 +70,7 @@ import { NumberBaseConverterTool }  from "./NumberBaseConverterTool";
 import { MarkdownToHtmlTool }       from "./MarkdownToHtmlTool";
 import { PasswordStrengthTool }    from "./PasswordStrengthTool";
 import { HttpStatusCodesTool }     from "./HttpStatusCodesTool";
+import { ApiResponseMockerTool }   from "./ApiResponseMockerTool";
 import { JsonSchemaValidatorTool } from "./JsonSchemaValidatorTool";
 import { YamlFormatterTool }       from "./YamlFormatterTool";
 import { UrlParserTool }           from "./UrlParserTool";
@@ -86,7 +87,6 @@ import { BugReportGeneratorClient as BugReportGeneratorTool } from "./BugReportG
 import { JsonMutatorTool }          from "./JsonMutatorTool";
 import { TestCaseMatrixTool }       from "./TestCaseMatrixTool";
 import { ApiResponseValidatorTool } from "./ApiResponseValidatorTool";
-import { HttpSecurityHeadersTool }  from "./HttpSecurityHeadersTool";
 
 /**
  * Single "use client" boundary for all interactive tool components.
@@ -149,10 +149,11 @@ export function ToolRenderer({
     case "xpath-generator":           return <XpathGeneratorTool dict={dict} />;
     case "css-selector-generator":    return <CssSelectorGeneratorTool dict={dict} />;
     case "api-request-builder":       return <ApiRequestBuilderTool dict={dict} />;
+    case "http-status-codes":         return <HttpStatusCodesTool dict={dict} />;
+    case "api-response-mocker":       return <ApiResponseMockerTool dict={dict} />;
     case "json-mutator":              return <JsonMutatorTool dict={dict} />;
     case "test-case-matrix":          return <TestCaseMatrixTool dict={dict} />;
     case "api-response-validator":    return <ApiResponseValidatorTool dict={dict} />;
-    case "http-security-headers":     return <HttpSecurityHeadersTool dict={dict} />;
     // ── API ─────────────────────────────────────────────────────────────────
     case "curl-generator":            return <CurlGeneratorTool dict={dict} />;
     case "rest-request-builder":      return <RestRequestBuilderTool dict={dict} />;
