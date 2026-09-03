@@ -1,0 +1,72 @@
+# ═══════════════════════════════════════════════════════════════
+# GitHub Actions — автоматический запуск тестов
+# ═══════════════════════════════════════════════════════════════
+#
+# Этот файл говорит GitHub: "каждый раз когда кто-то пушит код —
+# запусти вот этот набор команд на чистой виртуальной машине".
+#
+# Файл должен лежать ИМЕННО в .github/workflows/ — это не наша
+# придумка, а требование самого GitHub, он сканирует эту папку.
+
+name: Playwright Tests
+
+# Когда запускать этот workflow
+on:
+  push:
+    branches: [main, master]      # при пуше в основную ветку
+  pull_request:
+    branches: [main, master]      # при открытии Pull Request
+
+jobs:
+  test:
+    # На какой операционной системе гонять тесты (виртуальная машина GitHub)
+    runs-on: ubuntu-latest
+
+    # Максимальное время на весь прогон — если тесты зависнут, GitHub
+    # не будет ждать вечно и потратит меньше бесплатных минут
+    timeout-minutes: 15
+
+    steps:
+      # Шаг 1 — скачиваем код репозитория на виртуальную машину
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Шаг 2 — устанавливаем Node.js нужной версии
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"          # кэшируем зависимости — следующие прогоны быстрее
+
+      # Шаг 3 — устанавливаем зависимости проекта (то же что npm install)
+      - name: Install dependencies
+        run: npm ci
+
+      # Шаг 4 — устанавливаем браузеры Playwright (Chromium и т.д.)
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      # Шаг 5 — собираем production-версию сайта
+      # (быстрее и стабильнее чем dev-режим — помнишь урок про flaky тесты?)
+      - name: Build app
+        run: npm run build
+        env:
+          # Тестовые переменные окружения — минимально нужные чтобы сборка прошла.
+          # Реальные секреты (ключи Supabase/Stripe) хранятся в Settings → Secrets
+          # репозитория GitHub, а не прямо в этом файле — так безопаснее.
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+
+      # Шаг 6 — запускаем тесты против собранного приложения
+      - name: Run Playwright tests
+        run: npm run test
+
+      # Шаг 7 — если тесты упали, сохраняем отчёт как "артефакт"
+      # чтобы можно было скачать и посмотреть скриншоты/видео падения
+      - name: Upload test report
+        if: always()   # выполнить этот шаг даже если тесты упали
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 14

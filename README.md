@@ -1,5 +1,7 @@
 # Dev Toolbox
 
+[![Playwright Tests](https://github.com/gyryvladbeep/wrench.dev/actions/workflows/playwright.yml/badge.svg)](https://github.com/gyryvladbeep/wrench.dev/actions/workflows/playwright.yml)
+
 Essential tools for Developers, QA Engineers and DevOps. Fast, free, no signup — every MVP tool runs entirely client-side.
 
 This is the MVP code bundle that pairs with `dev-toolbox-master-plan.md` (business/product/SEO/roadmap). Read that first for the *why*; this file covers the *how*.
