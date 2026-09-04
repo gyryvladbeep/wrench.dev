@@ -103,7 +103,7 @@ export default function HomePage({ params }: { params: { locale: string } }) {
               <ul className="space-y-2 text-sm text-text-primary">
                 <li>{isRu ? "Один адрес, все инструменты, всегда под рукой" : "One address, every tool, always at hand"}</li>
                 <li>{isRu ? "Всё считается локально в браузере — данные никуда не уходят" : "Everything computes client-side — your data never leaves the browser"}</li>
-                <li>{isRu ? "Единый интерфейс для всех 75+ инструментов" : "One consistent interface across all 75+ tools"}</li>
+                <li>{isRu ? `Единый интерфейс для всех ${totalCount}+ инструментов` : `One consistent interface across all ${totalCount}+ tools`}</li>
                 <li>{isRu ? "Бесплатно навсегда, без рекламы и трекеров" : "Free forever, no ads, no trackers"}</li>
               </ul>
             </div>
