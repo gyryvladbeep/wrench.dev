@@ -169,7 +169,16 @@ test.describe.serial("Аккаунт: регистрация → сессия �
     // Не самопроверка ради самопроверки: некоторые баги логаута
     // проявляются только со ВТОРОЙ сессии (например, если состояние
     // React не полностью сбрасывается между сессиями одного таба).
-    await page.getByRole("button", { name: "Sign out" }).click();
+    //
+    // Тут мы на /profile, а не на главной, как в шаге 3 — а на /profile
+    // "Sign out" есть сразу в двух местах: в шапке сайта и отдельной
+    // кнопкой рядом с аватаркой на самой странице. Это нормально, не
+    // баг — но page.getByRole(...) без уточнения нашёл бы оба сразу и
+    // Playwright специально откажется гадать, какой из двух нажимать
+    // ("strict mode violation"). Уточняем через шапку (getByRole("banner"))
+    // — она одна и та же на любой странице сайта, в отличие от кнопки
+    // на самой /profile, которой не будет на других страницах.
+    await page.getByRole("banner").getByRole("button", { name: "Sign out" }).click();
     await page.waitForURL((url) => url.pathname === "/" || url.pathname === "/en", { timeout: 10_000 });
     await expect(page.getByRole("link", { name: "Sign in", exact: true })).toBeVisible();
   });
