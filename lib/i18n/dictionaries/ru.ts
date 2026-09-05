@@ -64,6 +64,7 @@ export const ru: Dictionary = {
     continueWith: "Продолжить через",
     continueWithGoogle: "Продолжить через Google",
     continueWithGithub: "Продолжить через GitHub",
+    oauthError: "Не получилось войти через {provider}. Попробуйте ещё раз или используйте email и пароль.",
     orDivider: "или",
     signingIn: "Входим…",
     signingUp: "Создаём аккаунт…",

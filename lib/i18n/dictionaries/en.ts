@@ -64,6 +64,7 @@ export const en: Dictionary = {
     continueWith: "Continue with",
     continueWithGoogle: "Continue with Google",
     continueWithGithub: "Continue with GitHub",
+    oauthError: "Something went wrong signing in with {provider}. Please try again or use email and password.",
     orDivider: "or",
     signingIn: "Signing in…",
     signingUp: "Creating account…",

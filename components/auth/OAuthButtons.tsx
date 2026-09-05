@@ -5,16 +5,97 @@ import { createClient } from "@/lib/supabase/client";
 import { Dictionary } from "@/lib/i18n/dictionary-types";
 import { Locale, localePath } from "@/lib/i18n/config";
 
+type Provider = "google" | "github";
+
+const PROVIDER_LABEL: Record<Provider, string> = { google: "Google", github: "GitHub" };
+
 export function OAuthButtons({ dict, locale }: { dict: Dictionary; locale: Locale }) {
-  const [loading, setLoading] = useState<"google" | "github" | null>(null);
+  const [loading, setLoading] = useState<Provider | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const t = dict.auth;
 
-  async function signInWith(provider: "google" | "github") {
+  /**
+   * ═══════════════════════════════════════════════════════════════
+   * Почему тут не просто supabase.auth.signInWithOAuth({ provider })
+   * ═══════════════════════════════════════════════════════════════
+   * Раньше так и было — и выглядело абсолютно правильно, но пряталась
+   * ошибка, которую нельзя было увидеть, не попробовав кнопку вживую.
+   *
+   * signInWithOAuth() строит ссылку авторизации ЦЕЛИКОМ на клиенте и
+   * никогда заранее не спрашивает сервер, включён ли вообще этот
+   * провайдер в Supabase Dashboard → Authentication → Providers. Он
+   * просто сразу уводит браузер (window.location) по этой ссылке.
+   * Если провайдер выключен (или не настроен Client ID/Secret),
+   * Supabase на той ссылке отвечает голым JSON вида
+   * {"error_code":"validation_failed","msg":"Unsupported provider:
+   * provider is not enabled"} — и человек видит НЕ сайт, а страницу
+   * с сырым текстом ошибки, без единой кнопки вернуться назад.
+   *
+   * Поэтому здесь мы:
+   *  1) просим supabase-js не переходить по ссылке самому
+   *     (skipBrowserRedirect: true) и отдать нам сам URL;
+   *  2) сами делаем fetch() на этот URL с redirect: "manual" — то есть
+   *     запрещаем ЕМУ следовать по редиректу автоматически;
+   *  3) если провайдер включён, Supabase ответит настоящим 3xx-редиректом
+   *     на accounts.google.com/github.com — при redirect: "manual" это
+   *     превращается в response.type === "opaqueredirect" (тело нам
+   *     недоступно, и не нужно — сам факт редиректа уже говорит "всё ок").
+   *     Только тогда переходим по ссылке по-настоящему;
+   *  4) если провайдер выключен, Supabase вернёт обычный читаемый 400 —
+   *     мы вытаскиваем из него текст ошибки и показываем ЧЕЛОВЕКУ
+   *     понятное сообщение на сайте, вместо того чтобы уводить его на
+   *     чужую страницу с JSON.
+   *
+   * Если сам предварительный fetch() не выполнился (например, какой-то
+   * браузер заблокировал его политикой CORS) — это НЕ то же самое, что
+   * подтверждённая ошибка провайдера. В этом случае намеренно ведём
+   * себя как раньше: просто уходим по ссылке напрямую, а не пугаем
+   * человека ошибкой там, где, возможно, всё бы сработало нормально.
+   */
+  async function signInWith(provider: Provider) {
     const supabase = createClient();
     if (!supabase) return;
+
+    setError(null);
     setLoading(provider);
+
     const redirectTo = `${window.location.origin}${localePath(locale, "/auth/callback")}`;
-    await supabase.auth.signInWithOAuth({ provider, options: { redirectTo } });
+
+    const { data, error: oauthError } = await supabase.auth.signInWithOAuth({
+      provider,
+      options: { redirectTo, skipBrowserRedirect: true },
+    });
+
+    const url = data?.url;
+    if (oauthError || !url) {
+      console.error(`signInWith(${provider}): supabase-js вернул ошибку или пустой url`, oauthError);
+      setError(t.oauthError.replace("{provider}", PROVIDER_LABEL[provider]));
+      setLoading(null);
+      return;
+    }
+
+    try {
+      const check = await fetch(url, { method: "GET", redirect: "manual" });
+      const isRedirect = check.type === "opaqueredirect" || (check.status >= 300 && check.status < 400);
+
+      if (!isRedirect) {
+        let serverMessage = "";
+        try {
+          const body = await check.json();
+          serverMessage = body?.msg ?? body?.error_description ?? body?.message ?? "";
+        } catch {
+          // Ответ не JSON — не критично, покажем общее сообщение.
+        }
+        console.error(`OAuth (${provider}) недоступен:`, check.status, serverMessage);
+        setError(t.oauthError.replace("{provider}", PROVIDER_LABEL[provider]));
+        setLoading(null);
+        return;
+      }
+    } catch (err) {
+      console.warn(`OAuth (${provider}): предварительная проверка ссылки не выполнилась, идём напрямую`, err);
+    }
+
+    window.location.href = url;
   }
 
   return (
@@ -43,6 +124,12 @@ export function OAuthButtons({ dict, locale }: { dict: Dictionary; locale: Local
         </svg>
         {loading === "github" ? `${t.continueWith} GitHub…` : t.continueWithGithub}
       </button>
+
+      {error && (
+        <p role="alert" className="pt-1 text-center text-sm text-orange-400">
+          {error}
+        </p>
+      )}
     </div>
   );
 }

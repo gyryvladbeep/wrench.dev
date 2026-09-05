@@ -63,6 +63,7 @@ export interface Dictionary {
     continueWith: string;
     continueWithGoogle: string;
     continueWithGithub: string;
+    oauthError: string;
     orDivider: string;
     signingIn: string;
     signingUp: string;
