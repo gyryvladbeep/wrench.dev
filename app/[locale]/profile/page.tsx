@@ -83,7 +83,7 @@ function ActivityCalendar({ activity }: { activity: Record<string, number> }) {
 }
 
 export default function ProfilePage() {
-  const { user, signOut }  = useAuth();
+  const { user, signOut, loading } = useAuth();
   const { locale }         = useDict();
   const router             = useRouter();
   const isRu               = locale === "ru";
@@ -99,12 +99,6 @@ export default function ProfilePage() {
   const [saving,   setSaving]   = useState(false);
   const [saved,    setSaved]    = useState(false);
   const [tab,      setTab]      = useState<"overview"|"history"|"badges"|"favorites"|"settings">("overview");
-
-  const [hydrated, setHydrated] = useState(false);
-
-  useEffect(() => {
-    setHydrated(true);
-  }, []);
 
   const load = useCallback(async () => {
     if (!user) return;
@@ -146,10 +140,37 @@ export default function ProfilePage() {
     setActivity(act);
   }, [user, isPro]);
 
+  // ═══════════════════════════════════════════════════════════════
+  // Почему тут loading из useAuth(), а не свой локальный "hydrated"
+  // ═══════════════════════════════════════════════════════════════
+  // Раньше здесь был свой флаг hydrated (true после первого рендера),
+  // и проверка "if (!user && hydrated)". Выглядело логично, но пряталась
+  // гонка состояний, которую вскрыл только настоящий e2e-тест: заход
+  // ЗАРАНЕЕ разлогиненного человека прямо на /profile (например, после
+  // выхода из аккаунта) навсегда зависал на пустой странице, ни разу
+  // не редиректя на /auth/login.
+  //
+  // Причина: user в AuthProvider изначально равен null — и ДО того как
+  // сессия проверена, и ПОСЛЕ подтверждения "ты правда разлогинен" — это
+  // одно и то же значение null. React не перезапускает эффект, если
+  // значение в зависимостях не изменилось (Object.is(null, null) —
+  // true), а hydrated в списке зависимостей эффекта не было вообще.
+  // Получалось: эффект успевал сработать РАНЬШЕ, чем hydrated становился
+  // true (и тогда просто вызывал load(), которая сама ничего не делает
+  // при user === null), а затем — когда hydrated менялся на true — эффект
+  // просто не перезапускался, потому что "hydrated" не в его зависимостях,
+  // а "user" не поменялся (как был null, так и остался null).
+  //
+  // loading, наоборот, ВСЕГДА меняется ровно один раз: true → false,
+  // именно в тот момент, когда AuthProvider узнал точный ответ (есть
+  // сессия или нет). Это гарантированная, настоящая смена значения —
+  // значит React обязательно перезапустит эффект в нужный момент,
+  // с уже финальным, правильным user.
   useEffect(() => {
-    if (!user && hydrated) { router.push(localePath(locale, "/auth/login")); return; }
+    if (loading) return;
+    if (!user) { router.push(localePath(locale, "/auth/login")); return; }
     load();
-  }, [user, router, locale, load]);
+  }, [user, loading, router, locale, load]);
 
   async function saveProfile() {
     if (!user) return;
