@@ -3,76 +3,27 @@ import { SignupPage } from "./pages/SignupPage";
 
 /**
  * ═══════════════════════════════════════════════════════════════
- * УРОВЕНЬ 5 — ТЕСТИРУЕМ РЕГИСТРАЦИЮ (РЕАЛЬНЫЙ БИЗНЕС-ФЛОУ)
+ * Регистрация — валидация полей (без обращения к сети)
  * ═══════════════════════════════════════════════════════════════
+ * Этот файл специально ограничен тем, что можно проверить БЕЗ живого
+ * запроса к Supabase — чисто клиентской валидацией формы. Реальный
+ * сетевой сценарий (успешная регистрация, дубликат email, вход, выход,
+ * персист сессии) переехал в tests/auth-flow.spec.ts — там же лежит
+ * подробное объяснение, почему это разделено на два файла, и что
+ * делать, если тот файл падает с упоминанием captcha.
  *
- * НОВАЯ ПРОБЛЕМА: регистрация — это не UUID Generator, который можно
- * гонять сколько угодно раз без последствий. Каждый успешный тест
- * СОЗДАЁТ РЕАЛЬНОГО ПОЛЬЗОВАТЕЛЯ в базе данных Supabase. Если
- * использовать один и тот же email каждый раз — второй прогон теста
- * упадёт с ошибкой "email already registered", хотя логика приложения
- * работает правильно! Это была бы ложная поломка теста.
- *
- * РЕШЕНИЕ: генерировать УНИКАЛЬНЫЙ email при каждом запуске теста.
- * Стандартный приём — добавить к адресу текущую метку времени
- * (timestamp) или случайную строку, чтобы каждый прогон использовал
- * новый, гарантированно свободный адрес.
- *
- * ВАЖНАЯ ОГОВОРКА ДЛЯ РЕАЛЬНОЙ РАБОТЫ:
- * ─────────────────────────────────────
- * Такие тесты постепенно "засоряют" базу данных тестовыми
- * пользователями. На реальном проекте для этого обычно делают:
- * 1) отдельную тестовую базу данных (staging), а не боевую (production)
- * 2) периодическую очистку тестовых записей (cron job или ручной SQL)
- * 3) или используют специальный API для очистки после каждого теста
- *    (afterEach хук, который удаляет только что созданного юзера)
- * Мы пока используем боевую базу для обучения — это нормально для
- * учебного проекта, но так делать в реальной команде не стоит.
+ * Раньше два сетевых теста лежали прямо здесь под test.skip() с
+ * пометкой "заблокировано hCaptcha" — то есть предполагалось, что
+ * попытка провалится, и тест даже не пытался её сделать. Теперь мы это
+ * предположение реально проверяем в auth-flow.spec.ts, поэтому здесь
+ * дублирующие skip-заглушки убраны.
  */
 
-// Генерируем уникальный email на основе текущего времени в миллисекундах.
-// Date.now() почти гарантированно не повторится между прогонами теста.
 function uniqueTestEmail(): string {
   return `qa-test-${Date.now()}@wrench-test.dev`;
 }
 
-test.describe("Регистрация", () => {
-
-  // ─────────────────────────────────────────────────────────────
-  // УРОК: реальное архитектурное ограничение, а не баг теста
-  // ─────────────────────────────────────────────────────────────
-  // Ранее в этом проекте мы специально включили hCaptcha защиту на
-  // регистрации (см. аудит безопасности) — она блокирует автоматические
-  // запросы, включая наши тесты, требуя пройти капчу как человек.
-  // Playwright физически не может "решить" капчу за живого пользователя.
-  //
-  // Это ЧАСТАЯ ситуация в автоматизации: некоторые функции безопасности
-  // (капча, 2FA, биометрия) специально созданы чтобы блокировать ботов —
-  // а автотест технически тоже бот. Стандартные решения на реальных
-  // проектах:
-  // 1) Отдельное тестовое окружение (staging) БЕЗ капчи для e2e тестов
-  // 2) Специальный "test mode" API-ключ у провайдера капчи (hCaptcha
-  //    и Google reCAPTCHA оба предоставляют тестовые ключи, которые
-  //    всегда проходят проверку — используются только на staging)
-  // 3) Мокирование ответа капчи на уровне сети (page.route()) —
-  //    подделываем ответ сервиса капчи, но это не всегда работает
-  //    если проверка идёт на бэкенде Supabase, а не в браузере
-  //
-  // Пока используем боевой Supabase без отдельного test-окружения —
-  // помечаем эти тесты как "skip" с понятной причиной, а не оставляем
-  // их молча падать. test.skip() с комментарием — гораздо честнее для
-  // команды, чем красный крестик без объяснения.
-  test.skip("успешная регистрация редиректит на главную страницу залогиненным — ЗАБЛОКИРОВАНО hCaptcha", async ({ page }) => {
-    const signup = new SignupPage(page);
-    await signup.goto();
-
-    const email = uniqueTestEmail();
-    await signup.fillForm(email, "TestPassword123!");
-    await signup.submit();
-
-    await page.waitForURL((url) => url.pathname === "/", { timeout: 10_000 });
-    await expect(page.getByRole("button", { name: "Sign out" })).toBeVisible({ timeout: 10_000 });
-  });
+test.describe("Регистрация — валидация", () => {
 
   test("несовпадающие пароли показывают ошибку и НЕ отправляют форму", async ({ page }) => {
     const signup = new SignupPage(page);
@@ -96,30 +47,6 @@ test.describe("Регистрация", () => {
     await expect(page).toHaveURL(/\/auth\/signup/);
   });
 
-  test.skip("попытка регистрации с уже существующим email показывает ошибку — ЗАБЛОКИРОВАНО hCaptcha", async ({ page }) => {
-    const signup = new SignupPage(page);
-    const email = uniqueTestEmail();
-
-    await test.step("регистрируем пользователя первый раз — должно пройти успешно", async () => {
-      await signup.goto();
-      await signup.fillForm(email, "TestPassword123!");
-      await signup.submit();
-      await page.waitForURL((url) => url.pathname === "/", { timeout: 10_000 });
-    });
-
-    await test.step("выходим из аккаунта, чтобы повторить регистрацию с чистого листа", async () => {
-      await page.getByRole("button", { name: "Sign out" }).click();
-    });
-
-    await test.step("пробуем зарегистрироваться ЕЩЁ РАЗ с тем же email — должна быть ошибка", async () => {
-      await signup.goto();
-      await signup.fillForm(email, "AnotherPassword456!");
-      await signup.submit();
-
-      await expect(signup.errorMessage).toBeVisible({ timeout: 10_000 });
-    });
-  });
-
   test("пароль короче 8 символов не проходит валидацию браузера", async ({ page }) => {
     const signup = new SignupPage(page);
     await signup.goto();
@@ -136,6 +63,33 @@ test.describe("Регистрация", () => {
       (el: HTMLInputElement) => el.checkValidity()
     );
     expect(isValid).toBe(false);
+  });
+
+  test("email без @ не проходит валидацию браузера", async ({ page }) => {
+    const signup = new SignupPage(page);
+    await signup.goto();
+
+    // Поле email имеет type="email" — браузер сам отклоняет строки без
+    // "@домена", это встроенная HTML5-валидация, не наш JS-код.
+    await signup.fillForm("not-an-email", "ValidPassword123!");
+
+    const isValid = await signup.emailInput.evaluate(
+      (el: HTMLInputElement) => el.checkValidity()
+    );
+    expect(isValid).toBe(false);
+  });
+
+  test("пустая форма блокируется валидацией браузера (все три поля required)", async ({ page }) => {
+    const signup = new SignupPage(page);
+    await signup.goto();
+
+    const emailValid    = await signup.emailInput.evaluate((el: HTMLInputElement) => el.checkValidity());
+    const passwordValid = await signup.passwordInput.evaluate((el: HTMLInputElement) => el.checkValidity());
+    const confirmValid  = await signup.confirmInput.evaluate((el: HTMLInputElement) => el.checkValidity());
+
+    expect(emailValid).toBe(false);
+    expect(passwordValid).toBe(false);
+    expect(confirmValid).toBe(false);
   });
 
 });
