@@ -15,11 +15,24 @@ import { localizeCategories } from "@/lib/i18n/localize";
 import { Dictionary } from "@/lib/i18n/dictionary-types";
 import { Locale } from "@/lib/i18n/config";
 
-const LOGO = () => (
-  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden>
-    <rect x="1.5" y="1.5" width="17" height="17" rx="3.5" stroke="currentColor" strokeWidth="1.5" className="text-accent"/>
-    <path d="M6 10h8M10 6v8" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" className="text-accent"/>
+// Простая одноштриховая иконка гаечного ключа (в духе Lucide, как и
+// остальные иконки в проекте — см. комментарий в CategoryIcon.tsx).
+// Раньше тут был обобщённый квадрат с плюсом внутри, никак не
+// связанный ни с названием продукта, ни с темой инструментов —
+// выглядел как случайная заглушка, а не логотип.
+const WrenchIcon = ({ size = 16 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden>
+    <path
+      d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"
+      stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="text-accent"
+    />
   </svg>
+);
+
+const LOGO = () => (
+  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[8px] bg-accent/15">
+    <WrenchIcon size={15} />
+  </span>
 );
 
 const SearchIcon = () => (
@@ -46,12 +59,16 @@ function NavLink({ href, children }: { href: string; children: React.ReactNode }
   );
 }
 
-// ═══════════════════════════════════════════════════════
-// Categories — было 3 отдельные ссылки в шапке (QA, API, Encoding) из
-// 10 существующих категорий, остальные 7 были вообще недоступны из
-// навигации. Заменили на один дропдаун сразу на все категории — это
-// и решает "видно только 3 из 10", и освобождает место в шапке.
-function CategoriesDropdown({ locale, dict }: { locale: Locale; dict: Dictionary }) {
+// Общий "выпадающий список ссылок" — и категории, и раздел обучения
+// используют одну и ту же механику открытия/закрытия (клик снаружи,
+// Esc), поэтому вынесено в один компонент вместо двух копий.
+function NavDropdown({
+  label, active, items,
+}: {
+  label: React.ReactNode;
+  active: boolean;
+  items: { key: string; href: string; icon?: React.ReactNode; label: string }[];
+}) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -69,30 +86,28 @@ function CategoriesDropdown({ locale, dict }: { locale: Locale; dict: Dictionary
     };
   }, [open]);
 
-  const cats = localizeCategories(categories, locale);
-
   return (
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen((o) => !o)}
         className={`flex items-center gap-1 text-sm transition-colors duration-100 ${
-          open ? "text-text-primary" : "text-text-muted hover:text-text-secondary"
+          open || active ? "text-text-primary" : "text-text-muted hover:text-text-secondary"
         }`}
       >
-        {dict.nav.categories}
+        {label}
         <ChevronIcon open={open} />
       </button>
       {open && (
-        <div className="animate-scale-in absolute left-0 top-full z-50 mt-2 w-60 overflow-hidden rounded-xl border border-border bg-canvas p-1.5 shadow-2xl">
-          {cats.map((cat) => (
+        <div className="animate-scale-in absolute left-0 top-full z-50 mt-2 w-56 overflow-hidden rounded-xl border border-border bg-canvas p-1.5 shadow-2xl">
+          {items.map((item) => (
             <Link
-              key={cat.slug}
-              href={localePath(locale, `/categories/${cat.slug}`)}
+              key={item.key}
+              href={item.href}
               onClick={() => setOpen(false)}
               className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm text-text-secondary transition-colors hover:bg-surface hover:text-text-primary"
             >
-              <span className="text-text-muted opacity-70"><CategoryIcon category={cat.slug} size={14} /></span>
-              {cat.name}
+              {item.icon && <span className="text-text-muted opacity-70">{item.icon}</span>}
+              {item.label}
             </Link>
           ))}
         </div>
@@ -101,21 +116,87 @@ function CategoriesDropdown({ locale, dict }: { locale: Locale; dict: Dictionary
   );
 }
 
-function UserMenu() {
+// ═══════════════════════════════════════════════════════
+// Почему категории и "Обучение" — дропдауны, а не отдельные ссылки
+// ═══════════════════════════════════════════════════════
+// Раньше в шапке было 8 отдельных пунктов (Tools, QA, API, Encoding,
+// Challenges, Interview, Playground, Knowledge, Pro — и после
+// добавления Workbench стало 9-10). На широких мониторах помещалось,
+// но правый блок (бейдж уровня + иконки + email + выход) всё равно
+// вылезал за пределы центрированного контейнера — реальный оверфлоу,
+// измеренный на проде, а не просто "на глаз". Плюс из 10 категорий в
+// шапке были видны только 3.
+//
+// Сгруппировали по смыслу: "Категории" — все 10 категорий инструментов,
+// "Обучение" — Challenges/Interview/Playground/Knowledge (всё, что не
+// про сам тулбокс, а про прокачку навыков). Итог — 5 пунктов верхнего
+// уровня вместо 9, с полным доступом ко всему остальному через 2 клика.
+function CategoriesDropdown({ locale, dict }: { locale: Locale; dict: Dictionary }) {
+  const pathname = usePathname() ?? "";
+  const cats = localizeCategories(categories, locale);
+  return (
+    <NavDropdown
+      label={dict.nav.categories}
+      active={pathname.includes("/categories/")}
+      items={cats.map((cat) => ({
+        key: cat.slug,
+        href: localePath(locale, `/categories/${cat.slug}`),
+        icon: <CategoryIcon category={cat.slug} size={14} />,
+        label: cat.name,
+      }))}
+    />
+  );
+}
+
+function LearnDropdown({ locale }: { locale: Locale }) {
+  const pathname = usePathname() ?? "";
+  const isRu = locale === "ru";
+  const items = [
+    { key: "challenges", href: localePath(locale, "/challenges"), label: isRu ? "Челленджи" : "Challenges" },
+    { key: "interview",  href: localePath(locale, "/interview"),  label: isRu ? "Интервью" : "Interview" },
+    { key: "playground", href: localePath(locale, "/playground"), label: "Playground" },
+    { key: "knowledge",  href: localePath(locale, "/knowledge"),  label: isRu ? "База знаний" : "Knowledge" },
+  ];
+  const active = items.some((i) => pathname.startsWith(i.href));
+  return (
+    <NavDropdown label={isRu ? "Обучение" : "Learn"} active={active} items={items} />
+  );
+}
+
+// Раньше справа в шапке стояли отдельно: бейдж уровня, иконка
+// Workbench, кружок с инициалом и текстовая кнопка "Выйти" — четыре
+// независимых элемента, из-за которых правый блок и не помещался.
+// Workbench теперь и так есть в основной навигации, so иконку под него
+// вынесли отсюда — весь аккаунт свернулся в один аватар с выпадающим
+// меню, как в большинстве современных SaaS-продуктов.
+function AvatarMenu() {
   const { locale, dict } = useDict();
   const { user, signOut } = useAuth();
   const router = useRouter();
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
 
-  // Раньше здесь были две неудачные попытки починить гонку с защитным
-  // редиректом /profile прямо тут — сначала через await/без await,
-  // потом через "не переходить, если мы на /profile". Обе ненадёжны
-  // или лишние. Настоящее решение теперь живёт в auth-context.tsx
-  // (isSigningOut()) — /profile сама знает, что не надо мешать этому
-  // переходу, пока идёт явный выход из аккаунта. Здесь ничего особого
-  // знать не нужно — всегда ведём на главную, как и было задумано.
+  useEffect(() => {
+    if (!open) return;
+    function onClickOutside(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    function onKey(e: KeyboardEvent) { if (e.key === "Escape") setOpen(false); }
+    document.addEventListener("mousedown", onClickOutside);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onClickOutside);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  // Та же причина, что и раньше в handleSignOut в UserMenu — редирект
+  // всегда на главную, гонку с защитным редиректом /profile решает
+  // isSigningOut() в auth-context.tsx, а не порядок действий здесь.
   function handleSignOut() {
     signOut();
     applyAndSaveAccent("#f59e0b");
+    setOpen(false);
     router.push(localePath(locale, "/"));
     router.refresh();
   }
@@ -134,26 +215,30 @@ function UserMenu() {
   );
 
   return (
-    <div className="flex items-center gap-2">
-      <WrenchScoreBadge />
-      <Link href={localePath(locale, "/workbench")}
-        title={locale === "ru" ? "Рабочий стол" : "Workbench"}
-        className="flex h-7 w-7 items-center justify-center rounded-full text-text-muted hover:bg-surface hover:text-text-primary transition-colors">
-        <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden>
-          <rect x="2" y="2" width="5.5" height="5.5" rx="1.2" stroke="currentColor" strokeWidth="1.4"/>
-          <rect x="8.5" y="2" width="5.5" height="5.5" rx="1.2" stroke="currentColor" strokeWidth="1.4"/>
-          <rect x="2" y="8.5" width="5.5" height="5.5" rx="1.2" stroke="currentColor" strokeWidth="1.4"/>
-          <rect x="8.5" y="8.5" width="5.5" height="5.5" rx="1.2" stroke="currentColor" strokeWidth="1.4"/>
-        </svg>
-      </Link>
-      <Link href={localePath(locale, "/profile")}
-        className="flex h-7 w-7 items-center justify-center rounded-full bg-accent/15 text-xs font-semibold text-accent hover:bg-accent/25 transition-colors"
-        title={user.email ?? ""}>
+    <div ref={ref} className="relative">
+      <button
+        onClick={() => setOpen((o) => !o)}
+        title={user.email ?? ""}
+        className="flex h-7 w-7 items-center justify-center rounded-full bg-accent/15 text-xs font-semibold text-accent transition-colors hover:bg-accent/25"
+      >
         {(user.email ?? "?")[0].toUpperCase()}
-      </Link>
-      <button onClick={handleSignOut} className="text-xs text-text-muted hover:text-text-secondary transition-colors">
-        {dict.auth.signOut}
       </button>
+      {open && (
+        <div className="animate-scale-in absolute right-0 top-full z-50 mt-2 w-56 overflow-hidden rounded-xl border border-border bg-canvas p-1.5 shadow-2xl">
+          <div className="border-b border-border px-2.5 pb-2.5 pt-1.5">
+            <p className="truncate text-xs text-text-muted">{user.email}</p>
+            <div className="mt-1.5"><WrenchScoreBadge /></div>
+          </div>
+          <Link href={localePath(locale, "/profile")} onClick={() => setOpen(false)}
+            className="mt-1 block rounded-lg px-2.5 py-2 text-sm text-text-secondary transition-colors hover:bg-surface hover:text-text-primary">
+            {dict.auth.profile}
+          </Link>
+          <button onClick={handleSignOut}
+            className="block w-full rounded-lg px-2.5 py-2 text-left text-sm text-text-secondary transition-colors hover:bg-surface hover:text-red-400">
+            {dict.auth.signOut}
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -184,12 +269,10 @@ export function Header() {
       <header className={`sticky top-0 z-40 border-b transition-colors duration-150 ${
         scrolled ? "border-border bg-canvas/98 backdrop-blur-md" : "border-border/50 bg-canvas/95 backdrop-blur"
       }`}>
-        <div className="mx-auto flex h-12 max-w-6xl items-center gap-6 px-5">
+        <div className="mx-auto flex h-12 max-w-6xl items-center gap-5 px-5">
 
-          {/* Logo — "Wrench" акцентом, "-Branch" тише рядом, чтобы не
-              раздувать ширину логотипа, но при этом не терять полное
-              название продукта, как было при просто "Wrench". */}
-          <Link href={home} className="flex items-center gap-2 shrink-0 hover:opacity-80 transition-opacity">
+          {/* Logo */}
+          <Link href={home} className="flex shrink-0 items-center gap-2 hover:opacity-80 transition-opacity">
             <LOGO />
             <span className="text-sm font-semibold tracking-tight">
               <span className="text-text-primary">Wrench</span>
@@ -197,8 +280,8 @@ export function Header() {
             </span>
           </Link>
 
-          {/* Nav — сгруппировано, чтобы не разрастаться на каждую новую
-              фичу: категории теперь один дропдаун вместо трёх ссылок. */}
+          {/* Nav — 5 пунктов верхнего уровня вместо прежних 9-10, см.
+              комментарий у CategoriesDropdown про то, почему. */}
           <nav className="hidden items-center gap-5 whitespace-nowrap lg:flex" aria-label="Main">
             <NavLink href={localePath(locale, "/tools")}>{dict.nav.tools}</NavLink>
             <CategoriesDropdown locale={locale} dict={dict} />
@@ -208,18 +291,7 @@ export function Header() {
                 <span className="rounded bg-accent/20 px-1 py-px text-[9px] font-bold text-accent uppercase">New</span>
               </span>
             </NavLink>
-            <NavLink href={localePath(locale, "/challenges")}>
-              {isRu ? "Челленджи" : "Challenges"}
-            </NavLink>
-            <NavLink href={localePath(locale, "/interview")}>
-              {isRu ? "Интервью" : "Interview"}
-            </NavLink>
-            <NavLink href={localePath(locale, "/playground")}>
-              Playground
-            </NavLink>
-            <NavLink href={localePath(locale, "/knowledge")}>
-              {isRu ? "База знаний" : "Knowledge"}
-            </NavLink>
+            <LearnDropdown locale={locale} />
             <NavLink href={localePath(locale, "/pro")}>
               <span className="flex items-center gap-1">
                 Pro
@@ -242,7 +314,7 @@ export function Header() {
               <SearchIcon />
             </button>
             <LocaleSwitcher />
-            <UserMenu />
+            <AvatarMenu />
           </div>
         </div>
       </header>
