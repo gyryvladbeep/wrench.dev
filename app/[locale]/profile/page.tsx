@@ -83,7 +83,7 @@ function ActivityCalendar({ activity }: { activity: Record<string, number> }) {
 }
 
 export default function ProfilePage() {
-  const { user, signOut, loading } = useAuth();
+  const { user, signOut, loading, isSigningOut } = useAuth();
   const { locale }         = useDict();
   const router             = useRouter();
   const isRu               = locale === "ru";
@@ -168,9 +168,20 @@ export default function ProfilePage() {
   // с уже финальным, правильным user.
   useEffect(() => {
     if (loading) return;
-    if (!user) { router.push(localePath(locale, "/auth/login")); return; }
+    if (!user) {
+      // Не редиректим, если разлогинивание запущено явным нажатием
+      // "Sign out" (в шапке или на самой странице) — та кнопка уже
+      // сама решает, куда вести дальше (обычно на главную). Этот
+      // редирект нужен для другого случая: человек ЗАШЁЛ на /profile,
+      // уже будучи разлогиненным (например, по прямой ссылке в другой
+      // вкладке) — тогда его аккуратно возвращают на страницу входа.
+      // Без этой проверки оба перехода "спорили" бы за то, куда в
+      // итоге попадёт человек — см. lib/auth/auth-context.tsx.
+      if (!isSigningOut()) router.push(localePath(locale, "/auth/login"));
+      return;
+    }
     load();
-  }, [user, loading, router, locale, load]);
+  }, [user, loading, router, locale, load, isSigningOut]);
 
   async function saveProfile() {
     if (!user) return;
