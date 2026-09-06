@@ -22,7 +22,6 @@ export default function WorkbenchPage() {
   const {
     workbenches, loading: wbLoading, maxWorkbenches, maxToolsPerWorkbench,
     createWorkbench, renameWorkbench, deleteWorkbench, addTool, removeTool, reorderTools,
-    reorderWorkbenches,
   } = useWorkbenches(isPro);
 
   const t = WORKBENCH_UI[locale];
@@ -32,14 +31,6 @@ export default function WorkbenchPage() {
   const [renamingId, setRenamingId]       = useState<string | null>(null);
   const [nameDraft, setNameDraft]         = useState("");
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
-
-  // Перетаскивание вкладок рабочих столов — тот же нативный HTML5 drag &
-  // drop, что уже используется для карточек инструментов в WorkbenchGrid
-  // (см. её комментарий про выбор в пользу нативного API без библиотек).
-  // Здесь состояние живёт прямо в странице, а не в отдельном компоненте —
-  // вкладок мало (максимум 5 у Pro) и вся разметка тут же, в одном месте.
-  const [draggedWorkspaceId, setDraggedWorkspaceId] = useState<string | null>(null);
-  const [overWorkspaceId, setOverWorkspaceId]       = useState<string | null>(null);
 
   // Тот же приём, что и в /profile: ждём именно loading из useAuth(),
   // а не свой локальный "hydrated" флаг. См. подробный разбор гонки
@@ -81,22 +72,6 @@ export default function WorkbenchPage() {
     setRenamingId(null);
   }
 
-  function handleWorkspaceDrop(targetId: string) {
-    if (!draggedWorkspaceId || draggedWorkspaceId === targetId) {
-      setDraggedWorkspaceId(null); setOverWorkspaceId(null); return;
-    }
-    const current = workbenches.map((w) => w.id);
-    const from = current.indexOf(draggedWorkspaceId);
-    const to   = current.indexOf(targetId);
-    if (from === -1 || to === -1) { setDraggedWorkspaceId(null); setOverWorkspaceId(null); return; }
-    const next = [...current];
-    next.splice(from, 1);
-    next.splice(to, 0, draggedWorkspaceId);
-    reorderWorkbenches(next);
-    setDraggedWorkspaceId(null);
-    setOverWorkspaceId(null);
-  }
-
   return (
     <div className="mx-auto max-w-5xl px-5 py-8">
       <div className="mb-6">
@@ -107,22 +82,7 @@ export default function WorkbenchPage() {
       {/* Workspace tabs */}
       <div className="mb-4 flex flex-wrap items-center gap-2">
         {workbenches.map((wb) => (
-          <div
-            key={wb.id}
-            // Перетаскивать можно только саму вкладку, не поле переименования —
-            // иначе drag мешал бы выделять текст курсором внутри input.
-            draggable={renamingId !== wb.id}
-            onDragStart={() => setDraggedWorkspaceId(wb.id)}
-            onDragOver={(e) => { e.preventDefault(); if (overWorkspaceId !== wb.id) setOverWorkspaceId(wb.id); }}
-            onDragLeave={() => setOverWorkspaceId((id) => (id === wb.id ? null : id))}
-            onDrop={(e) => { e.preventDefault(); handleWorkspaceDrop(wb.id); }}
-            onDragEnd={() => { setDraggedWorkspaceId(null); setOverWorkspaceId(null); }}
-            className={`rounded-lg transition-opacity ${draggedWorkspaceId === wb.id ? "opacity-40" : ""} ${
-              overWorkspaceId === wb.id && draggedWorkspaceId && draggedWorkspaceId !== wb.id
-                ? "ring-2 ring-accent"
-                : ""
-            }`}
-          >
+          <div key={wb.id}>
             {renamingId === wb.id ? (
               <input
                 autoFocus

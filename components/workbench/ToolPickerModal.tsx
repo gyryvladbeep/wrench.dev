@@ -1,5 +1,5 @@
 "use client";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Locale, localePath } from "@/lib/i18n/config";
 import { localizeTool } from "@/lib/i18n/localize";
@@ -28,6 +28,19 @@ export function ToolPickerModal({
     const base = query.trim() ? searchTools(query, locale) : getImplementedTools();
     return base.filter((tool) => tool.isImplemented).map((tool) => localizeTool(tool, locale));
   }, [query, locale]);
+
+  // Модалка показывает подсказку "Esc" у поля поиска, но до этого места
+  // ничего Escape не обрабатывало — закрывался пикер только кликом по
+  // фону. Тот же приём, что и в SearchModal.tsx: слушаем keydown на
+  // window, пока модалка открыта.
+  useEffect(() => {
+    if (!open) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose();
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open, onClose]);
 
   if (!open) return null;
 

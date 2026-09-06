@@ -9,6 +9,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useSubscription } from "@/lib/hooks/useSubscription";
 import { BADGES, BADGE_COLOR, checkAchievements } from "@/lib/achievements";
 import { useFavorites } from "@/lib/hooks/useFavorites";
+import { useWorkbenches } from "@/lib/hooks/useWorkbenches";
 import { allTools } from "@/lib/tools-registry";
 import { WrenchScorePanel } from "@/components/WrenchScorePanel";
 import { THEME_COLORS, applyAndSaveAccent } from "@/components/ThemeProvider";
@@ -89,6 +90,7 @@ export default function ProfilePage() {
   const isRu               = locale === "ru";
   const { isPro, sub, openPortal } = useSubscription();
   const { favorites, toggle } = useFavorites();
+  const { workbenches: workbenchList } = useWorkbenches(isPro);
 
   const [profile,  setProfile]  = useState<Profile>({ username:"", display_name:"", bio:"", avatar_color:"#f59e0b", role_tag:"developer" });
   const [stats,    setStats]    = useState<Stats | null>(null);
@@ -199,6 +201,7 @@ export default function ProfilePage() {
 
   const initials = (profile.display_name || user?.email || "?")[0].toUpperCase();
   const totalDays = Object.keys(activity).length;
+  const workbenchToolCount = workbenchList.reduce((sum, w) => sum + w.tool_slugs.length, 0);
 
   if (!user) return null;
 
@@ -296,6 +299,31 @@ export default function ProfilePage() {
               isRu={isRu}
             />
           )}
+
+          {/* Workbench promo — самый заметный крючок для тех, кто ещё не
+              пробовал фичу, и быстрый доступ для тех, кто уже пользуется.
+              Стоит сразу после Wrench Score, до активности и наград —
+              намеренно на видном месте наверху вкладки. */}
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-accent/20 bg-accent/5 p-5">
+            <div>
+              <h2 className="text-sm font-semibold text-text-primary">
+                {isRu ? "Рабочий стол" : "Workbench"}
+              </h2>
+              <p className="mt-1 text-xs text-text-muted max-w-md">
+                {workbenchToolCount > 0
+                  ? (isRu
+                      ? `${workbenchToolCount} инструментов закреплено в ${workbenchList.length} наборах — открой их все на одной странице.`
+                      : `${workbenchToolCount} tool${workbenchToolCount === 1 ? "" : "s"} pinned across ${workbenchList.length} workspace${workbenchList.length === 1 ? "" : "s"}.`)
+                  : (isRu
+                      ? "Закрепи инструменты, которыми пользуешься чаще всего, и открывай их все рядом на одной странице."
+                      : "Pin the tools you use most and open them all side by side on one page.")}
+              </p>
+            </div>
+            <Link href={localePath(locale, "/workbench")}
+              className="shrink-0 rounded bg-accent px-3 py-1.5 text-xs font-medium text-accent-fg hover:bg-amber-400 transition-colors">
+              {workbenchToolCount > 0 ? (isRu ? "Открыть" : "Open") : (isRu ? "Попробовать" : "Try it")}
+            </Link>
+          </div>
 
           {/* Activity calendar */}
           <div className="rounded-lg border border-border bg-surface p-5">

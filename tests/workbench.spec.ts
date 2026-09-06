@@ -114,6 +114,16 @@ test.describe.serial("Workbench: жизненный цикл рабочего с
     }
   });
 
+  test("промо-карточка Workbench на странице профиля показывает актуальное число закреплённых инструментов", async () => {
+    // Сама фича задумана как крючок для регистрации (см. комментарий в
+    // profile/page.tsx) — если карточка врёт про количество, весь смысл
+    // промо теряется. У нас сейчас 6 инструментов в одном рабочем столе.
+    await page.goto("/en/profile");
+    await expect(page.getByText(/6 tools pinned across 1 workspace/)).toBeVisible();
+    await page.getByRole("link", { name: "Open" }).click();
+    await page.waitForURL(/\/workbench/, { timeout: 10_000 });
+  });
+
   test("карточки инструментов можно перетаскивать — порядок меняется", async () => {
     const before = await wb.currentCardOrder();
     // Перетаскиваем первую карточку на место последней.

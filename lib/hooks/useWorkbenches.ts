@@ -122,9 +122,29 @@ export function useWorkbenches(isPro: boolean) {
     setToolSlugs(id, slugs);
   }, [setToolSlugs]);
 
+  // Перетаскивание самих вкладок рабочих столов (не инструментов внутри
+  // одного стола — это reorderTools выше). newIdOrder — id рабочих
+  // столов в новом порядке отображения; position каждого пересчитывается
+  // по его индексу в этом массиве и сохраняется той же схемой, что уже
+  // используется для сортировки при загрузке (order("position")).
+  const reorderWorkbenches = useCallback((newIdOrder: string[]) => {
+    setWorkbenches((prev) => {
+      const byId = new Map(prev.map((w) => [w.id, w]));
+      const next = newIdOrder.map((id) => byId.get(id)).filter((w): w is Workbench => Boolean(w));
+      // Если что-то не сошлось (id не нашёлся), лучше не терять рабочие
+      // столы — оставляем прежний порядок, чем рисковать пропажей вкладки.
+      return next.length === prev.length ? next : prev;
+    });
+    const supabase = createClient();
+    newIdOrder.forEach((id, index) => {
+      supabase.from("workbenches").update({ position: index, updated_at: new Date().toISOString() }).eq("id", id)
+        .then(({ error }: { error: unknown }) => { if (error) console.error("useWorkbenches: reorder failed", error); });
+    });
+  }, []);
+
   return {
     workbenches, loading, maxWorkbenches, maxToolsPerWorkbench,
     createWorkbench, renameWorkbench, deleteWorkbench,
-    addTool, removeTool, reorderTools,
+    addTool, removeTool, reorderTools, reorderWorkbenches,
   };
 }

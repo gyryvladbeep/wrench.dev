@@ -27,6 +27,11 @@ export class WorkbenchPage {
   readonly pickerSearchInput:  Locator;
   readonly pickerLimitBanner:  Locator;
 
+  // Строка вкладок рабочих столов — нужна отдельно от workspaceTab(),
+  // чтобы уметь спрашивать про порядок ВСЕХ вкладок сразу (см.
+  // workspaceTabOrder), а не про одну конкретную по имени.
+  readonly workspaceTabsRow:   Locator;
+
   constructor(page: Page) {
     this.page = page;
 
@@ -52,6 +57,11 @@ export class WorkbenchPage {
     this.pickerRoot        = page.locator("div.fixed.inset-0.z-50");
     this.pickerSearchInput = this.pickerRoot.getByPlaceholder("Search tools…");
     this.pickerLimitBanner = this.pickerRoot.getByText(/reached the .+-tool limit/);
+
+    // Тот самый div с классами "mb-4 flex flex-wrap items-center gap-2"
+    // из workbench/page.tsx — единственный такой на странице, держит
+    // и вкладки рабочих столов, и кнопку "+ New workspace"/лимит рядом.
+    this.workspaceTabsRow  = page.locator("div.mb-4.flex.flex-wrap.items-center.gap-2");
   }
 
   async goto() {
@@ -76,10 +86,10 @@ export class WorkbenchPage {
   }
 
   async closeToolPicker() {
-    // У этой модалки, в отличие от SearchModal.tsx, нет обработчика
-    // Escape (см. находку в чате при написании этого спека) — закрываем
-    // кликом по фону вне центральной карточки.
-    await this.page.mouse.click(10, 10);
+    // Раньше у этой модалки не было обработчика Escape при живом хинте
+    // "Esc" в углу (нашли и починили отдельно, см. ToolPickerModal.tsx) —
+    // теперь можно закрывать по Escape, как и было обещано в UI.
+    await this.page.keyboard.press("Escape");
     await expect(this.pickerRoot).toBeHidden();
   }
 
@@ -93,8 +103,22 @@ export class WorkbenchPage {
     await this.pickerToolRow(exactToolName).click();
   }
 
-  /** Заголовок карточки инструмента на самой странице (не в модалке). */
+  /** Заголовок карточки инструмента на самой странице (не в модалке).
+   *
+   *  Бросаем явную ошибку без имени, а не даём Playwright тихо съесть
+   *  "name: undefined" как "фильтр по имени не задан" (getByRole в этом
+   *  случае резолвится ВООБЩЕ ПО ВСЕМ h3 на странице — ровно это и было
+   *  найдено как причина флейка в dragCardOnto(), см. её комментарий и
+   *  комментарий в currentCardOrder() ниже). Лучше сразу понятная
+   *  ошибка "вызван без имени", чем непонятный "resolved to 6 elements"
+   *  без единой зацепки, откуда взялось пустое имя. */
   toolCardHeading(exactToolName: string): Locator {
+    if (!exactToolName) {
+      throw new Error(
+        "toolCardHeading() вызван без имени инструмента — вероятно, currentCardOrder() " +
+        "поймал ещё не отрисованный грид (см. комментарий в currentCardOrder())."
+      );
+    }
     return this.page.getByRole("heading", { level: 3, name: exactToolName, exact: true });
   }
 
@@ -116,9 +140,30 @@ export class WorkbenchPage {
     return this.page.getByText(/^\d+\/\d+ tools$/);
   }
 
-  /** Порядок карточек на странице сейчас — по заголовкам, сверху вниз. */
+  /** Порядок карточек на странице сейчас — по заголовкам, сверху вниз.
+   *
+   *  НАСТОЯЩАЯ причина флейка "resolved to 6 elements" в тесте на
+   *  перетаскивание карточек была здесь, а не в toolCard(): allTextContents()
+   *  не ждёт полного рендера — если вызвать её в узком окне, где грид
+   *  на мгновение пуст (например, useWorkbenches перезагружает данные
+   *  из-за фонового обновления auth-токена — тогда app/[locale]/workbench/page.tsx
+   *  на время рендерит null, пока wbLoading снова true), она молча
+   *  вернёт [] вместо 6 названий. Дальше before[0] и before[length-1]
+   *  оба оказываются undefined — а getByRole({ name: undefined }) в
+   *  Playwright означает "без фильтра по имени", то есть резолвится
+   *  сразу во ВСЕ 6 карточек. Отсюда и "resolved to 6 elements" в двух
+   *  прогонах из десяти на --repeat-each=5 (гонка чаще ловится под
+   *  нагрузкой параллельных воркеров).
+   *
+   *  Чиним не борьбой с симптомом (можно было бы просто перепроверять
+   *  args), а тем, что ждём, пока в гриде появится хотя бы одна
+   *  карточка, ПЕРЕД тем как читать список: React рендерит tools.map()
+   *  одним коммитом, так что если появилась первая карточка — значит,
+   *  появились и все остальные. */
   async currentCardOrder(): Promise<string[]> {
-    return this.page.getByRole("heading", { level: 3 }).allTextContents();
+    const headings = this.page.getByRole("heading", { level: 3 });
+    await headings.first().waitFor({ state: "visible" });
+    return headings.allTextContents();
   }
 
   async dragCardOnto(sourceToolName: string, targetToolName: string) {
@@ -128,5 +173,31 @@ export class WorkbenchPage {
   async startDeleteConfirmation() {
     await this.deleteButton.click();
     await expect(this.confirmDeleteButton).toBeVisible();
+  }
+
+  /** Порядок вкладок рабочих столов сейчас — по названию, слева направо.
+   *  "> div" — только обёртки самих вкладок, не кнопка "+ New workspace"
+   *  и не текст лимита, которые лежат в том же ряду соседями (см. JSX).
+   *
+   *  Та же гонка, что была найдена и починена в currentCardOrder() —
+   *  workspace-tabs-row живёт на той же странице с тем же useWorkbenches
+   *  и тем же "if (!user || wbLoading) return null" в page.tsx, так что
+   *  тоже может на мгновение полностью пропасть из DOM при фоновой
+   *  перезагрузке. Ждём хотя бы одну вкладку перед чтением списка. */
+  async workspaceTabOrder(): Promise<string[]> {
+    const tabs = this.workspaceTabsRow.locator("> div");
+    await tabs.first().waitFor({ state: "visible" });
+    return tabs.allTextContents();
+  }
+
+  /** Внешний draggable-контейнер вкладки — как toolCard() у карточек
+   *  инструментов: перетаскивать нужно за div с атрибутом draggable,
+   *  а не за сам button внутри него. */
+  workspaceTabCard(exactWorkspaceName: string): Locator {
+    return this.workspaceTab(exactWorkspaceName).locator("..");
+  }
+
+  async dragWorkspaceTabOnto(sourceName: string, targetName: string) {
+    await this.workspaceTabCard(sourceName).dragTo(this.workspaceTabCard(targetName));
   }
 }
