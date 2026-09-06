@@ -1,0 +1,167 @@
+warning: in the working copy of 'app/[locale]/profile/page.tsx', LF will be replaced by CRLF the next time Git touches it
+[1mdiff --git a/app/[locale]/profile/page.tsx b/app/[locale]/profile/page.tsx[m
+[1mindex 0b8571e..a53e01c 100644[m
+[1m--- a/app/[locale]/profile/page.tsx[m
+[1m+++ b/app/[locale]/profile/page.tsx[m
+[36m@@ -1,571 +1,119 @@[m
+ "use client";[m
+[31m-import { useCallback, useEffect, useState } from "react";[m
+[31m-import Link from "next/link";[m
+[31m-import { useRouter } from "next/navigation";[m
+[31m-import { useAuth } from "@/lib/auth/auth-context";[m
+[31m-import { useDict } from "@/lib/i18n/dict-context";[m
+[31m-import { localePath } from "@/lib/i18n/config";[m
+[31m-import { createClient } from "@/lib/supabase/client";[m
+[31m-import { useSubscription } from "@/lib/hooks/useSubscription";[m
+[31m-import { BADGES, BADGE_COLOR, checkAchievements } from "@/lib/achievements";[m
+[31m-import { useFavorites } from "@/lib/hooks/useFavorites";[m
+[31m-import { allTools } from "@/lib/tools-registry";[m
+[31m-import { WrenchScorePanel } from "@/components/WrenchScorePanel";[m
+[31m-import { THEME_COLORS, applyAndSaveAccent } from "@/components/ThemeProvider";[m
+[31m-[m
+[31m-const ROLE_TAGS = [[m
+[31m-  { id:"qa",        label:"QA Engineer",        labelRu:"QA-инженер" },[m
+[31m-  { id:"frontend",  label:"Frontend Dev",       labelRu:"Frontend-разработчик" },[m
+[31m-  { id:"backend",   label:"Backend Dev",        labelRu:"Backend-разработчик" },[m
+[31m-  { id:"fullstack", label:"Full Stack Dev",     labelRu:"Full Stack" },[m
+[31m-  { id:"devops",    label:"DevOps Engineer",    labelRu:"DevOps-инженер" },[m
+[31m-  { id:"developer", label:"Developer",          labelRu:"Разработчик" },[m
+[31m-];[m
+[31m-[m
+[31m-interface Profile {[m
+[31m-  username: string;[m
+[31m-  display_name: string;[m
+[31m-  bio: string;[m
+[31m-  avatar_color: string;[m
+[31m-  role_tag: string;[m
+[31m-}[m
+[31m-[m
+[31m-interface Stats {[m
+[31m-  total_solved: number;[m
+[31m-  total_points: number;[m
+[31m-  current_streak: number;[m
+[31m-  longest_streak: number;[m
+[31m-}[m
+[31m-[m
+[31m-interface ToolHistory {[m
+[31m-  tool_slug: string;[m
+[31m-  used_at: string;[m
+[31m-}[m
+[31m-[m
+[31m-// Activity calendar helpers[m
+[31m-function getLast90Days(): string[] {[m
+[31m-  const days: string[] = [];[m
+[31m-  for (let i = 89; i >= 0; i--) {[m
+[31m-    const d = new Date(); d.setDate(d.getDate() - i);[m
+[31m-    days.push(d.toISOString().slice(0, 10));[m
+[31m-  }[m
+[31m-  return days;[m
+[31m-}[m
+[31m-[m
+[31m-function ActivityCalendar({ activity }: { activity: Record<string, number> }) {[m
+[31m-  const days  = getLast90Days();[m
+[31m-  const weeks: string[][] = [];[m
+[31m-  for (let i = 0; i < days.length; i += 7) weeks.push(days.slice(i, i + 7));[m
+[31m-  const max   = Math.max(1, ...Object.values(activity));[m
+ [m
+[31m-  function intensity(count: number) {[m
+[31m-    if (!count) return "bg-surface border border-border";[m
+[31m-    const pct = count / max;[m
+[31m-    if (pct > 0.75) return "bg-accent";[m
+[31m-    if (pct > 0.5)  return "bg-accent/70";[m
+[31m-    if (pct > 0.25) return "bg-accent/40";[m
+[31m-    return "bg-accent/20";[m
+[31m-  }[m
+[32m+[m[32mimport { createContext, useContext, useEffect, useState, useCallback, useRef } from "react";[m
+[32m+[m[32mimport type { User, Session } from "@supabase/supabase-js";[m
+[32m+[m[32mimport { createClient } from "@/lib/supabase/client";[m
+ [m
+[31m-  return ([m
+[31m-    <div className="flex gap-1 overflow-x-auto pb-1">[m
+[31m-      {weeks.map((week, wi) => ([m
+[31m-        <div key={wi} className="flex flex-col gap-1">[m
+[31m-          {week.map((day) => ([m
+[31m-            <div key={day}[m
+[31m-              title={`${day}: ${activity[day] ?? 0} actions`}[m
+[31m-              className={`h-3 w-3 rounded-sm transition-colors ${intensity(activity[day] ?? 0)}`} />[m
+[31m-          ))}[m
+[31m-        </div>[m
+[31m-      ))}[m
+[31m-    </div>[m
+[31m-  );[m
+[32m+[m[32minterface AuthContextValue {[m
+[32m+[m[32m  user: User | null;[m
+[32m+[m[32m  session: Session | null;[m
+[32m+[m[32m  loading: boolean;[m
+[32m+[m[32m  signOut: () => Promise<void>;[m
+[32m+[m[32m  isConfigured: boolean;[m
+[32m+[m[32m  isSigningOut: () => boolean;[m
+ }[m
+ [m
+[31m-export default function ProfilePage() {[m
+[31m-  const { user, signOut, loading, isSigningOut } = useAuth();[m
+[31m-  const { locale }         = useDict();[m
+[31m-  const router             = useRouter();[m
+[31m-  const isRu               = locale === "ru";[m
+[31m-  const { isPro, sub, openPortal } = useSubscription();[m
+[31m-  const { favorites, toggle } = useFavorites();[m
+[32m+[m[32mconst AuthContext = createContext<AuthContextValue>({[m
+[32m+[m[32m  user: null,[m
+[32m+[m[32m  session: null,[m
+[32m+[m[32m  loading: false,[m
+[32m+[m[32m  signOut: async () => {},[m
+[32m+[m[32m  isConfigured: false,[m
+[32m+[m[32m  isSigningOut: () => false,[m
+[32m+[m[32m});[m
+ [m
+[31m-  const [profile,  setProfile]  = useState<Profile>({ username:"", display_name:"", bio:"", avatar_color:"#f59e0b", role_tag:"developer" });[m
+[31m-  const [stats,    setStats]    = useState<Stats | null>(null);[m
+[31m-  const [history,  setHistory]  = useState<ToolHistory[]>([]);[m
+[31m-  const [activity, setActivity] = useState<Record<string, number>>({});[m
+[31m-  const [badges,   setBadges]   = useState<string[]>([]);[m
+[31m-  const [aiUsed,   setAiUsed]   = useState(0);[m
+[31m-  const [saving,   setSaving]   = useState(false);[m
+[31m-  const [saved,    setSaved]    = useState(false);[m
+[31m-  const [tab,      setTab]      = useState<"overview"|"history"|"badges"|"favorites"|"settings">("overview");[m
+[32m+[m[32mexport function AuthProvider({ children }: { children: React.ReactNode }) {[m
+[32m+[m[32m  const [user, setUser] = useState<User | null>(null);[m
+[32m+[m[32m  const [session, setSession] = useState<Session | null>(null);[m
+[32m+[m[32m  const [loading, setLoading] = useState(true);[m
+ [m
+[31m-  const load = useCallback(async () => {[m
+[31m-    if (!user) return;[m
+[31m-    const supabase = createClient();[m
+[31m-    const today    = new Date().toISOString().slice(0, 10);[m
+[32m+[m[32m  const supabase = createClient();[m
+[32m+[m[32m  const isConfigured = !!supabase;[m
+ [m
+[31m-    const [{ data: prof }, { data: streak }, { data: hist }, { data: usage }, { data: attempts }] = await Promise.all([[m
+[31m-      supabase.from("profiles").select("*").eq("id", user.id).single(),[m
+[31m-      supabase.from("user_streaks").select("*").eq("user_id", user.id).single(),[m
+[31m-      supabase.from("tool_history").select("tool_slug, used_at").eq("user_id", user.id).order("used_at", { ascending: false }).limit(50),[m
+[31m-      supabase.from("ai_usage").select("count").eq("user_id", user.id).eq("used_at", today).single(),[m
+[31m-      supabase.from("challenge_attempts").select("challenge_id, is_correct, completed_at").eq("user_id", user.id).eq("is_correct", true),[m
+[31m-    ]);[m
+[31m-[m
+[31m-    if (prof) setProfile(prof as Profile);[m
+[31m-    if (streak) {[m
+[31m-      setStats(streak as Stats);[m
+[31m-      const earned = checkAchievements({[m
+[31m-        total_solved:    streak.total_solved,[m
+[31m-        total_points:    streak.total_points,[m
+[31m-        current_streak:  streak.current_streak,[m
+[31m-        isPro,[m
+[31m-      });[m
+[31m-      setBadges(earned);[m
+[32m+[m[32m  useEffect(() => {[m
+[32m+[m[32m    if (!supabase) {[m
+[32m+[m[32m      setLoading(false);[m
+[32m+[m[32m      return;[m
+     }[m
+[31m-    if (hist) setHistory(hist as ToolHistory[]);[m
+[31m-    if (usage) setAiUsed((usage as { count: number }).count ?? 0);[m
+ [m
+[31m-    // Build activity map from tool history + challenge attempts[m
+[31m-    const act: Record<string, number> = {};[m
+[31m-    hist?.forEach((h: ToolHistory) => {[m
+[31m-     

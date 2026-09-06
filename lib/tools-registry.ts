@@ -151,17 +151,6 @@ export const tools: Tool[] = [
     relatedSlugs: ["xml-formatter", "css-selector-generator", "markdown-preview"],
     keywords: ["html formatter", "html beautifier", "format html"],
   },
-  {
-    slug: "yaml-formatter",
-    isHidden: true,
-    name: "YAML Formatter",
-    shortDescription: "Format and validate YAML documents.",
-    longDescription: "Paste YAML to validate its syntax and reformat it with consistent indentation.",
-    metaDescription: "Format and validate YAML online. Check YAML syntax and reformat documents. Free, runs in your browser.",
-    category: "formatting", isImplemented: false,
-    relatedSlugs: ["json-to-yaml", "json-formatter"],
-    keywords: ["yaml formatter", "yaml validator", "yaml beautifier"],
-  },
 
   // ═══════════════════════════════ ENCODING ══════════════════════════════════
 
@@ -505,18 +494,6 @@ export const tools: Tool[] = [
     aliases: ["http headers", "response headers", "check headers"],
     relatedSlugs: ["curl-generator", "url-encode-decode"],
     keywords: ["http header checker", "response header inspector"],
-  },
-  {
-    slug: "url-parser",
-    isHidden: true,
-    name: "URL Parser",
-    shortDescription: "Parse URLs into protocol, host, path, query and fragment.",
-    longDescription: "Break down any URL into its component parts: protocol, hostname, port, path, query parameters and fragment.",
-    metaDescription: "Free URL parser. Break down URLs into protocol, host, path, query params and fragment. Runs in your browser.",
-    category: "web", isImplemented: false,
-    aliases: ["url analyzer", "url breakdown", "parse url"],
-    relatedSlugs: ["url-encode-decode", "header-inspector"],
-    keywords: ["url parser", "url analyzer", "parse url online"],
   },
   {
     slug: "api-response-mocker",
