@@ -31,8 +31,30 @@ export function SignupForm({ dict, locale }: { dict: Dictionary; locale: Locale 
         emailRedirectTo: `${window.location.origin}${localePath(locale, "/auth/callback")}`,
       },
     });
+
+    // ═══════════════════════════════════════════════════════════════
+    // Почему мало проверить только "error"
+    // ═══════════════════════════════════════════════════════════════
+    // У Supabase есть намеренная защита от перебора email: если человек
+    // пытается зарегистрироваться на email, который УЖЕ занят, signUp()
+    // не возвращает ошибку — специально, чтобы по тексту ошибки нельзя
+    // было узнать, какие email уже зарегистрированы (это официально
+    // задокументированное поведение Supabase Auth). Вместо ошибки он
+    // отдаёт error: null и "поддельного" user без сессии, у которого
+    // identities — пустой массив. У НАСТОЯЩЕГО нового пользователя
+    // identities всегда содержит хотя бы одну запись.
+    //
+    // Раньше здесь любой error === null считался успехом и сразу уводил
+    // на главную — то есть при повторной регистрации на существующий
+    // email человек просто молча улетал на главную без аккаунта и без
+    // единого объяснения, что вообще произошло.
+    const emailAlreadyExists = !error && data?.user && data.user.identities?.length === 0;
+
     if (error) {
       setError(error.message);
+      setLoading(false);
+    } else if (emailAlreadyExists) {
+      setError(t.emailAlreadyRegistered);
       setLoading(false);
     } else {
       // Trigger confirmed automatically — redirect to home

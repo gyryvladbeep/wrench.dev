@@ -71,6 +71,7 @@ export const ru: Dictionary = {
     sending: "Отправляем…",
     passwordsNoMatch: "Пароли не совпадают.",
     checkEmail: "Проверьте почту — нужно подтвердить аккаунт.",
+    emailAlreadyRegistered: "Аккаунт с таким email уже существует. Попробуйте войти вместо регистрации.",
     profileHeading: "Ваш профиль",
     memberSince: "Участник с",
     plan: "Тариф",

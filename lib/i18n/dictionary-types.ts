@@ -70,6 +70,7 @@ export interface Dictionary {
     sending: string;
     passwordsNoMatch: string;
     checkEmail: string;
+    emailAlreadyRegistered: string;
     profileHeading: string;
     memberSince: string;
     plan: string;

@@ -71,6 +71,7 @@ export const en: Dictionary = {
     sending: "Sending…",
     passwordsNoMatch: "Passwords don't match.",
     checkEmail: "Check your email to confirm your account.",
+    emailAlreadyRegistered: "An account with this email already exists. Try signing in instead.",
     profileHeading: "Your profile",
     memberSince: "Member since",
     plan: "Plan",
