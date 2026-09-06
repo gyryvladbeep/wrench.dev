@@ -127,6 +127,12 @@ export function Header() {
                 <span className="rounded bg-accent/20 px-1 py-px text-[9px] font-bold text-accent uppercase">New</span>
               </span>
             </NavLink>
+            <NavLink href={localePath(locale, "/workbench")}>
+              <span className="flex items-center gap-1">
+                {isRu ? "Рабочий стол" : "Workbench"}
+                <span className="rounded bg-accent/20 px-1 py-px text-[9px] font-bold text-accent uppercase">New</span>
+              </span>
+            </NavLink>
             <NavLink href={localePath(locale, "/interview")}>
               {isRu ? "Интервью" : "Interview"}
             </NavLink>
