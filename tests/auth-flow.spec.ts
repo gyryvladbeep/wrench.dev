@@ -83,6 +83,20 @@ async function waitForAuthOutcome(
   }
 }
 
+// ═══════════════════════════════════════════════════════
+// Зачем этот хелпер появился
+// ═══════════════════════════════════════════════════════
+// Раньше "Sign out" была видимой кнопкой прямо в шапке сайта — тесты
+// просто искали её и жали. После редизайна шапки (components/Header.tsx)
+// весь блок аккаунта свернули в один аватар с выпадающим меню, и
+// "Sign out" теперь рендерится только когда это меню открыто. Кнопка
+// аватарки помечена aria-label="Account menu" именно для того, чтобы
+// тесты могли находить её стабильно — по email первая буква меняется
+// от прогона к прогону, а лейбл — нет.
+async function openAccountMenu(page: Page): Promise<void> {
+  await page.getByRole("banner").getByRole("button", { name: "Account menu" }).click();
+}
+
 test.describe.serial("Аккаунт: регистрация → сессия → выход → повторный вход → выход", () => {
   // Один page на всю serial-группу — намеренно. Нам нужно, чтобы кука
   // сессии Supabase дожила от регистрации до последующего логаута и
@@ -114,7 +128,8 @@ test.describe.serial("Аккаунт: регистрация → сессия �
       "Регистрация"
     );
 
-    await expect(page.getByRole("button", { name: "Sign out" })).toBeVisible({ timeout: 10_000 });
+    await openAccountMenu(page);
+    await expect(page.getByRole("banner").getByRole("button", { name: "Sign out" })).toBeVisible({ timeout: 10_000 });
   });
 
   test("шаг 2 — сессия переживает обновление страницы (F5)", async () => {
@@ -123,11 +138,15 @@ test.describe.serial("Аккаунт: регистрация → сессия �
     // теряет куки Supabase при редиректах, либо клиент не подхватывает
     // сохранённую сессию при старте.
     await page.reload();
-    await expect(page.getByRole("button", { name: "Sign out" })).toBeVisible({ timeout: 10_000 });
+    await openAccountMenu(page);
+    await expect(page.getByRole("banner").getByRole("button", { name: "Sign out" })).toBeVisible({ timeout: 10_000 });
   });
 
   test("шаг 3 — выход возвращает шапку в гостевое состояние", async () => {
-    await page.getByRole("button", { name: "Sign out" }).click();
+    // Меню аккаунта уже открыто с прошлого шага (тот же page на весь
+    // serial-блок, а reload() в шаге 2 не закрыл его заново — мы
+    // открыли его уже ПОСЛЕ перезагрузки) — кнопка уже видима.
+    await page.getByRole("banner").getByRole("button", { name: "Sign out" }).click();
     await page.waitForURL((url) => url.pathname === "/" || url.pathname === "/en", { timeout: 10_000 });
 
     await expect(page.getByRole("link", { name: "Sign in", exact: true })).toBeVisible();
@@ -150,6 +169,8 @@ test.describe.serial("Аккаунт: регистрация → сессия �
     await expect(login.errorMessage).toBeVisible({ timeout: 15_000 });
     // Ключевая негативная проверка: убеждаемся что нас НЕ пустили внутрь.
     await expect(page).toHaveURL(/\/auth\/login/);
+    // Разлогинен — значит в шапке вообще нет аватарки/меню аккаунта,
+    // а значит и кнопки "Sign out" быть не может ни в каком виде.
     await expect(page.getByRole("button", { name: "Sign out" })).not.toBeVisible();
   });
 
@@ -171,13 +192,16 @@ test.describe.serial("Аккаунт: регистрация → сессия �
     // React не полностью сбрасывается между сессиями одного таба).
     //
     // Тут мы на /profile, а не на главной, как в шаге 3 — а на /profile
-    // "Sign out" есть сразу в двух местах: в шапке сайта и отдельной
-    // кнопкой рядом с аватаркой на самой странице. Это нормально, не
-    // баг — но page.getByRole(...) без уточнения нашёл бы оба сразу и
-    // Playwright специально откажется гадать, какой из двух нажимать
-    // ("strict mode violation"). Уточняем через шапку (getByRole("banner"))
-    // — она одна и та же на любой странице сайта, в отличие от кнопки
-    // на самой /profile, которой не будет на других страницах.
+    // "Sign out" есть сразу в двух местах: внутри меню аккаунта в шапке
+    // сайта и отдельной кнопкой рядом с аватаркой на самой странице.
+    // Это нормально, не баг — но page.getByRole(...) без уточнения
+    // нашёл бы оба сразу и Playwright специально откажется гадать,
+    // какой из двух нажимать ("strict mode violation"). Уточняем через
+    // шапку (getByRole("banner")) — она одна и та же на любой странице
+    // сайта, в отличие от кнопки на самой /profile, которой не будет на
+    // других страницах. Меню аккаунта на свежей странице (после
+    // редиректа из шага 6) закрыто — открываем его явно.
+    await openAccountMenu(page);
     await page.getByRole("banner").getByRole("button", { name: "Sign out" }).click();
     await page.waitForURL((url) => url.pathname === "/" || url.pathname === "/en", { timeout: 10_000 });
     await expect(page.getByRole("link", { name: "Sign in", exact: true })).toBeVisible();

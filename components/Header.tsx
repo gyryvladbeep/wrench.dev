@@ -219,6 +219,7 @@ function AvatarMenu() {
       <button
         onClick={() => setOpen((o) => !o)}
         title={user.email ?? ""}
+        aria-label="Account menu"
         className="flex h-7 w-7 items-center justify-center rounded-full bg-accent/15 text-xs font-semibold text-accent transition-colors hover:bg-accent/25"
       >
         {(user.email ?? "?")[0].toUpperCase()}
@@ -300,15 +301,23 @@ export function Header() {
             </NavLink>
           </nav>
 
-          {/* Search */}
-          <button onClick={() => setOpen(true)}
-            className="hidden md:flex flex-1 max-w-[200px] items-center gap-2 rounded-md border border-border bg-surface px-3 py-1.5 text-xs text-text-muted hover:border-border-focus hover:text-text-secondary transition-all">
-            <SearchIcon />
-            <span className="flex-1 text-left">{isRu ? "Поиск…" : "Search…"}</span>
-            <kbd className="rounded border border-border bg-canvas px-1.5 py-px font-mono text-[10px]">⌘K</kbd>
-          </button>
-
+          {/* Правая группа — поиск, локаль и аккаунт держатся вместе одним
+              блоком, прижатым к правому краю через ml-auto. Раньше поиск
+              стоял отдельно с flex-1 (рос, пока не упрётся в max-width),
+              и после того как навигация слева стала компактнее (5 пунктов
+              вместо 9), свободного места стало больше, а забирал его как
+              раз этот flex-1 — получался пустой зазор ИМЕННО перед этой
+              группой, а не растяжение чего-то полезного. Сгруппировав всё
+              вместе, лишнее пространство уходит в единственный, ожидаемый
+              промежуток между навигацией и правым блоком, а не повисает
+              необъяснимой дырой посреди шапки. */}
           <div className="ml-auto flex items-center gap-3">
+            <button onClick={() => setOpen(true)}
+              className="hidden md:flex w-44 items-center gap-2 rounded-md border border-border bg-surface px-3 py-1.5 text-xs text-text-muted hover:border-border-focus hover:text-text-secondary transition-all">
+              <SearchIcon />
+              <span className="flex-1 text-left">{isRu ? "Поиск…" : "Search…"}</span>
+              <kbd className="rounded border border-border bg-canvas px-1.5 py-px font-mono text-[10px]">⌘K</kbd>
+            </button>
             <button onClick={() => setOpen(true)} aria-label="Search"
               className="md:hidden rounded p-1.5 text-text-muted hover:bg-surface hover:text-text-secondary transition-colors">
               <SearchIcon />
