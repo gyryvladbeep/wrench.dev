@@ -39,8 +39,23 @@ function UserMenu() {
   const { user, signOut } = useAuth();
   const router = useRouter();
 
-  async function handleSignOut() {
-    await signOut();
+  function handleSignOut() {
+    // Раньше здесь стояло "await signOut()" перед переходом — и это
+    // прятало гонку состояний, которую вскрыл автотест. При выходе
+    // именно со страницы /profile у неё есть свой защитный эффект:
+    // как только сессия обнуляется, /profile сама уводит на
+    // /auth/login (это отдельный, специально исправленный баг — см.
+    // историю коммитов app/[locale]/profile/page.tsx). Если сначала
+    // ДОЖДАТЬСЯ signOut(), этот эффект на /profile успевает сработать
+    // раньше, чем наш переход на "/" — и "перебивает" его, человек
+    // попадает не на главную, а на страницу входа.
+    //
+    // Без await переход на "/" запускается сразу же, ещё до того как
+    // /profile вообще узнаёт о разлогинивании — гонки не остаётся.
+    // Сам signOut() всё равно спокойно доработает в фоне и корректно
+    // очистит сессию; ждать его завершения тут незачем. Так же, без
+    // await, уже сделаны обе кнопки "Sign out" на самой /profile.
+    signOut();
     // Reset theme to default on sign out
     applyAndSaveAccent("#f59e0b");
     router.push(localePath(locale, "/"));
