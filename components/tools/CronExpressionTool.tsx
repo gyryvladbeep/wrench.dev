@@ -48,15 +48,21 @@ function describeCron(cron: string, isRu: boolean): string {
   const at     = isRu ? "в" : "at";
 
   if (cron === "* * * * *") return isRu ? "Каждую минуту" : "Every minute";
-  if (min === "0" && hour !== "*" && dom === "*" && month === "*" && dow === "*") {
-    const h = parsePart(hour, 0, 23).join(", ");
-    return isRu ? `Каждый день в ${h}:00` : `Every day at ${h}:00`;
-  }
   if (min.startsWith("*/")) {
     return isRu ? `Каждые ${min.split("/")[1]} минут` : `Every ${min.split("/")[1]} minutes`;
   }
-  if (hour.startsWith("*/")) {
+  // ФИКС: ветка "каждые N часов" раньше стояла ПОСЛЕ ветки "Every day at
+  // H:00" ниже, и та ветка (min==="0" && hour!=="*" && ...) перехватывала
+  // любое выражение вида "0 */6 * * *" первой — "*/6" тоже проходит
+  // условие hour!=="*", так что до этой строки выполнение никогда не
+  // доходило. Проверяем "каждые N часов" раньше, чтобы ветка была
+  // достижима.
+  if (hour.startsWith("*/") && dom === "*" && month === "*" && dow === "*") {
     return isRu ? `Каждые ${hour.split("/")[1]} часов` : `Every ${hour.split("/")[1]} hours`;
+  }
+  if (min === "0" && hour !== "*" && dom === "*" && month === "*" && dow === "*") {
+    const h = parsePart(hour, 0, 23).join(", ");
+    return isRu ? `Каждый день в ${h}:00` : `Every day at ${h}:00`;
   }
   if (dow !== "*") {
     const days = parsePart(dow, 0, 6).map((d) => WEEKDAYS[d]).join(", ");

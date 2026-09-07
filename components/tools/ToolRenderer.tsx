@@ -50,19 +50,16 @@ import {
   RemoveEmptyLinesTool,
 } from "./TextTools";
 import {
-  LoremIpsumTool,
   RandomColorTool,
   NanoIdTool,
 } from "./GeneratorTools";
 import {
   AgeCalculatorTool,
   DateDifferenceTool,
-  CronExpressionTool,
 } from "./DateTimeTools";
 import { ComingSoonTool }           from "./ComingSoonTool";
 import { BoundaryValueTool }        from "./BoundaryValueTool";
 import { TestDataGeneratorTool }    from "./TestDataGeneratorTool";
-import { ApiRequestBuilderV2Tool }  from "./ApiRequestBuilderV2Tool";
 import { JsonDiffTool }             from "./JsonDiffTool";
 import { ColorConverterTool }       from "./ColorConverterTool";
 import { LoremIpsumTool as LoremIpsumStandaloneTool } from "./LoremIpsumTool";
@@ -157,23 +154,18 @@ export function ToolRenderer({
     // ── API ─────────────────────────────────────────────────────────────────
     case "curl-generator":            return <CurlGeneratorTool dict={dict} />;
     case "rest-request-builder":      return <RestRequestBuilderTool dict={dict} />;
-    case "api-request-builder":       return <ApiRequestBuilderV2Tool dict={dict} />;
     case "boundary-value-generator":  return <BoundaryValueTool dict={dict} />;
     case "test-data-generator":       return <TestDataGeneratorTool dict={dict} />;
     case "json-diff":                 return <JsonDiffTool dict={dict} />;
-    case "lorem-ipsum-generator":     return <LoremIpsumStandaloneTool dict={dict} />;
     case "markdown-to-html":          return <MarkdownToHtmlTool dict={dict} />;
     case "password-strength":         return <PasswordStrengthTool dict={dict} />;
     case "json-schema-validator":     return <JsonSchemaValidatorTool dict={dict} />;
     case "yaml-formatter":            return <YamlFormatterTool dict={dict} />;
     case "url-parser":                return <UrlParserTool dict={dict} />;
-    case "cron-expression":           return <CronBuilderTool dict={dict} />;
     case "string-escape":             return <StringEscapeTool dict={dict} />;
     case "chmod-calculator":          return <ChmodCalculatorTool dict={dict} />;
-    case "password-strength":         return <PasswordStrengthTool dict={dict} />;
     case "json-to-typescript":         return <JsonToTypescriptTool dict={dict} />;
     case "color-converter":            return <ColorConverterTool dict={dict} />;
-    case "number-base-converter":      return <NumberBaseConverterTool dict={dict} />;
     case "number-base-converter":      return <NumberBaseConverterTool dict={dict} />;
     case "html-to-markdown":           return <HtmlToMarkdownTool dict={dict} />;
     case "text-to-ascii":              return <AsciiArtTool dict={dict} />;

@@ -37,9 +37,25 @@ tools.forEach(tool => tool.run());
 
 // Simple markdown to HTML converter
 function mdToHtml(md: string): string {
+  // ФИКС: раньше код-блоки (```...```) конвертировались в <pre><code> ДО
+  // шага "Paragraphs" ниже, и этот шаг оборачивал в <p> любую строку, не
+  // начинающуюся с "<lowercase" — включая внутренние строки кода
+  // (`tools.forEach(...)`) и закрывающую `</code></pre>` (она начинается
+  // с "</", а не с "<letter", так что тоже не распознавалась как "уже
+  // тег"). В результате многострочные код-блоки ломались стray-тегами
+  // <p> прямо внутри <pre><code>. Теперь код-блоки на время шага
+  // "Paragraphs" заменяются плейсхолдером вида "<codeblockN/>" (он сам
+  // начинается с "<lowercase", поэтому корректно распознаётся как "уже
+  // тег" и не оборачивается), а после — подставляются обратно целиком.
+  const codeBlocks: string[] = [];
   return md
-    // Code blocks
-    .replace(/```(\w+)?\n([\s\S]*?)```/g, '<pre><code class="language-$1">$2</code></pre>')
+    // Code blocks — extract into placeholders so later steps (in particular
+    // the paragraph-wrap step) never touch their content.
+    .replace(/```(\w+)?\n([\s\S]*?)```/g, (_m, lang: string | undefined, code: string) => {
+      const html = `<pre><code class="language-${lang ?? ""}">${code}</code></pre>`;
+      codeBlocks.push(html);
+      return `<codeblock${codeBlocks.length - 1}/>`;
+    })
     // Inline code
     .replace(/`([^`]+)`/g, '<code>$1</code>')
     // Headers
@@ -68,6 +84,8 @@ function mdToHtml(md: string): string {
     .replace(/^(?!<[a-z]).+$/gm, (line) => line.trim() ? `<p>${line}</p>` : '')
     // Wrap li in ul
     .replace(/(<li>.*<\/li>\n?)+/g, (m) => `<ul>${m}</ul>`)
+    // Restore code blocks (after paragraph-wrap, so their content is untouched)
+    .replace(/<codeblock(\d+)\/>/g, (_m, i: string) => codeBlocks[Number(i)])
     // Clean empty lines
     .replace(/\n{3,}/g, '\n\n')
     .trim();

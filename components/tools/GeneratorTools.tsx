@@ -1,77 +1,8 @@
 "use client";
-import { useState, useCallback } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { CopyButton } from "@/components/CopyButton";
 import { Dictionary } from "@/lib/i18n/dictionary-types";
-
-// ─── Lorem Ipsum ─────────────────────────────────────────────────────────────
-const LOREM_WORDS = "lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore magna aliqua enim ad minim veniam quis nostrud exercitation ullamco laboris nisi aliquip ex ea commodo consequat duis aute irure dolor reprehenderit voluptate velit esse cillum fugiat nulla pariatur excepteur sint occaecat cupidatat non proident sunt culpa qui officia deserunt mollit anim est laborum".split(" ");
-
-function randomWord() { return LOREM_WORDS[Math.floor(Math.random() * LOREM_WORDS.length)]; }
-function capitalize(s: string) { return s.charAt(0).toUpperCase() + s.slice(1); }
-
-function generateLoremWords(count: number): string {
-  return Array.from({ length: count }, randomWord).join(" ");
-}
-function generateLoremSentences(count: number): string {
-  return Array.from({ length: count }, () => {
-    const len = 8 + Math.floor(Math.random() * 10);
-    return capitalize(Array.from({ length: len }, randomWord).join(" ")) + ".";
-  }).join(" ");
-}
-function generateLoremParagraphs(count: number): string {
-  return Array.from({ length: count }, () => {
-    const sentences = 3 + Math.floor(Math.random() * 4);
-    return generateLoremSentences(sentences);
-  }).join("\n\n");
-}
-
-export function LoremIpsumTool({ dict }: { dict: Dictionary }) {
-  const [mode, setMode] = useState<"words" | "sentences" | "paragraphs">("paragraphs");
-  const [count, setCount] = useState(3);
-  const [output, setOutput] = useState(() => generateLoremParagraphs(3));
-
-  function generate() {
-    if (mode === "words") setOutput(capitalize(generateLoremWords(count)) + ".");
-    else if (mode === "sentences") setOutput(generateLoremSentences(count));
-    else setOutput(generateLoremParagraphs(count));
-  }
-
-  const modes = [
-    { id: "words", label: "Words" },
-    { id: "sentences", label: "Sentences" },
-    { id: "paragraphs", label: "Paragraphs" },
-  ] as const;
-
-  return (
-    <div>
-      <div className="flex flex-wrap items-end gap-3 mb-4">
-        <div>
-          <label className="mb-1 block text-xs font-medium text-text-muted">Type</label>
-          <div className="flex gap-1">
-            {modes.map((m) => (
-              <button key={m.id} onClick={() => setMode(m.id)}
-                className={`rounded-[10px] px-3 py-1.5 text-sm ${mode === m.id ? "bg-accent text-accent-fg" : "bg-surface text-text-muted hover:bg-surface-hover"}`}>
-                {m.label}
-              </button>
-            ))}
-          </div>
-        </div>
-        <div>
-          <label className="mb-1 block text-xs font-medium text-text-muted">Count</label>
-          <input type="number" min={1} max={100} value={count} onChange={(e) => setCount(Number(e.target.value))}
-            className="code-surface w-20 rounded-[10px] p-2 text-sm text-text-primary outline-none" />
-        </div>
-        <Button onClick={generate}>Generate</Button>
-        <div className="ml-auto">
-          <CopyButton value={output} label={dict.common.copy} copiedLabel={dict.common.copied} />
-        </div>
-      </div>
-      <textarea readOnly value={output} rows={12}
-        className="code-surface w-full rounded-[10px] p-3 text-sm text-text-primary outline-none" />
-    </div>
-  );
-}
 
 // ─── Random Color Generator ───────────────────────────────────────────────────
 function hexToRgb(hex: string) {

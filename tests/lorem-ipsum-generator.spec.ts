@@ -7,12 +7,11 @@ import { LoremIpsumPage } from "./pages/LoremIpsumPage";
 // а не конкретную строку).
 const WORDS_EN = ["lorem","ipsum","dolor","sit","amet","consectetur","adipiscing","elit","sed","do","eiusmod","tempor","incididunt","ut","labore","et","dolore","magna","aliqua","enim","ad","minim","veniam","quis","nostrud","exercitation","ullamco","laboris","nisi","aliquip","ex","ea","commodo","consequat","duis","aute","irure","in","reprehenderit","voluptate","velit","esse","cillum","eu","fugiat","nulla","pariatur","excepteur","sint","occaecat","cupidatat","non","proident","sunt","culpa","qui","officia","deserunt","mollit","anim","id","est","laborum"];
 
-// Точная копия WORDS_RU из components/tools/LoremIpsumTool.tsx. ПРИМЕЧАНИЕ:
-// одно слово ("pariatur") в этом массиве оставлено непереведённым и
-// совпадает с WORDS_EN — это особенность реальных данных компонента, а не
-// ошибка теста, поэтому проверяем принадлежность WORDS_RU, а не отсутствие
-// пересечения с WORDS_EN.
-const WORDS_RU = ["лорем","ипсум","долор","сит","амет","консектетур","адипискинг","элит","сед","до","эйусмод","темпор","инцididунт","ут","лаборе","эт","долоре","магна","аликва","эним","ад","миним","вениам","квис","ностrud","экзерситатион","улламко","лаборис","ниси","алликвип","экс","эа","коммодо","конsequат","дуис","ауте","иrure","ин","репрехендерит","волuptате","велит","ессе","чиллум","эу","фуgиат","нулла","pariatur","экzептеур","синт","оccaecат"];
+// Точная копия WORDS_RU из components/tools/LoremIpsumTool.tsx (после
+// фикса смешанной латиницы/кириллицы — раньше 9 слов были испорчены
+// случайными латинскими буквами, включая полностью непереведённое
+// "pariatur"; теперь весь массив полностью кириллический).
+const WORDS_RU = ["лорем","ипсум","долор","сит","амет","консектетур","адипискинг","элит","сед","до","эйусмод","темпор","инцидидунт","ут","лаборе","эт","долоре","магна","аликва","эним","ад","миним","вениам","квис","ноструд","экзерситатион","улламко","лаборис","ниси","алликвип","экс","эа","коммодо","консекват","дуис","ауте","ируре","ин","репрехендерит","волюптате","велит","ессе","чиллум","эу","фугиат","нулла","париатур","эксептеур","синт","оккаекат"];
 
 test.describe("Lorem Ipsum Generator", () => {
   let tool: LoremIpsumPage;
@@ -56,7 +55,7 @@ test.describe("Lorem Ipsum Generator", () => {
     }
   });
 
-  test("переключение на RU меняет словарь — слова берутся из WORDS_RU", async () => {
+  test("переключение на RU меняет словарь — слова берутся из WORDS_RU, латиница не просачивается (регресс на фикс смешанного текста)", async () => {
     await tool.wordsTypeButton.click();
     await tool.setCount(15);
     await tool.ruButton.click();
@@ -66,6 +65,10 @@ test.describe("Lorem Ipsum Generator", () => {
     expect(words).toHaveLength(15);
     for (const w of words) {
       expect(WORDS_RU).toContain(w);
+      // Регресс-проверка на исправленный баг: раньше несколько "русских"
+      // слов на самом деле содержали латинские буквы (ностrud, pariatur и
+      // т.д.) — теперь ни одно RU-слово не должно совпадать с EN-словарём.
+      expect(WORDS_EN).not.toContain(w);
     }
   });
 

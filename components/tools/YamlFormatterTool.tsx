@@ -6,10 +6,26 @@ import { ToolShell } from "./ToolShell";
 import { EmptyToolInput } from "@/components/EmptyState";
 
 // Minimal YAML parser/formatter (handles common cases)
+function coerceScalar(val: string): unknown {
+  const trimmed = val.trim();
+  if (trimmed === "true") return true;
+  if (trimmed === "false") return false;
+  if (trimmed === "null" || trimmed === "~") return null;
+  if (trimmed !== "" && !isNaN(Number(trimmed))) return Number(trimmed);
+  return trimmed.replace(/^["']|["']$/g, "");
+}
+
 function parseYaml(text: string): unknown {
   const lines = text.split("\n");
   const root: Record<string, unknown> = {};
-  const stack: { obj: Record<string, unknown>; indent: number }[] = [{ obj: root, indent: -1 }];
+  type Frame = {
+    obj: Record<string, unknown>;
+    indent: number;
+    parent?: Record<string, unknown>;
+    key?: string;
+    arr?: unknown[];
+  };
+  const stack: Frame[] = [{ obj: root, indent: -1 }];
 
   for (const line of lines) {
     if (!line.trim() || line.trim().startsWith("#")) continue;
@@ -17,8 +33,22 @@ function parseYaml(text: string): unknown {
     const content = line.trim();
 
     while (stack.length > 1 && stack[stack.length - 1].indent >= indent) stack.pop();
-    const current = stack[stack.length - 1].obj;
+    const top = stack[stack.length - 1];
 
+    if (content === "-" || content.startsWith("- ")) {
+      const itemText = content === "-" ? "" : content.slice(2).trim();
+      // Первый элемент списка на этом уровне превращает placeholder-объект
+      // родителя (созданный для "key:" без значения) в настоящий массив.
+      if (!top.arr) {
+        const arr: unknown[] = [];
+        top.arr = arr;
+        if (top.parent && top.key !== undefined) top.parent[top.key] = arr;
+      }
+      top.arr.push(coerceScalar(itemText));
+      continue;
+    }
+
+    const current = top.obj;
     if (content.includes(":")) {
       const colonIdx = content.indexOf(":");
       const key      = content.slice(0, colonIdx).trim();
@@ -27,15 +57,10 @@ function parseYaml(text: string): unknown {
       if (!val) {
         const child: Record<string, unknown> = {};
         current[key] = child;
-        stack.push({ obj: child, indent });
-      } else if (val === "true") current[key] = true;
-      else if (val === "false") current[key] = false;
-      else if (val === "null" || val === "~") current[key] = null;
-      else if (!isNaN(Number(val))) current[key] = Number(val);
-      else current[key] = val.replace(/^["']|["']$/g, "");
-    } else if (content.startsWith("- ")) {
-      const arr: unknown[] = [];
-      current["_list"] = arr;
+        stack.push({ obj: child, indent, parent: current, key });
+      } else {
+        current[key] = coerceScalar(val);
+      }
     }
   }
   return root;

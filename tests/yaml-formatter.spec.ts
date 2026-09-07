@@ -1,13 +1,30 @@
 import { test, expect } from "@playwright/test";
 import { YamlFormatterPage } from "./pages/YamlFormatterPage";
 
-// Точная копия parseYaml()/objToYaml() из components/tools/YamlFormatterTool.tsx.
+// Точная копия parseYaml()/objToYaml() из components/tools/YamlFormatterTool.tsx
+// (после фикса бага потери элементов списка — см. коммент в самом источнике).
 // Это САМОДЕЛЬНЫЙ мини-парсер YAML (не спецификация), поэтому единственный
 // надёжный способ проверить "ожидаемое" — воспроизвести ровно ту же логику.
+function coerceScalar(val: string): unknown {
+  const trimmed = val.trim();
+  if (trimmed === "true") return true;
+  if (trimmed === "false") return false;
+  if (trimmed === "null" || trimmed === "~") return null;
+  if (trimmed !== "" && !isNaN(Number(trimmed))) return Number(trimmed);
+  return trimmed.replace(/^["']|["']$/g, "");
+}
+
 function parseYaml(text: string): unknown {
   const lines = text.split("\n");
   const root: Record<string, unknown> = {};
-  const stack: { obj: Record<string, unknown>; indent: number }[] = [{ obj: root, indent: -1 }];
+  type Frame = {
+    obj: Record<string, unknown>;
+    indent: number;
+    parent?: Record<string, unknown>;
+    key?: string;
+    arr?: unknown[];
+  };
+  const stack: Frame[] = [{ obj: root, indent: -1 }];
 
   for (const line of lines) {
     if (!line.trim() || line.trim().startsWith("#")) continue;
@@ -15,8 +32,20 @@ function parseYaml(text: string): unknown {
     const content = line.trim();
 
     while (stack.length > 1 && stack[stack.length - 1].indent >= indent) stack.pop();
-    const current = stack[stack.length - 1].obj;
+    const top = stack[stack.length - 1];
 
+    if (content === "-" || content.startsWith("- ")) {
+      const itemText = content === "-" ? "" : content.slice(2).trim();
+      if (!top.arr) {
+        const arr: unknown[] = [];
+        top.arr = arr;
+        if (top.parent && top.key !== undefined) top.parent[top.key] = arr;
+      }
+      top.arr.push(coerceScalar(itemText));
+      continue;
+    }
+
+    const current = top.obj;
     if (content.includes(":")) {
       const colonIdx = content.indexOf(":");
       const key = content.slice(0, colonIdx).trim();
@@ -25,15 +54,10 @@ function parseYaml(text: string): unknown {
       if (!val) {
         const child: Record<string, unknown> = {};
         current[key] = child;
-        stack.push({ obj: child, indent });
-      } else if (val === "true") current[key] = true;
-      else if (val === "false") current[key] = false;
-      else if (val === "null" || val === "~") current[key] = null;
-      else if (!isNaN(Number(val))) current[key] = Number(val);
-      else current[key] = val.replace(/^["']|["']$/g, "");
-    } else if (content.startsWith("- ")) {
-      const arr: unknown[] = [];
-      current["_list"] = arr;
+        stack.push({ obj: child, indent, parent: current, key });
+      } else {
+        current[key] = coerceScalar(val);
+      }
     }
   }
   return root;
@@ -131,18 +155,38 @@ test.describe("YAML Formatter", () => {
     await expect(tool.output).toBeHidden();
   });
 
-  test("ИЗВЕСТНОЕ ОГРАНИЧЕНИЕ: элементы YAML-списка ('- item') не сохраняются парсером", async () => {
-    // Самодельный parseYaml() не читает содержимое строк "- ...": для любой
-    // такой строки он просто перезаписывает current["_list"] пустым
-    // массивом, теряя значения "a" и "b". Тест фиксирует РЕАЛЬНОЕ (пусть и
-    // некорректное с точки зрения YAML) поведение страницы, а не то, каким
-    // оно "должно" быть — это находка для отдельного багфикса, не для теста.
+  test("РЕГРЕСС на исправленный баг: элементы YAML-списка ('- item') теперь корректно сохраняются", async () => {
+    // Раньше parseYaml() для любой строки "- ..." просто перезаписывал
+    // current["_list"] новым пустым массивом, теряя значения "a"/"b" —
+    // items превращался в {_list: []}. После фикса items — настоящий
+    // массив ["a","b"].
     const withList = "items:\n  - a\n  - b";
     await tool.setInput(withList);
     await tool.jsonModeButton.click();
 
     const expected = JSON.stringify(parseYaml(withList), null, 2);
     await expect(tool.output).toHaveValue(expected);
-    await expect(tool.output).toHaveValue(JSON.stringify({ items: { _list: [] } }, null, 2));
+    await expect(tool.output).toHaveValue(JSON.stringify({ items: ["a", "b"] }, null, 2));
+  });
+
+  test("список с типизированными значениями (числа/булевы) — каждый элемент коэрцится как скаляр", async () => {
+    const withTypedList = "ports:\n  - 80\n  - 443\nflags:\n  - true\n  - false";
+    await tool.setInput(withTypedList);
+    await tool.jsonModeButton.click();
+
+    const expected = JSON.stringify(parseYaml(withTypedList), null, 2);
+    await expect(tool.output).toHaveValue(expected);
+    await expect(tool.output).toHaveValue(
+      JSON.stringify({ ports: [80, 443], flags: [true, false] }, null, 2)
+    );
+  });
+
+  test("список внутри режима Format сериализуется обратно через '- ' с сохранением значений", async () => {
+    const withList = "items:\n  - a\n  - b";
+    await tool.setInput(withList);
+
+    const expected = objToYaml(parseYaml(withList));
+    await expect(tool.output).toHaveValue(expected);
+    await expect(tool.output).toHaveValue(/items:\n {2}- a\n {2}- b/);
   });
 });

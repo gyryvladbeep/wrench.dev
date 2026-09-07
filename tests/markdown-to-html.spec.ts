@@ -1,10 +1,17 @@
 import { test, expect } from "@playwright/test";
 import { MarkdownToHtmlPage } from "./pages/MarkdownToHtmlPage";
 
-// Точная копия mdToHtml() из components/tools/MarkdownToHtmlTool.tsx.
+// Точная копия mdToHtml() из components/tools/MarkdownToHtmlTool.tsx
+// (после фикса бага с лишними <p> внутри многострочных код-блоков —
+// см. коммент в самом источнике).
 function mdToHtml(md: string): string {
+  const codeBlocks: string[] = [];
   return md
-    .replace(/```(\w+)?\n([\s\S]*?)```/g, '<pre><code class="language-$1">$2</code></pre>')
+    .replace(/```(\w+)?\n([\s\S]*?)```/g, (_m, lang: string | undefined, code: string) => {
+      const html = `<pre><code class="language-${lang ?? ""}">${code}</code></pre>`;
+      codeBlocks.push(html);
+      return `<codeblock${codeBlocks.length - 1}/>`;
+    })
     .replace(/`([^`]+)`/g, '<code>$1</code>')
     .replace(/^### (.+)$/gm, '<h3>$1</h3>')
     .replace(/^## (.+)$/gm, '<h2>$1</h2>')
@@ -23,6 +30,7 @@ function mdToHtml(md: string): string {
     .replace(/^- (.+)$/gm, '<li>$1</li>')
     .replace(/^(?!<[a-z]).+$/gm, (line) => line.trim() ? `<p>${line}</p>` : '')
     .replace(/(<li>.*<\/li>\n?)+/g, (m) => `<ul>${m}</ul>`)
+    .replace(/<codeblock(\d+)\/>/g, (_m, i: string) => codeBlocks[Number(i)])
     .replace(/\n{3,}/g, '\n\n')
     .trim();
 }
@@ -81,19 +89,49 @@ test.describe("Markdown to HTML", () => {
     await expect(tool.previewPane.locator("h1", { hasText: "Hello, Wrench!" })).toBeVisible();
   });
 
-  test("ИЗВЕСТНОЕ ОГРАНИЧЕНИЕ: многострочный код-блок получает лишний <p> вокруг закрывающего </code></pre>", async () => {
-    // Параграф-regex `.replace(/^(?!<[a-z]).+$/gm, ...)` идёт ПОСЛЕ обработки
-    // code-блоков и проверяет только начало строки: "</code></pre>" начинается
-    // с "</", а не "<" + строчная буква, поэтому негативный lookahead
-    // `(?!<[a-z])` пропускает эту строку — и она ошибочно оборачивается в
-    // <p>...</p>. Тест фиксирует РЕАЛЬНОЕ поведение страницы (совпадает с
-    // mdToHtml() 1-в-1); это находка для отдельного обсуждения, не баг теста.
+  test("РЕГРЕСС на исправленный баг: однострочный код-блок больше не оборачивает закрывающий </code></pre> в <p>", async () => {
+    // Раньше параграф-regex не распознавал "</code></pre>" как "уже тег"
+    // (он начинается с "</", а не "<" + строчная буква) и оборачивал его в
+    // <p>...</p> прямо внутри <pre><code>. После фикса код-блок на время
+    // шага "Paragraphs" прячется за плейсхолдером и восстанавливается
+    // целиком, без вставленных <p>.
     const input = "```python\nprint('hi')\n```";
     await tool.setInput(input);
     const expected = mdToHtml(input);
 
     await expect(tool.output).toHaveValue(expected);
-    await expect(tool.output).toHaveValue('<pre><code class="language-python">print(\'hi\')\n<p></code></pre></p>');
+    await expect(tool.output).toHaveValue('<pre><code class="language-python">print(\'hi\')\n</code></pre>');
+    await expect(tool.output).not.toHaveValue(/<p>/);
+  });
+
+  test("РЕГРЕСС: многострочный код-блок — ни одна внутренняя строка не оборачивается в <p>", async () => {
+    // До фикса каждая НЕ-первая строка внутри код-блока (не только
+    // закрывающий </code></pre>) тоже ошибочно оборачивалась в <p>,
+    // поскольку параграф-regex обрабатывал уже вставленный <pre><code>...
+    // текст построчно, а "уже тегом" считал только самую первую строку.
+    const input = "```js\nconst a = 1;\nconst b = 2;\nconsole.log(a + b);\n```";
+    await tool.setInput(input);
+    const expected = mdToHtml(input);
+
+    await expect(tool.output).toHaveValue(expected);
+    await expect(tool.output).toHaveValue(
+      '<pre><code class="language-js">const a = 1;\nconst b = 2;\nconsole.log(a + b);\n</code></pre>'
+    );
+  });
+
+  test("код-блок, окружённый обычными абзацами — абзацы вокруг него оборачиваются в <p>, сам блок — нет", async () => {
+    const input = "before text\n\n```js\ncode();\n```\n\nafter text";
+    await tool.setInput(input);
+    const expected = mdToHtml(input);
+
+    await expect(tool.output).toHaveValue(expected);
+    await expect(tool.output).toHaveValue(/<p>before text<\/p>/);
+    await expect(tool.output).toHaveValue(/<p>after text<\/p>/);
+    // toHaveValue со строкой требует ТОЧНОГО совпадения всего textarea —
+    // здесь в textarea ещё есть "before text"/"after text" вокруг блока,
+    // поэтому для проверки самого блока внутри нужен regex (частичное
+    // совпадение), а не строка.
+    await expect(tool.output).toHaveValue(/<pre><code class="language-js">code\(\);\n<\/code><\/pre>/);
   });
 
   test("таблица markdown конвертируется в строки <tr><td>", async () => {

@@ -5,7 +5,7 @@ import { Dictionary } from "@/lib/i18n/dictionary-types";
 
 const WORDS_EN = ["lorem","ipsum","dolor","sit","amet","consectetur","adipiscing","elit","sed","do","eiusmod","tempor","incididunt","ut","labore","et","dolore","magna","aliqua","enim","ad","minim","veniam","quis","nostrud","exercitation","ullamco","laboris","nisi","aliquip","ex","ea","commodo","consequat","duis","aute","irure","in","reprehenderit","voluptate","velit","esse","cillum","eu","fugiat","nulla","pariatur","excepteur","sint","occaecat","cupidatat","non","proident","sunt","culpa","qui","officia","deserunt","mollit","anim","id","est","laborum"];
 
-const WORDS_RU = ["лорем","ипсум","долор","сит","амет","консектетур","адипискинг","элит","сед","до","эйусмод","темпор","инцididунт","ут","лаборе","эт","долоре","магна","аликва","эним","ад","миним","вениам","квис","ностrud","экзерситатион","улламко","лаборис","ниси","алликвип","экс","эа","коммодо","конsequат","дуис","ауте","иrure","ин","репрехендерит","волuptате","велит","ессе","чиллум","эу","фуgиат","нулла","pariatur","экzептеур","синт","оccaecат"];
+const WORDS_RU = ["лорем","ипсум","долор","сит","амет","консектетур","адипискинг","элит","сед","до","эйусмод","темпор","инцидидунт","ут","лаборе","эт","долоре","магна","аликва","эним","ад","миним","вениам","квис","ноструд","экзерситатион","улламко","лаборис","ниси","алликвип","экс","эа","коммодо","консекват","дуис","ауте","ируре","ин","репрехендерит","волюптате","велит","ессе","чиллум","эу","фугиат","нулла","париатур","эксептеур","синт","оккаекат"];
 
 function genWords(count: number, ru: boolean) {
   const words = ru ? WORDS_RU : WORDS_EN;
