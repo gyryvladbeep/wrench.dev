@@ -1,5 +1,6 @@
 "use client";
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
+import { CheckIcon, CloseIcon, InfoIcon } from "@/components/icons/GameIcons";
 type T = "success"|"error"|"info";
 interface Item { id:string; message:string; type:T; }
 interface Ctx  { toast:(m:string,t?:T)=>void; success:(m:string)=>void; error:(m:string)=>void; }
@@ -15,7 +16,7 @@ function ToastItem({ item, onRemove }: { item:Item; onRemove:(id:string)=>void }
     const t3=setTimeout(()=>onRemove(item.id),2600);
     return()=>{clearTimeout(t1);clearTimeout(t2);clearTimeout(t3);};
   },[item.id,onRemove]);
-  const icons = { success:"✓", error:"✕", info:"ℹ" };
+  const icons = { success: <CheckIcon size={14} />, error: <CloseIcon size={13} />, info: <InfoIcon size={14} /> };
   const cls   = {
     success:"border-accent/40 bg-accent/10 text-accent",
     error:  "border-red-500/40 bg-red-500/10 text-red-400",
@@ -24,7 +25,7 @@ function ToastItem({ item, onRemove }: { item:Item; onRemove:(id:string)=>void }
   return (
     <div role="status" aria-live="polite"
       className={`flex items-center gap-2 rounded-[10px] border px-4 py-2.5 text-sm shadow-lg transition-all duration-300 ${cls[item.type]} ${visible?"translate-y-0 opacity-100":"translate-y-2 opacity-0"}`}>
-      <span className="font-bold shrink-0">{icons[item.type]}</span>
+      <span className="shrink-0">{icons[item.type]}</span>
       <span>{item.message}</span>
     </div>
   );

@@ -1,17 +1,18 @@
 import Link from "next/link";
+import { GameIcon, type GameIconId } from "@/components/icons/GameIcons";
 
 interface EmptyStateProps {
-  icon?:        string;
+  icon?:        GameIconId;
   title:        string;
   description?: string;
   action?:      { label: string; href: string };
 }
 
-export function EmptyState({ icon = "🔍", title, description, action }: EmptyStateProps) {
+export function EmptyState({ icon = "magnifier", title, description, action }: EmptyStateProps) {
   return (
     <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
       <div className="relative mb-4">
-        <div className="text-5xl animate-float">{icon}</div>
+        <div className="animate-float text-text-muted"><GameIcon id={icon} size={40} /></div>
         <div className="absolute inset-0 rounded-full blur-xl opacity-20"
           style={{ background: "var(--accent)" }} />
       </div>
@@ -45,7 +46,7 @@ export function EmptyToolInput({ message = "Paste your input to see the result" 
 export function EmptySearch({ query }: { query: string }) {
   return (
     <div className="flex flex-col items-center justify-center py-16 text-center">
-      <span className="text-4xl mb-3">🔎</span>
+      <div className="mb-3 text-text-muted"><GameIcon id="magnifier" size={30} /></div>
       <h3 className="text-base font-semibold text-text-primary">No results for &ldquo;{query}&rdquo;</h3>
       <p className="mt-2 text-sm text-text-muted">Try a different search term or browse by category.</p>
     </div>
@@ -54,7 +55,7 @@ export function EmptySearch({ query }: { query: string }) {
 export function EmptySearchResults({ query }: { query: string }) {
   return (
     <div className="flex flex-col items-center justify-center py-16 text-center">
-      <span className="text-4xl mb-3">🔎</span>
+      <div className="mb-3 text-text-muted"><GameIcon id="magnifier" size={30} /></div>
       <h3 className="text-base font-semibold text-text-primary">No results for &ldquo;{query}&rdquo;</h3>
       <p className="mt-2 text-sm text-text-muted">Try a different search term or browse by category.</p>
     </div>

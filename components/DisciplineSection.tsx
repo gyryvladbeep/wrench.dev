@@ -3,6 +3,7 @@ import { DisciplineMeta, getToolsForDiscipline, getDisciplineToolCount } from "@
 import { Locale, localePath } from "@/lib/i18n/config";
 import { localizeTools } from "@/lib/i18n/localize";
 import { ToolCard } from "@/components/ToolCard";
+import { GameIcon } from "@/components/icons/GameIcons";
 
 export function DisciplineSection({ discipline, locale, isRu, limit = 4 }: {
   discipline: DisciplineMeta; locale: Locale; isRu: boolean; limit?: number;
@@ -15,9 +16,9 @@ export function DisciplineSection({ discipline, locale, isRu, limit = 4 }: {
     <section className="py-8">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
-          <span className="flex h-10 w-10 items-center justify-center rounded-xl text-xl shrink-0"
-            style={{ background: `${discipline.color}15` }}>
-            {discipline.icon}
+          <span className="flex h-10 w-10 items-center justify-center rounded-xl shrink-0"
+            style={{ background: `${discipline.color}15`, color: discipline.color }}>
+            <GameIcon id={discipline.icon} size={20} />
           </span>
           <div>
             <h2 className="text-base font-bold text-text-primary">{isRu ? discipline.labelRu : discipline.labelEn}</h2>

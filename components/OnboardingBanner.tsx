@@ -4,12 +4,13 @@ import Link from "next/link";
 import { useAuth } from "@/lib/auth/auth-context";
 import { localePath } from "@/lib/i18n/config";
 import { useDict } from "@/lib/i18n/dict-context";
+import { GameIcon, CheckIcon, CloseIcon, type GameIconId } from "@/components/icons/GameIcons";
 
-const STEPS = [
-  { icon:"🛠", titleEn:"Try a tool",         titleRu:"Попробуй инструмент",    hrefKey:"/tools",      labelEn:"Browse tools",    labelRu:"Все инструменты" },
-  { icon:"🏆", titleEn:"Solve a Challenge",  titleRu:"Реши задачу",            hrefKey:"/challenges", labelEn:"Go to Challenges", labelRu:"Открыть" },
-  { icon:"⭐", titleEn:"Add to Favorites",   titleRu:"Добавь в избранное",     hrefKey:"/tools",      labelEn:"Find a tool",     labelRu:"Найти инструмент" },
-  { icon:"🎨", titleEn:"Customize theme",    titleRu:"Настрой тему",           hrefKey:"/profile",    labelEn:"Open profile",    labelRu:"Профиль" },
+const STEPS: { icon: GameIconId; titleEn: string; titleRu: string; hrefKey: string; labelEn: string; labelRu: string }[] = [
+  { icon:"wrench",  titleEn:"Try a tool",        titleRu:"Попробуй инструмент",    hrefKey:"/tools",      labelEn:"Browse tools",     labelRu:"Все инструменты" },
+  { icon:"trophy",  titleEn:"Solve a Challenge", titleRu:"Реши задачу",            hrefKey:"/challenges", labelEn:"Go to Challenges", labelRu:"Открыть" },
+  { icon:"star",    titleEn:"Add to Favorites",  titleRu:"Добавь в избранное",     hrefKey:"/tools",      labelEn:"Find a tool",      labelRu:"Найти инструмент" },
+  { icon:"palette", titleEn:"Customize theme",   titleRu:"Настрой тему",           hrefKey:"/profile",    labelEn:"Open profile",     labelRu:"Профиль" },
 ];
 
 export function OnboardingBanner() {
@@ -75,16 +76,16 @@ export function OnboardingBanner() {
                         ? "border-success/30 bg-success/10 text-success line-through opacity-60"
                         : "border-border bg-canvas text-text-muted hover:border-[var(--accent)]/40 hover:text-text-primary hover:bg-surface"
                     }`}>
-                    <span>{step.icon}</span>
-                    {isDone ? "✓" : (isRu ? step.titleRu : step.titleEn)}
+                    <GameIcon id={step.icon} size={13} />
+                    {isDone ? <CheckIcon size={12} /> : (isRu ? step.titleRu : step.titleEn)}
                   </Link>
                 );
               })}
             </div>
           </div>
-          <button onClick={dismiss}
-            className="shrink-0 rounded p-1 text-text-muted hover:text-text-primary transition-colors text-xs">
-            ✕
+          <button onClick={dismiss} aria-label={isRu ? "Закрыть" : "Dismiss"}
+            className="shrink-0 rounded p-1 text-text-muted hover:text-text-primary transition-colors">
+            <CloseIcon size={12} />
           </button>
         </div>
       </div>

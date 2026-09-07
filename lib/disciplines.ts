@@ -1,5 +1,6 @@
 import { Tool, ToolCategory } from "./types";
 import { allTools } from "./tools-registry";
+import type { GameIconId } from "@/components/icons/GameIcons";
 
 /**
  * "Disciplines" group the underlying tool categories into the 4 buckets
@@ -16,7 +17,8 @@ export interface DisciplineMeta {
   labelRu: string;
   taglineEn: string;
   taglineRu: string;
-  icon: string;
+  // Раньше — эмодзи прямо в данных, теперь id иконки из GameIcons.tsx.
+  icon: GameIconId;
   color: string;
   categories: ToolCategory[];
 }
@@ -28,7 +30,7 @@ export const DISCIPLINES: DisciplineMeta[] = [
     labelRu: "QA Арсенал",
     taglineEn: "Test design, negative testing, bug reports",
     taglineRu: "Тест-дизайн, негативное тестирование, баг-репорты",
-    icon: "🧪",
+    icon: "flask",
     color: "#22c55e",
     categories: ["qa"],
   },
@@ -38,7 +40,7 @@ export const DISCIPLINES: DisciplineMeta[] = [
     labelRu: "Frontend Тулкит",
     taglineEn: "Selectors, formatting, encoding, text utilities",
     taglineRu: "Селекторы, форматирование, кодирование, текст",
-    icon: "🎨",
+    icon: "palette",
     color: "#3b82f6",
     categories: ["formatting", "encoding", "text", "web"],
   },
@@ -48,7 +50,7 @@ export const DISCIPLINES: DisciplineMeta[] = [
     labelRu: "Backend и API",
     taglineEn: "Requests, mocking, hashing, status codes",
     taglineRu: "Запросы, моки, хэши, коды статусов",
-    icon: "⚙️",
+    icon: "gear",
     color: "#a78bfa",
     categories: ["api", "hash"],
   },
@@ -58,7 +60,7 @@ export const DISCIPLINES: DisciplineMeta[] = [
     labelRu: "Генераторы и утилиты",
     taglineEn: "IDs, dates, passwords, everyday helpers",
     taglineRu: "ID, даты, пароли, повседневные помощники",
-    icon: "🔧",
+    icon: "wrench",
     color: "#f59e0b",
     categories: ["generators", "datetime", "data"],
   },

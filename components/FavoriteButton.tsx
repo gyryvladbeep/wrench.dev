@@ -2,6 +2,7 @@
 
 import { useDict } from "@/lib/i18n/dict-context";
 import { useFavorites } from "@/lib/hooks/useFavorites";
+import { StarIcon } from "@/components/icons/GameIcons";
 
 export function FavoriteButton({ slug }: { slug: string }) {
   const { locale } = useDict();
@@ -19,11 +20,11 @@ export function FavoriteButton({ slug }: { slug: string }) {
       onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggle(slug); }}
       aria-label={label}
       title={label}
-      className={`shrink-0 rounded-full p-1 text-base leading-none transition-colors ${
+      className={`shrink-0 rounded-full p-1 transition-colors ${
         active ? "text-accent hover:text-accent/70" : "text-text-muted hover:text-accent"
       }`}
     >
-      {active ? "★" : "☆"}
+      <StarIcon size={16} filled={active} />
     </button>
   );
 }

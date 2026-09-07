@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { Discipline, DISCIPLINES } from "@/lib/disciplines";
+import { GameIcon, CloseIcon } from "@/components/icons/GameIcons";
 
 const STORAGE_KEY = "wrench_preferred_role";
 
@@ -43,7 +44,8 @@ export function RoleSelector({ isRu, onSelect, onDismiss }: RoleSelectorProps) {
               : "We'll surface the tools you'll use most first — everything else stays one click away"}
           </p>
         </div>
-        <button onClick={onDismiss} className="shrink-0 text-text-disabled hover:text-text-muted transition-colors text-sm">✕</button>
+        <button onClick={onDismiss} aria-label={isRu ? "Закрыть" : "Dismiss"}
+          className="shrink-0 text-text-disabled hover:text-text-muted transition-colors"><CloseIcon size={13} /></button>
       </div>
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
         {DISCIPLINES.map((d) => (
@@ -52,7 +54,7 @@ export function RoleSelector({ isRu, onSelect, onDismiss }: RoleSelectorProps) {
             style={{ borderColor: undefined }}
             onMouseEnter={(e) => (e.currentTarget.style.borderColor = `${d.color}60`)}
             onMouseLeave={(e) => (e.currentTarget.style.borderColor = "")}>
-            <span className="text-2xl">{d.icon}</span>
+            <span style={{ color: d.color }}><GameIcon id={d.icon} size={22} /></span>
             <span className="text-xs font-medium text-text-primary text-center">{isRu ? d.labelRu : d.labelEn}</span>
           </button>
         ))}
@@ -67,7 +69,7 @@ export function CurrentRoleBadge({ isRu, role, onChange }: { isRu: boolean; role
     <button onClick={onChange}
       className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs transition-colors hover:bg-surface"
       style={{ borderColor: `${meta.color}40`, background: `${meta.color}10`, color: meta.color }}>
-      <span>{meta.icon}</span>
+      <GameIcon id={meta.icon} size={13} />
       {isRu ? meta.labelRu : meta.labelEn}
       <span className="text-text-disabled ml-1">· {isRu ? "изменить" : "change"}</span>
     </button>
