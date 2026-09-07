@@ -9,20 +9,27 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Base
-        canvas:          "#09090b",
-        surface:         "#111113",
-        "surface-hover": "#18181b",
-        border:          "#27272a",
-        "border-focus":  "#52525b",
+        // Base — тёмная холодная слейт-палитра с едва заметным
+        // фиолетовым подтоном (вместо нейтрального zinc), чтобы
+        // сайт не выглядел как типовой "нейро-дизайн" тёмный шаблон,
+        // и чтобы оттенок перекликался с космической темой фона.
+        // Разница почти незаметна по отдельности, но задаёт узнаваемый
+        // характер палитры — контраст к тексту не меняется.
+        canvas:          "#0a0a10",
+        surface:         "#131319",
+        "surface-hover": "#1b1b23",
+        border:          "#26262f",
+        "border-focus":  "#52525f",
 
         // Text hierarchy
-        "text-primary":   "#fafafa",
-        "text-secondary": "#a1a1aa",
-        "text-muted":     "#71717a",
-        "text-disabled":  "#3f3f46",
+        "text-primary":   "#f8f8fb",
+        "text-secondary": "#a4a4b1",
+        "text-muted":     "#76767f",
+        "text-disabled":  "#44444e",
 
-        // Dynamic accent — reads from CSS variable set by ThemeProvider
+        // Dynamic accent — reads from CSS variable set by ThemeProvider.
+        // Фича выбора акцентного цвета (10 пресетов) не трогаем —
+        // редизайн только вокруг неё.
         accent:         "rgb(var(--accent-rgb) / <alpha-value>)",
         "accent-fg":    "rgb(var(--accent-fg-rgb) / <alpha-value>)",
         "accent-muted": "rgb(var(--accent-rgb) / 0.15)",
@@ -35,7 +42,13 @@ const config: Config = {
         link:    "#60a5fa",
       },
       fontFamily: {
-        sans: ["var(--font-sans)", "Inter", "system-ui", "sans-serif"],
+        // Body — Manrope (бесплатная замена Euclid Circular B по духу
+        // референсов, полная поддержка кириллицы).
+        sans: ["var(--font-sans)", "Manrope", "system-ui", "sans-serif"],
+        // Заголовки — Unbounded: геометричный, слегка футуристичный
+        // дисплейный шрифт с полной кириллицей — держит "космическую"
+        // тему в самой типографике, не только в фоне.
+        heading: ["var(--font-heading)", "Unbounded", "system-ui", "sans-serif"],
         mono: ["var(--font-mono)", "JetBrains Mono", "ui-monospace", "monospace"],
       },
       fontSize: {
@@ -54,7 +67,7 @@ const config: Config = {
         DEFAULT: "0 2px 4px rgba(0,0,0,0.5)",
         md:      "0 4px 8px rgba(0,0,0,0.5)",
         lg:      "0 8px 24px rgba(0,0,0,0.6)",
-        "focus-accent": "0 0 0 2px #09090b, 0 0 0 4px rgb(var(--accent-rgb))",
+        "focus-accent": "0 0 0 2px #0a0a10, 0 0 0 4px rgb(var(--accent-rgb))",
       },
       animation: {
         "fade-in":  "fade-in 0.15s ease both",
