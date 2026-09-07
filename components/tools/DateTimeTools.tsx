@@ -1,6 +1,7 @@
 "use client";
 import { useMemo, useState } from "react";
 import { Dictionary } from "@/lib/i18n/dictionary-types";
+import { CakeIcon } from "@/components/icons/GameIcons";
 
 // ─── Age Calculator ───────────────────────────────────────────────────────────
 export function AgeCalculatorTool({ dict }: { dict: Dictionary }) {
@@ -56,8 +57,8 @@ export function AgeCalculatorTool({ dict }: { dict: Dictionary }) {
               </div>
             ))}
           </div>
-          <p className="text-sm text-text-muted text-center">
-            🎂 Next birthday in {result.daysUntil} day{result.daysUntil !== 1 ? "s" : ""}
+          <p className="flex items-center justify-center gap-1.5 text-sm text-text-muted text-center">
+            <CakeIcon size={13} /> Next birthday in {result.daysUntil} day{result.daysUntil !== 1 ? "s" : ""}
           </p>
         </div>
       ) : (

@@ -1,6 +1,7 @@
 import { Metadata } from "next";
 import Link from "next/link";
 import { isLocale, defaultLocale, localePath } from "@/lib/i18n/config";
+import { BugIcon, LightbulbIcon, BriefcaseIcon, LockIcon, ClipboardIcon, MailIcon } from "@/components/icons/GameIcons";
 
 export async function generateMetadata({ params }: { params: { locale: string } }): Promise<Metadata> {
   const isRu = params.locale === "ru";
@@ -15,17 +16,17 @@ export default function ContactPage({ params }: { params: { locale: string } }) 
   const isRu   = locale === "ru";
 
   const TOPICS = isRu ? [
-    { icon:"🐛", title:"Баг-репорт",          desc:"Нашёл баг в инструменте или на платформе?" },
-    { icon:"💡", title:"Запрос инструмента",   desc:"Есть идея инструмента который был бы полезен?" },
-    { icon:"💼", title:"Pro план и оплата",    desc:"Вопросы по подписке, возврат средств." },
-    { icon:"🔒", title:"Безопасность",         desc:"Нашёл уязвимость? Сообщи нам ответственно." },
-    { icon:"📋", title:"Общие вопросы",        desc:"Что-то ещё что не попадает в другие категории." },
+    { icon:BugIcon,       title:"Баг-репорт",          desc:"Нашёл баг в инструменте или на платформе?" },
+    { icon:LightbulbIcon, title:"Запрос инструмента",   desc:"Есть идея инструмента который был бы полезен?" },
+    { icon:BriefcaseIcon, title:"Pro план и оплата",    desc:"Вопросы по подписке, возврат средств." },
+    { icon:LockIcon,      title:"Безопасность",         desc:"Нашёл уязвимость? Сообщи нам ответственно." },
+    { icon:ClipboardIcon, title:"Общие вопросы",        desc:"Что-то ещё что не попадает в другие категории." },
   ] : [
-    { icon:"🐛", title:"Bug report",           desc:"Found a bug in a tool or on the platform?" },
-    { icon:"💡", title:"Tool request",         desc:"Have an idea for a tool that would be useful?" },
-    { icon:"💼", title:"Pro & billing",        desc:"Questions about your subscription or refunds." },
-    { icon:"🔒", title:"Security",             desc:"Found a vulnerability? Please disclose responsibly." },
-    { icon:"📋", title:"General",              desc:"Anything else that doesn't fit other categories." },
+    { icon:BugIcon,       title:"Bug report",           desc:"Found a bug in a tool or on the platform?" },
+    { icon:LightbulbIcon, title:"Tool request",         desc:"Have an idea for a tool that would be useful?" },
+    { icon:BriefcaseIcon, title:"Pro & billing",        desc:"Questions about your subscription or refunds." },
+    { icon:LockIcon,      title:"Security",             desc:"Found a vulnerability? Please disclose responsibly." },
+    { icon:ClipboardIcon, title:"General",              desc:"Anything else that doesn't fit other categories." },
   ];
 
   return (
@@ -41,7 +42,7 @@ export default function ContactPage({ params }: { params: { locale: string } }) 
 
       {/* Email CTA */}
       <div className="rounded-xl border border-border bg-surface p-6 mb-8 text-center">
-        <p className="text-2xl mb-3">✉️</p>
+        <div className="mb-3 flex justify-center text-text-secondary"><MailIcon size={28} /></div>
         <p className="text-base font-semibold text-text-primary mb-1">gyryseksa@outlook.com</p>
         <p className="text-xs text-text-muted mb-4">
           {isRu ? "Обычно отвечаем в течение 24-48 часов" : "We typically respond within 24-48 hours"}
@@ -62,7 +63,7 @@ export default function ContactPage({ params }: { params: { locale: string } }) 
           {TOPICS.map(t => (
             <a key={t.title} href="mailto:gyryseksa@outlook.com"
               className="flex items-start gap-3 rounded-lg border border-border bg-surface p-4 hover:border-[var(--accent)]/30 hover:bg-surface-hover transition-all group">
-              <span className="text-xl shrink-0">{t.icon}</span>
+              <span className="shrink-0 rounded-lg bg-accent/10 p-1.5 text-accent"><t.icon size={16} /></span>
               <div>
                 <p className="text-sm font-medium text-text-primary group-hover:text-accent transition-colors">{t.title}</p>
                 <p className="text-xs text-text-muted mt-0.5">{t.desc}</p>

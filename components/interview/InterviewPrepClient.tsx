@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 import { INTERVIEW_QUESTIONS, DIFFICULTY_LABELS, ROLE_META, InterviewRole, InterviewDifficulty } from "@/lib/interview/questions";
 import { Locale, localePath } from "@/lib/i18n/config";
 import Link from "next/link";
+import { GameIcon, CheckIcon } from "@/components/icons/GameIcons";
 
 interface Props { locale: Locale; }
 
@@ -151,7 +152,7 @@ export function InterviewPrepClient({ locale }: Props) {
         <div className="space-y-4">
           {flashCards.length === 0 ? (
             <div className="rounded-lg border border-green-500/30 bg-green-500/10 p-8 text-center">
-              <p className="text-xl">🎉</p>
+              <div className="flex justify-center text-success"><GameIcon id="trophy" size={26} /></div>
               <p className="mt-2 font-semibold text-success">{isRu ? "Все вопросы изучены!" : "All questions studied!"}</p>
               <button onClick={() => setKnown(new Set())} className="mt-4 text-sm text-link hover:underline">
                 {isRu ? "Начать заново" : "Start over"}
@@ -199,8 +200,8 @@ export function InterviewPrepClient({ locale }: Props) {
 
                 {flipped && (
                   <button onClick={() => { toggleKnown(currentCard.id); nextCard(); }}
-                    className="flex-1 rounded border border-green-500/30 bg-green-500/10 px-4 py-2 text-sm font-medium text-success hover:bg-green-500/20 transition-colors">
-                    ✓ {isRu ? "Знаю" : "Got it"}
+                    className="flex-1 flex items-center justify-center gap-1.5 rounded border border-green-500/30 bg-green-500/10 px-4 py-2 text-sm font-medium text-success hover:bg-green-500/20 transition-colors">
+                    <CheckIcon size={13} /> {isRu ? "Знаю" : "Got it"}
                   </button>
                 )}
 

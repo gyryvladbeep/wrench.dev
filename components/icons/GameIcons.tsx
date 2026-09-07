@@ -203,3 +203,143 @@ export function LightbulbIcon({ className = "", size = 14 }: IconProps) {
     </svg>
   );
 }
+
+// Ревизия 3: продолжение эмодзи-сweeп'а — контактная страница, 404,
+// пасхалка, формы и ряд tool-компонентов всё ещё хранили пиктограммы
+// (🐛💡💼🔒📋✉️🎉🧰🔧🛠🏆📚🎭🔍🎂🔓🛡🧮📬⚡) прямо в разметке/данных.
+// Ниже — недостающие иконки той же конвенции (viewBox 16, currentColor,
+// обводка 1.4, без заливок) для этих мест.
+
+// Баг — замена "🐛" (тема "баг-репорт" на /contact).
+export function BugIcon({ className = "", size = 14 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 16 16" fill="none" className={className} aria-hidden>
+      <circle cx="8" cy="4.3" r="1.3" stroke="currentColor" strokeWidth="1.3"/>
+      <path d="M6.7 3.1L5.6 1.9M9.3 3.1l1.1-1.2" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+      <rect x="4.7" y="5.7" width="6.6" height="7.6" rx="3.3" stroke="currentColor" strokeWidth="1.4"/>
+      <path d="M4.7 8H2.3M11.3 8h2.4M4.7 10.3H2.3M11.3 10.3h2.4M4.7 12.3H2.7M11.3 12.3h2.6" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+    </svg>
+  );
+}
+
+// Портфель — замена "💼" (тема "Pro план и оплата" на /contact).
+export function BriefcaseIcon({ className = "", size = 14 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 16 16" fill="none" className={className} aria-hidden>
+      <rect x="2" y="5.5" width="12" height="8" rx="1.2" stroke="currentColor" strokeWidth="1.4"/>
+      <path d="M6 5.5V4a1.2 1.2 0 011.2-1.2h1.6A1.2 1.2 0 0110 4v1.5" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/>
+      <path d="M2 9.5h12" stroke="currentColor" strokeWidth="1.4"/>
+    </svg>
+  );
+}
+
+// Планшет со списком — замена "📋" (тема "Общие вопросы" на /contact,
+// пункт "Interview Prep" на 404).
+export function ClipboardIcon({ className = "", size = 14 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 16 16" fill="none" className={className} aria-hidden>
+      <rect x="3.5" y="3" width="9" height="11.5" rx="1.2" stroke="currentColor" strokeWidth="1.4"/>
+      <rect x="5.8" y="1.7" width="4.4" height="2.3" rx="0.8" stroke="currentColor" strokeWidth="1.4"/>
+      <path d="M5.8 7.5h4.4M5.8 10h4.4M5.8 12.5h2.8" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+    </svg>
+  );
+}
+
+// Открытая книга — замена "📚" (пункт "Knowledge Base" на 404).
+export function BookIcon({ className = "", size = 14 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 16 16" fill="none" className={className} aria-hidden>
+      <path d="M2.5 3.2c1.6-.6 3.4-.6 5 0v9.6c-1.6-.6-3.4-.6-5 0V3.2z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/>
+      <path d="M13.5 3.2c-1.6-.6-3.4-.6-5 0v9.6c1.6-.6 3.4-.6 5 0V3.2z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/>
+    </svg>
+  );
+}
+
+// Конверт — замена "✉️"/"📬" (email CTA на /contact, "письмо отправлено"
+// в ForgotPasswordForm и ComingSoonTool).
+export function MailIcon({ className = "", size = 20 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 16 16" fill="none" className={className} aria-hidden>
+      <rect x="1.5" y="3.5" width="13" height="9" rx="1.2" stroke="currentColor" strokeWidth="1.4"/>
+      <path d="M2 4.3l6 5 6-5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  );
+}
+
+// Закрытый замок — замена "🔒" (переключатель блокировки цвета в
+// Random Color Generator, тема "Безопасность" на /contact).
+export function LockIcon({ className = "", size = 14 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 16 16" fill="none" className={className} aria-hidden>
+      <rect x="3.3" y="7.2" width="9.4" height="7" rx="1.3" stroke="currentColor" strokeWidth="1.4"/>
+      <path d="M5.5 7.2V5a2.5 2.5 0 015 0v2.2" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+    </svg>
+  );
+}
+
+// Открытый замок — замена "🔓" (тот же переключатель, разблокировано).
+export function UnlockIcon({ className = "", size = 14 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 16 16" fill="none" className={className} aria-hidden>
+      <rect x="3.3" y="7.2" width="9.4" height="7" rx="1.3" stroke="currentColor" strokeWidth="1.4"/>
+      <path d="M5.5 7.2V5a2.5 2.5 0 014.5-1.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+    </svg>
+  );
+}
+
+// Щит с галочкой — замена "🛡️" (заголовок HTTP Security Headers Checker).
+export function ShieldIcon({ className = "", size = 20 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 16 16" fill="none" className={className} aria-hidden>
+      <path d="M8 1.8l5 1.8v4c0 3.4-2.1 5.9-5 6.6-2.9-.7-5-3.2-5-6.6v-4l5-1.8z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/>
+      <path d="M5.7 8l1.7 1.7L10.3 6.2" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  );
+}
+
+// Сетка/таблица — замена "🧮" (заголовок и пустое состояние Test Case
+// Matrix Generator).
+export function GridIcon({ className = "", size = 20 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 16 16" fill="none" className={className} aria-hidden>
+      <rect x="2" y="2" width="12" height="12" rx="1.2" stroke="currentColor" strokeWidth="1.4"/>
+      <path d="M2 6.7h12M2 11.3h12M6.7 2v12M11.3 2v12" stroke="currentColor" strokeWidth="1.1"/>
+    </svg>
+  );
+}
+
+// Слои — замена "🎭" (заголовок API Response Mocker: мок — это
+// "поддельный слой" данных, абстрактнее и понятнее буквальных масок).
+export function LayersIcon({ className = "", size = 20 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 16 16" fill="none" className={className} aria-hidden>
+      <path d="M8 2.2L14 5.7 8 9.2 2 5.7 8 2.2z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/>
+      <path d="M2.5 8.4L8 11.7l5.5-3.3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M2.5 11L8 14.3l5.5-3.3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  );
+}
+
+// Треугольник с восклицательным знаком — замена "⚠️"/"⚠" (предупреждения
+// в API Response Validator, HTTP Security Headers).
+export function WarningIcon({ className = "", size = 14 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 16 16" fill="none" className={className} aria-hidden>
+      <path d="M8 2L14.5 13.2H1.5L8 2z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/>
+      <path d="M8 6.5v3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+      <path d="M8 11.3v.1" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
+    </svg>
+  );
+}
+
+// Торт со свечой — замена "🎂" (Age Calculator, "до дня рождения").
+export function CakeIcon({ className = "", size = 14 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 16 16" fill="none" className={className} aria-hidden>
+      <rect x="2.5" y="8.7" width="11" height="4.8" rx="1" stroke="currentColor" strokeWidth="1.4"/>
+      <path d="M2.5 11.1h11" stroke="currentColor" strokeWidth="1.1"/>
+      <path d="M8 8.7V5.6" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+      <path d="M8 5.6c.6-.5.6-1.3 0-2-.6.7-.6 1.5 0 2z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/>
+    </svg>
+  );
+}

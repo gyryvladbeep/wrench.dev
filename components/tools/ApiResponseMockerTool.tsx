@@ -2,6 +2,7 @@
 import { useMemo, useState } from "react";
 import { CopyButton } from "@/components/CopyButton";
 import { Dictionary } from "@/lib/i18n/dictionary-types";
+import { LayersIcon, CloseIcon } from "@/components/icons/GameIcons";
 
 type MockFormat = "msw" | "json-server" | "express" | "postman";
 
@@ -104,7 +105,9 @@ export function ApiResponseMockerTool({ dict }: { dict: Dictionary }) {
     <div className="space-y-5">
       {/* Header */}
       <div className="rounded-lg border border-border bg-surface/50 p-4 flex items-start gap-3">
-        <span className="text-2xl">🎭</span>
+        <div className="shrink-0 rounded-lg bg-accent/10 p-2 text-accent">
+          <LayersIcon size={20} />
+        </div>
         <div>
           <h3 className="text-sm font-semibold text-text-primary">
             {isRu ? "Мокер API ответов" : "API Response Mocker"}
@@ -153,7 +156,9 @@ export function ApiResponseMockerTool({ dict }: { dict: Dictionary }) {
             <div className="flex items-center justify-between mb-2">
               <label className="input-label mb-0">{isRu ? "Тело ответа (JSON)" : "Response body (JSON)"}</label>
               {!isValidJson && json && (
-                <span className="text-[10px] text-red-400">✕ {isRu ? "Невалидный JSON" : "Invalid JSON"}</span>
+                <span className="flex items-center gap-1 text-[10px] text-red-400">
+                  <CloseIcon size={8} /> {isRu ? "Невалидный JSON" : "Invalid JSON"}
+                </span>
               )}
             </div>
             <textarea value={json} onChange={e => setJson(e.target.value)}

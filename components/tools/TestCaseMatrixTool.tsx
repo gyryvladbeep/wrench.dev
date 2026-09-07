@@ -2,6 +2,7 @@
 import { useMemo, useState } from "react";
 import { CopyButton } from "@/components/CopyButton";
 import { Dictionary } from "@/lib/i18n/dictionary-types";
+import { GridIcon, CloseIcon } from "@/components/icons/GameIcons";
 
 interface Param { name: string; values: string; }
 
@@ -198,7 +199,9 @@ export function TestCaseMatrixTool({ dict }: { dict: Dictionary }) {
       {/* Header */}
       <div className="rounded-lg border border-border bg-surface/50 p-4">
         <div className="flex items-start gap-3">
-          <span className="text-2xl">🧮</span>
+          <div className="shrink-0 rounded-lg bg-accent/10 p-2 text-accent">
+            <GridIcon size={20} />
+          </div>
           <div>
             <h3 className="text-sm font-semibold text-text-primary">
               {isRu ? "Матрица тест-кейсов" : "Test Case Matrix Generator"}
@@ -246,7 +249,7 @@ export function TestCaseMatrixTool({ dict }: { dict: Dictionary }) {
                     placeholder={isRu ? "Название параметра" : "Parameter name"}
                     className="code-surface flex-1 rounded px-2.5 py-1.5 text-xs text-text-primary outline-none" />
                   <button onClick={() => removeParam(i)}
-                    className="text-text-disabled hover:text-error transition-colors text-sm">✕</button>
+                    className="text-text-disabled hover:text-error transition-colors"><CloseIcon size={11} /></button>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-[10px] text-text-muted w-5 shrink-0">{isRu ? "знач." : "vals"}</span>
@@ -369,7 +372,7 @@ export function TestCaseMatrixTool({ dict }: { dict: Dictionary }) {
           {!output && parsedParams.length === 0 && (
             <div className="code-surface rounded-lg flex items-center justify-center py-16 text-center">
               <div>
-                <p className="text-2xl mb-2">🧮</p>
+                <div className="mb-2 flex justify-center text-text-muted"><GridIcon size={22} /></div>
                 <p className="text-sm text-text-muted">{isRu ? "Добавь параметры слева" : "Add parameters on the left"}</p>
               </div>
             </div>

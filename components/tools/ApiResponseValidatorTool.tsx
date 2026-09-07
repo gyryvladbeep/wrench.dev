@@ -1,6 +1,7 @@
 "use client";
 import { useMemo, useState } from "react";
 import { Dictionary } from "@/lib/i18n/dictionary-types";
+import { GameIcon, CloseIcon, WarningIcon, InfoIcon, CheckIcon } from "@/components/icons/GameIcons";
 
 type JsonValue = string | number | boolean | null | JsonValue[] | { [k: string]: JsonValue };
 
@@ -91,9 +92,9 @@ const PRESETS = [
 ];
 
 const SEV = {
-  error:   { icon:"✕", color:"text-red-400",   bg:"border-red-500/30 bg-red-500/5",     label:"Error",   labelRu:"Ошибка" },
-  warning: { icon:"⚠", color:"text-amber-400", bg:"border-amber-500/30 bg-amber-500/5", label:"Warning", labelRu:"Предупреждение" },
-  info:    { icon:"ℹ", color:"text-blue-400",  bg:"border-blue-500/30 bg-blue-500/5",   label:"Info",    labelRu:"Инфо" },
+  error:   { icon:CloseIcon,   color:"text-red-400",   bg:"border-red-500/30 bg-red-500/5",     label:"Error",   labelRu:"Ошибка" },
+  warning: { icon:WarningIcon, color:"text-amber-400", bg:"border-amber-500/30 bg-amber-500/5", label:"Warning", labelRu:"Предупреждение" },
+  info:    { icon:InfoIcon,    color:"text-blue-400",  bg:"border-blue-500/30 bg-blue-500/5",   label:"Info",    labelRu:"Инфо" },
 };
 
 const TYPE_LABELS: Record<string, [string, string]> = {
@@ -132,7 +133,9 @@ export function ApiResponseValidatorTool({ dict }: { dict: Dictionary }) {
   return (
     <div className="space-y-5">
       <div className="rounded-lg border border-border bg-surface/50 p-4 flex items-start gap-3">
-        <span className="text-2xl">🔍</span>
+        <div className="shrink-0 rounded-lg bg-accent/10 p-2 text-accent">
+          <GameIcon id="magnifier" size={20} />
+        </div>
         <div>
           <h3 className="text-sm font-semibold text-text-primary">{isRu ? "Валидатор ответов API" : "API Response Validator"}</h3>
           <p className="text-xs text-text-muted mt-0.5">{isRu ? "Вставь схему (из Swagger/Postman) и реальный ответ — найдём отсутствующие поля, неверные типы и лишние данные." : "Paste schema (from Swagger/Postman) and actual response — find missing fields, wrong types and extra data."}</p>
@@ -165,7 +168,9 @@ export function ApiResponseValidatorTool({ dict }: { dict: Dictionary }) {
           {result.ok && (
             <div className={`rounded-xl border p-4 ${isValid ? "border-green-500/30 bg-green-500/5" : errors > 0 ? "border-red-500/30 bg-red-500/5" : "border-amber-500/30 bg-amber-500/5"}`}>
               <div className="flex items-center gap-3">
-                <span className="text-3xl">{isValid ? "✅" : errors > 0 ? "❌" : "⚠️"}</span>
+                <span className={isValid ? "text-success" : errors > 0 ? "text-error" : "text-amber-400"}>
+                  {isValid ? <CheckIcon size={26} /> : errors > 0 ? <CloseIcon size={26} /> : <WarningIcon size={26} />}
+                </span>
                 <div>
                   <p className={`text-base font-bold ${isValid ? "text-success" : errors > 0 ? "text-error" : "text-amber-400"}`}>
                     {isValid ? (isRu ? "Ответ соответствует схеме" : "Response matches schema") : errors > 0 ? (isRu ? "Критичные расхождения" : "Critical mismatches") : (isRu ? "Предупреждения" : "Warnings found")}
@@ -197,7 +202,7 @@ export function ApiResponseValidatorTool({ dict }: { dict: Dictionary }) {
               return (
                 <div key={i} className={`rounded-lg border p-3 ${s.bg}`}>
                   <div className="flex items-start gap-2">
-                    <span className={`shrink-0 font-bold ${s.color}`}>{s.icon}</span>
+                    <span className={`shrink-0 ${s.color}`}><s.icon size={13} /></span>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap mb-1">
                         <code className="font-mono text-xs font-semibold text-text-primary">{issue.path}</code>
@@ -217,7 +222,7 @@ export function ApiResponseValidatorTool({ dict }: { dict: Dictionary }) {
             })}
             {result.ok && result.issues.length === 0 && (
               <div className="rounded-lg border border-green-500/30 bg-green-500/5 p-8 text-center">
-                <p className="text-3xl mb-2">🎉</p>
+                <div className="mb-2 flex justify-center text-success"><CheckIcon size={26} /></div>
                 <p className="text-sm font-semibold text-success">{isRu ? "Идеальное совпадение!" : "Perfect match!"}</p>
               </div>
             )}

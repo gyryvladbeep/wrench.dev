@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Tool } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Dictionary } from "@/lib/i18n/dictionary-types";
+import { GameIcon, MailIcon } from "@/components/icons/GameIcons";
 
 export function ComingSoonTool({ tool, dict }: { tool: Tool; dict: Dictionary }) {
   const [email, setEmail] = useState("");
@@ -13,7 +14,7 @@ export function ComingSoonTool({ tool, dict }: { tool: Tool; dict: Dictionary })
   return (
     <div className="rounded-[12px] border border-border bg-surface overflow-hidden">
       <div className="border-b border-border p-8 text-center">
-        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-[12px] border border-border bg-canvas text-3xl">⚡</div>
+        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-[12px] border border-border bg-canvas text-accent"><GameIcon id="lightning" size={26} /></div>
         <h3 className="text-lg font-semibold text-text-primary">{tool.name}</h3>
         <p className="mt-2 text-sm text-text-muted leading-relaxed max-w-sm mx-auto">{t.body}</p>
       </div>
@@ -32,7 +33,7 @@ export function ComingSoonTool({ tool, dict }: { tool: Tool; dict: Dictionary })
           </form>
         ) : (
           <div className="text-center py-2">
-            <p className="text-2xl mb-2">📬</p>
+            <div className="mb-2 flex justify-center text-accent"><MailIcon size={24} /></div>
             <p className="text-sm text-accent font-medium">{t.thanks.replace("{name}",tool.name)}</p>
           </div>
         )}

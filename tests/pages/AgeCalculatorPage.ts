@@ -8,7 +8,7 @@ export class AgeCalculatorPage {
   readonly asOfInput:  Locator;
   readonly yearsValue: Locator; // крупное число "N" над "years old"
   readonly fallbackMessage: Locator;
-  readonly nextBirthdayText: Locator; // "🎂 Next birthday in N day(s)"
+  readonly nextBirthdayText: Locator; // "Next birthday in N day(s)"
 
   constructor(page: Page) {
     this.page = page;

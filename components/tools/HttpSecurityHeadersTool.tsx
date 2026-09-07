@@ -1,6 +1,7 @@
 "use client";
 import { useMemo, useState } from "react";
 import { Dictionary } from "@/lib/i18n/dictionary-types";
+import { ShieldIcon, CheckIcon, CloseIcon } from "@/components/icons/GameIcons";
 
 interface HeaderCheck {
   header:       string;
@@ -230,7 +231,9 @@ export function HttpSecurityHeadersTool({ dict }: { dict: Dictionary }) {
     <div className="space-y-5">
       {/* Header */}
       <div className="rounded-lg border border-border bg-surface/50 p-4 flex items-start gap-3">
-        <span className="text-2xl">🛡️</span>
+        <div className="shrink-0 rounded-lg bg-accent/10 p-2 text-accent">
+          <ShieldIcon size={20} />
+        </div>
         <div>
           <h3 className="text-sm font-semibold text-text-primary">
             {isRu ? "Проверка безопасности HTTP заголовков" : "HTTP Security Headers Checker"}
@@ -317,8 +320,8 @@ export function HttpSecurityHeadersTool({ dict }: { dict: Dictionary }) {
                 <div key={r.header} className={`rounded-lg border overflow-hidden transition-colors ${r.pass ? "border-border bg-surface" : sev.bg}`}>
                   <button onClick={() => toggleExpand(r.header)}
                     className="w-full flex items-center gap-3 px-3 py-2.5 text-left hover:bg-surface-hover transition-colors">
-                    <span className={`shrink-0 text-sm font-bold ${r.pass ? "text-success" : sev.color}`}>
-                      {r.pass ? "✓" : "✕"}
+                    <span className={`shrink-0 ${r.pass ? "text-success" : sev.color}`}>
+                      {r.pass ? <CheckIcon size={13} /> : <CloseIcon size={11} />}
                     </span>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">

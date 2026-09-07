@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { Dictionary } from "@/lib/i18n/dictionary-types";
 import { Locale, localePath } from "@/lib/i18n/config";
 import { Button } from "@/components/ui/button";
+import { MailIcon } from "@/components/icons/GameIcons";
 
 export function ForgotPasswordForm({ dict, locale }: { dict: Dictionary; locale: Locale }) {
   const [email, setEmail] = useState("");
@@ -33,7 +34,7 @@ export function ForgotPasswordForm({ dict, locale }: { dict: Dictionary; locale:
   if (done) {
     return (
       <div className="py-4 text-center">
-        <p className="text-2xl">📬</p>
+        <div className="flex justify-center text-text-secondary"><MailIcon size={26} /></div>
         <p className="mt-3 text-sm text-text-primary">{t.resetLinkSent}</p>
         <p className="mt-1 text-xs text-text-muted">{email}</p>
       </div>

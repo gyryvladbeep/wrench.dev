@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { GameIcon, ClipboardIcon, BookIcon } from "@/components/icons/GameIcons";
 
 export default function NotFound() {
   return (
@@ -23,8 +24,8 @@ export default function NotFound() {
       <div className="relative mb-4">
         <p className="text-[100px] font-black leading-none select-none"
           style={{ color: "var(--accent)", opacity: 0.15 }}>404</p>
-        <div className="absolute inset-0 flex items-center justify-center">
-          <span className="text-6xl animate-float">🔧</span>
+        <div className="absolute inset-0 flex items-center justify-center animate-float">
+          <GameIcon id="wrench" size={64} />
         </div>
       </div>
 
@@ -36,14 +37,14 @@ export default function NotFound() {
       {/* Suggestions */}
       <div className="mt-8 grid grid-cols-2 gap-2 text-left max-w-sm w-full">
         {[
-          { href:"/tools",      icon:"🛠",  label:"All Tools" },
-          { href:"/challenges", icon:"🏆",  label:"Challenges" },
-          { href:"/interview",  icon:"📋",  label:"Interview Prep" },
-          { href:"/knowledge",  icon:"📚",  label:"Knowledge Base" },
-        ].map(({ href, icon, label }) => (
+          { href:"/tools",      icon:(p:{size?:number}) => <GameIcon id="wrench" size={p.size} />, label:"All Tools" },
+          { href:"/challenges", icon:(p:{size?:number}) => <GameIcon id="trophy" size={p.size} />, label:"Challenges" },
+          { href:"/interview",  icon:ClipboardIcon,                                                label:"Interview Prep" },
+          { href:"/knowledge",  icon:BookIcon,                                                     label:"Knowledge Base" },
+        ].map(({ href, icon: Icon, label }) => (
           <Link key={href} href={href}
             className="flex items-center gap-2.5 rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-text-muted hover:bg-surface-hover hover:text-text-primary hover:border-[var(--accent)]/30 transition-all">
-            <span>{icon}</span>
+            <Icon size={15} />
             {label}
           </Link>
         ))}

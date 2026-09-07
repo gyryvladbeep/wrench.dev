@@ -12,6 +12,7 @@ import { localizeTool } from "@/lib/i18n/localize";
 import { ToolPickerModal } from "@/components/workbench/ToolPickerModal";
 import { WorkbenchGrid } from "@/components/workbench/WorkbenchGrid";
 import { WORKBENCH_UI, formatWorkbenchString } from "@/lib/i18n/workbench-content";
+import { GameIcon } from "@/components/icons/GameIcons";
 
 export default function WorkbenchPage() {
   const { user, loading, isSigningOut } = useAuth();
@@ -217,7 +218,7 @@ export default function WorkbenchPage() {
 
           {activeTools.length === 0 ? (
             <div className="rounded-lg border border-border bg-surface p-10 text-center">
-              <p className="mb-3 text-2xl">🧰</p>
+              <div className="mb-3 flex justify-center text-text-muted"><GameIcon id="wrench" size={28} /></div>
               <p className="font-medium text-text-secondary">{t.emptyTitle}</p>
               <p className="mt-2 text-sm text-text-muted">{t.emptyBody}</p>
               <button

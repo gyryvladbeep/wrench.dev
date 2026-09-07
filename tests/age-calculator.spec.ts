@@ -57,6 +57,6 @@ test.describe("Age Calculator", () => {
     const expected = computeAge("1990-06-16", "2024-06-15");
     expect(expected.daysUntil).toBe(1);
 
-    await expect(tool.nextBirthdayText).toHaveText("🎂 Next birthday in 1 day");
+    await expect(tool.nextBirthdayText).toHaveText("Next birthday in 1 day");
   });
 });

@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { localePath } from "@/lib/i18n/config";
 import { useDict } from "@/lib/i18n/dict-context";
+import { GameIcon } from "@/components/icons/GameIcons";
 
 export default function ProSuccessPage() {
   const { locale } = useDict();
@@ -9,7 +10,7 @@ export default function ProSuccessPage() {
 
   return (
     <div className="mx-auto max-w-lg px-5 py-20 text-center">
-      <div className="mb-6 text-5xl">🎉</div>
+      <div className="mb-6 flex justify-center text-accent"><GameIcon id="crown" size={48} /></div>
       <h1 className="text-2xl font-bold text-text-primary">
         {isRu ? "Добро пожаловать в Pro!" : "Welcome to Pro!"}
       </h1>

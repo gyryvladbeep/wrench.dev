@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { GameIcon, GameIconId } from "@/components/icons/GameIcons";
 
 const KONAMI = ["ArrowUp","ArrowUp","ArrowDown","ArrowDown","ArrowLeft","ArrowRight","ArrowLeft","ArrowRight","b","a"];
 
@@ -42,17 +43,17 @@ function Confetti() {
 export function EasterEgg() {
   const [keys,   setKeys]   = useState<string[]>([]);
   const [active, setActive] = useState(false);
-  const [emoji,  setEmoji]  = useState("");
+  const [icon,   setIcon]   = useState<GameIconId>("sparkle");
 
   useEffect(() => {
-    const EMOJIS = ["🎉","🔧","🚀","⭐","🏆","💎","🎯","⚡"];
+    const ICONS: GameIconId[] = ["sparkle","wrench","rocket","star","trophy","diamond","target","lightning"];
 
     function onKey(e: KeyboardEvent) {
       setKeys(prev => {
         const next = [...prev, e.key].slice(-KONAMI.length);
         if (next.join(",") === KONAMI.join(",")) {
           setActive(true);
-          setEmoji(EMOJIS[Math.floor(Math.random() * EMOJIS.length)]);
+          setIcon(ICONS[Math.floor(Math.random() * ICONS.length)]);
           setTimeout(() => setActive(false), 4000);
           return [];
         }
@@ -71,9 +72,11 @@ export function EasterEgg() {
       <Confetti />
       <div className="pointer-events-none fixed inset-0 z-[9998] flex items-center justify-center">
         <div className="animate-scale-in rounded-2xl border border-border bg-canvas/95 backdrop-blur-md px-8 py-6 text-center shadow-2xl">
-          <p className="text-5xl mb-3">{emoji}</p>
+          <div className="mb-3 flex justify-center text-accent"><GameIcon id={icon} size={48} /></div>
           <p className="text-lg font-bold text-text-primary">Konami Code!</p>
-          <p className="text-sm text-text-muted mt-1">You found the easter egg 🔧</p>
+          <p className="flex items-center justify-center gap-1.5 text-sm text-text-muted mt-1">
+            You found the easter egg <GameIcon id="wrench" size={13} />
+          </p>
         </div>
       </div>
     </>

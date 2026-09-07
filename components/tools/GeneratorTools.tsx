@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { CopyButton } from "@/components/CopyButton";
 import { Dictionary } from "@/lib/i18n/dictionary-types";
+import { LockIcon, UnlockIcon } from "@/components/icons/GameIcons";
 
 // ─── Random Color Generator ───────────────────────────────────────────────────
 function hexToRgb(hex: string) {
@@ -68,7 +69,7 @@ export function RandomColorTool({ dict }: { dict: Dictionary }) {
                 <button onClick={() => setLocked((p) => p.map((v, j) => j === i ? !v : v))}
                   title={locked[i] ? "Unlock" : "Lock"}
                   className={`text-sm ${locked[i] ? "text-accent" : "text-text-muted hover:text-text-primary"}`}>
-                  {locked[i] ? "🔒" : "🔓"}
+                  {locked[i] ? <LockIcon size={14} /> : <UnlockIcon size={14} />}
                 </button>
                 <CopyButton value={hex.toUpperCase()} label={dict.common.copy} copiedLabel={dict.common.copied} />
               </div>
