@@ -29,7 +29,7 @@ interface IconProps {
 export type GameIconId =
   | "wrench" | "gear" | "rocket" | "star" | "sparkle" | "crown"
   | "lightning" | "fire" | "flag" | "diamond" | "target"
-  | "trophy" | "magnifier" | "palette" | "medal" | "flask";
+  | "trophy" | "magnifier" | "palette" | "medal" | "flask" | "brackets";
 
 const icons: Record<GameIconId, (p: IconProps) => JSX.Element> = {
   wrench: ({ className = "", size = 16 }) => (
@@ -110,10 +110,9 @@ const icons: Record<GameIconId, (p: IconProps) => JSX.Element> = {
   ),
   palette: ({ className = "", size = 16 }) => (
     <svg width={size} height={size} viewBox="0 0 16 16" fill="none" className={className} aria-hidden>
-      <path d="M8 2C4.7 2 2 4.5 2 8.2 2 10.5 3.4 12 5.3 12c.7 0 1-.4 1-1s-.4-.9-.4-1.6c0-.9.9-1.4 1.9-1.4H10c2.2 0 4-1.4 4-3.6C14 2.9 11.3 2 8 2z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/>
-      <circle cx="5.2" cy="6" r="0.8" stroke="currentColor" strokeWidth="1.4"/>
-      <circle cx="7.5" cy="4.3" r="0.8" stroke="currentColor" strokeWidth="1.4"/>
-      <circle cx="10.2" cy="5.3" r="0.8" stroke="currentColor" strokeWidth="1.4"/>
+      <path d="M8 1.7a6.3 6.3 0 100 12.6c.9 0 1.5-.6 1.5-1.4 0-.4-.2-.7-.2-1.2 0-.8.6-1.3 1.5-1.3h1.1c1.5 0 2.6-1.2 2.6-2.7A6.3 6.3 0 008 1.7z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/>
+      <circle cx="5.4" cy="6.3" r="0.9" stroke="currentColor" strokeWidth="1.4"/>
+      <circle cx="9.4" cy="4.6" r="0.9" stroke="currentColor" strokeWidth="1.4"/>
     </svg>
   ),
   medal: ({ className = "", size = 16 }) => (
@@ -126,6 +125,15 @@ const icons: Record<GameIconId, (p: IconProps) => JSX.Element> = {
     <svg width={size} height={size} viewBox="0 0 16 16" fill="none" className={className} aria-hidden>
       <path d="M6.5 1.5v5.3L2.8 12a1.5 1.5 0 001.3 2.3h7.8a1.5 1.5 0 001.3-2.3L9.5 6.8V1.5" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/>
       <path d="M5.5 1.5h5M4.5 10h7" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+    </svg>
+  ),
+  // Code brackets — используется для Frontend-дисциплины/бейджа вместо
+  // palette: инструменты этой группы (селекторы, форматирование,
+  // кодирование) про код, а не про рисование, плюс форма геометричнее
+  // и однозначнее на маленьком размере, чем "капля" палитры.
+  brackets: ({ className = "", size = 16 }) => (
+    <svg width={size} height={size} viewBox="0 0 16 16" fill="none" className={className} aria-hidden>
+      <path d="M6 3.5L2 8l4 4.5M10 3.5l4 4.5-4 4.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
     </svg>
   ),
 };

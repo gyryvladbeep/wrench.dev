@@ -54,7 +54,10 @@ export function RoleSelector({ isRu, onSelect, onDismiss }: RoleSelectorProps) {
             style={{ borderColor: undefined }}
             onMouseEnter={(e) => (e.currentTarget.style.borderColor = `${d.color}60`)}
             onMouseLeave={(e) => (e.currentTarget.style.borderColor = "")}>
-            <span style={{ color: d.color }}><GameIcon id={d.icon} size={22} /></span>
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl"
+              style={{ background: `${d.color}15`, color: d.color }}>
+              <GameIcon id={d.icon} size={20} />
+            </span>
             <span className="text-xs font-medium text-text-primary text-center">{isRu ? d.labelRu : d.labelEn}</span>
           </button>
         ))}

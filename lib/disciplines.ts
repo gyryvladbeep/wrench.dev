@@ -31,7 +31,7 @@ export const DISCIPLINES: DisciplineMeta[] = [
     taglineEn: "Test design, negative testing, bug reports",
     taglineRu: "Тест-дизайн, негативное тестирование, баг-репорты",
     icon: "flask",
-    color: "#22c55e",
+    color: "#6bbd97",
     categories: ["qa"],
   },
   {
@@ -40,8 +40,8 @@ export const DISCIPLINES: DisciplineMeta[] = [
     labelRu: "Frontend Тулкит",
     taglineEn: "Selectors, formatting, encoding, text utilities",
     taglineRu: "Селекторы, форматирование, кодирование, текст",
-    icon: "palette",
-    color: "#3b82f6",
+    icon: "brackets",
+    color: "#759ac7",
     categories: ["formatting", "encoding", "text", "web"],
   },
   {
@@ -51,7 +51,7 @@ export const DISCIPLINES: DisciplineMeta[] = [
     taglineEn: "Requests, mocking, hashing, status codes",
     taglineRu: "Запросы, моки, хэши, коды статусов",
     icon: "gear",
-    color: "#a78bfa",
+    color: "#9987c9",
     categories: ["api", "hash"],
   },
   {
@@ -61,7 +61,7 @@ export const DISCIPLINES: DisciplineMeta[] = [
     taglineEn: "IDs, dates, passwords, everyday helpers",
     taglineRu: "ID, даты, пароли, повседневные помощники",
     icon: "wrench",
-    color: "#f59e0b",
+    color: "#c49964",
     categories: ["generators", "datetime", "data"],
   },
 ];
