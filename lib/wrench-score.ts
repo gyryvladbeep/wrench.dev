@@ -1,3 +1,5 @@
+import type { GameIconId } from "@/components/icons/GameIcons";
+
 export interface WrenchLevel {
   id:          string;
   label:       string;
@@ -6,7 +8,10 @@ export interface WrenchLevel {
   maxScore:    number;
   color:       string;
   colorClass:  string;
-  icon:        string;
+  // Раньше тут лежал эмодзи прямо в данных (🔧⚙️🚀⭐👑) — эмодзи из
+  // продукта убираем везде, поэтому теперь тут id иконки из
+  // components/icons/GameIcons.tsx, а рендерит его <GameIcon id={...}/>.
+  icon:        GameIconId;
   description: string;
   descriptionRu: string;
 }
@@ -15,35 +20,35 @@ export const LEVELS: WrenchLevel[] = [
   {
     id: "apprentice", label: "Apprentice", labelRu: "Ученик",
     minScore: 0, maxScore: 99, color: "#71717a", colorClass: "text-zinc-400",
-    icon: "🔧",
+    icon: "wrench",
     description: "Just getting started. Explore the tools!",
     descriptionRu: "Только начинаешь. Исследуй инструменты!",
   },
   {
     id: "engineer", label: "Engineer", labelRu: "Инженер",
     minScore: 100, maxScore: 299, color: "#3b82f6", colorClass: "text-blue-400",
-    icon: "⚙️",
+    icon: "gear",
     description: "Getting comfortable with the toolbox.",
     descriptionRu: "Уверенно осваиваешь инструменты.",
   },
   {
     id: "senior", label: "Senior", labelRu: "Сеньор",
     minScore: 300, maxScore: 699, color: "#8b5cf6", colorClass: "text-violet-400",
-    icon: "🚀",
+    icon: "rocket",
     description: "Solid skills. Challenges are no problem.",
     descriptionRu: "Сильные навыки. Challenges не проблема.",
   },
   {
     id: "expert", label: "Expert", labelRu: "Эксперт",
     minScore: 700, maxScore: 1499, color: "#f59e0b", colorClass: "text-amber-400",
-    icon: "⭐",
+    icon: "star",
     description: "Top tier. You know your stuff.",
     descriptionRu: "Высший уровень. Знаешь своё дело.",
   },
   {
     id: "master", label: "Master", labelRu: "Мастер",
     minScore: 1500, maxScore: Infinity, color: "#10b981", colorClass: "text-emerald-400",
-    icon: "👑",
+    icon: "crown",
     description: "Legendary status. The toolbox bows to you.",
     descriptionRu: "Легендарный статус. Инструменты склоняются перед тобой.",
   },

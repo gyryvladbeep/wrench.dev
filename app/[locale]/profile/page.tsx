@@ -13,6 +13,7 @@ import { useWorkbenches } from "@/lib/hooks/useWorkbenches";
 import { allTools } from "@/lib/tools-registry";
 import { WrenchScorePanel } from "@/components/WrenchScorePanel";
 import { THEME_COLORS, applyAndSaveAccent } from "@/components/ThemeProvider";
+import { GameIcon, CheckIcon, StarIcon, type GameIconId } from "@/components/icons/GameIcons";
 
 const ROLE_TAGS = [
   { id:"qa",        label:"QA Engineer",        labelRu:"QA-инженер" },
@@ -260,17 +261,21 @@ export default function ProfilePage() {
         </button>
       </div>
 
-      {/* Quick stats row */}
+      {/* Quick stats row — раньше у каждой карточки было поле icon с
+          эмодзи, но оно нигде не рендерилось (мёртвый код), а «Серия»
+          вообще вставляла 🔥 прямо в число. Теперь иконка реально
+          показывается (маленькая, над числом), а число — чистое. */}
       {stats && (
         <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {[
-            { label: isRu ? "Решено"   : "Solved",         value: stats.total_solved,   icon: "✓" },
-            { label: isRu ? "Очки"     : "Points",          value: stats.total_points,   icon: "⭐" },
-            { label: isRu ? "Серия"    : "Streak",          value: `${stats.current_streak}🔥`, icon: "🔥" },
-            { label: isRu ? "AI сегодня": "AI today",       value: isPro ? "∞" : `${aiUsed}/3`, icon: "🤖" },
-          ].map(({ label, value, icon }) => (
+          {([
+            { label: isRu ? "Решено"    : "Solved",    value: String(stats.total_solved),               icon: "target"    as GameIconId },
+            { label: isRu ? "Очки"      : "Points",    value: String(stats.total_points),               icon: "star"      as GameIconId },
+            { label: isRu ? "Серия"     : "Streak",    value: String(stats.current_streak),             icon: "fire"      as GameIconId },
+            { label: isRu ? "AI сегодня": "AI today",  value: isPro ? "∞" : `${aiUsed}/3`,               icon: "sparkle"   as GameIconId },
+          ]).map(({ label, value, icon }) => (
             <div key={label} className="rounded-lg border border-border bg-surface p-4 text-center">
-              <p className="text-2xl font-bold text-text-primary">{value}</p>
+              <div className="flex justify-center text-text-muted"><GameIcon id={icon} size={16} /></div>
+              <p className="mt-1 text-2xl font-bold text-text-primary">{value}</p>
               <p className="mt-0.5 text-xs text-text-muted">{label}</p>
             </div>
           ))}
@@ -320,7 +325,7 @@ export default function ProfilePage() {
               </p>
             </div>
             <Link href={localePath(locale, "/workbench")}
-              className="shrink-0 rounded bg-accent px-3 py-1.5 text-xs font-medium text-accent-fg hover:bg-amber-400 transition-colors">
+              className="shrink-0 rounded bg-accent px-3 py-1.5 text-xs font-medium text-accent-fg transition-opacity hover:opacity-90">
               {workbenchToolCount > 0 ? (isRu ? "Открыть" : "Open") : (isRu ? "Попробовать" : "Try it")}
             </Link>
           </div>
@@ -363,7 +368,7 @@ export default function ProfilePage() {
                   return (
                     <div key={bid} title={isRu ? b.descriptionRu : b.description}
                       className={`flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs ${BADGE_COLOR[b.color] ?? BADGE_COLOR.amber}`}>
-                      <span>{b.icon}</span>
+                      <GameIcon id={b.icon} size={13} />
                       <span className="font-medium">{isRu ? b.labelRu : b.label}</span>
                     </div>
                   );
@@ -400,7 +405,7 @@ export default function ProfilePage() {
                   <p className="text-xs text-text-muted mt-0.5">AI: {aiUsed}/3 {isRu ? "сегодня" : "today"}</p>
                 </div>
                 <Link href={localePath(locale, "/pro")}
-                  className="rounded bg-accent px-3 py-1.5 text-xs font-medium text-accent-fg hover:bg-amber-400 transition-colors">
+                  className="rounded bg-accent px-3 py-1.5 text-xs font-medium text-accent-fg transition-opacity hover:opacity-90">
                   {isRu ? "Перейти на Pro" : "Upgrade to Pro"}
                 </Link>
               </div>
@@ -453,11 +458,11 @@ export default function ProfilePage() {
             const earned = badges.includes(b.id);
             return (
               <div key={b.id} className={`flex items-start gap-3 rounded-lg border p-4 transition-colors ${earned ? `${BADGE_COLOR[b.color] ?? "border-border bg-surface"}` : "border-border bg-surface opacity-40"}`}>
-                <span className="text-2xl">{b.icon}</span>
+                <GameIcon id={b.icon} size={24} />
                 <div>
                   <p className={`text-sm font-semibold ${earned ? "" : "text-text-muted"}`}>
                     {isRu ? b.labelRu : b.label}
-                    {earned && <span className="ml-2 text-xs opacity-70">✓</span>}
+                    {earned && <span className="ml-2 inline-flex align-middle opacity-70"><CheckIcon size={11} /></span>}
                   </p>
                   <p className="text-xs text-text-muted mt-0.5">
                     {isRu ? b.descriptionRu : b.description}
@@ -474,15 +479,15 @@ export default function ProfilePage() {
         <div className="space-y-3">
           {favorites.length === 0 ? (
             <div className="rounded-lg border border-border bg-surface p-10 text-center">
-              <p className="text-2xl mb-3">⭐</p>
+              <div className="mb-3 flex justify-center text-text-muted"><StarIcon size={28} /></div>
               <p className="text-text-secondary font-medium">
                 {isRu ? "Нет избранных инструментов" : "No favorite tools yet"}
               </p>
               <p className="mt-2 text-sm text-text-muted">
-                {isRu ? "Нажми ★ рядом с любым инструментом чтобы добавить в избранное." : "Click ★ next to any tool to add it to favorites."}
+                {isRu ? "Нажми на звёздочку рядом с любым инструментом, чтобы добавить его в избранное." : "Click the star icon next to any tool to add it to favorites."}
               </p>
               <Link href={localePath(locale, "/tools")}
-                className="mt-4 inline-block rounded bg-accent px-4 py-2 text-sm font-medium text-accent-fg hover:bg-amber-400 transition-colors">
+                className="mt-4 inline-block rounded bg-accent px-4 py-2 text-sm font-medium text-accent-fg transition-opacity hover:opacity-90">
                 {isRu ? "Перейти к инструментам" : "Browse tools"}
               </Link>
             </div>
@@ -503,8 +508,8 @@ export default function ProfilePage() {
                       </Link>
                       <button onClick={() => toggle(slug)}
                         title={isRu ? "Убрать из избранного" : "Remove from favorites"}
-                        className="shrink-0 text-accent hover:text-text-muted transition-colors text-lg leading-none">
-                        ★
+                        className="shrink-0 text-accent hover:text-text-muted transition-colors">
+                        <StarIcon size={16} filled />
                       </button>
                     </div>
                   );
@@ -579,8 +584,9 @@ export default function ProfilePage() {
             </div>
 
             <button onClick={saveProfile} disabled={saving}
-              className="w-full rounded bg-accent py-2.5 text-sm font-semibold text-accent-fg hover:bg-amber-400 disabled:opacity-60 transition-colors">
-              {saving ? (isRu ? "Сохраняю..." : "Saving...") : saved ? (isRu ? "✓ Сохранено" : "✓ Saved") : (isRu ? "Сохранить профиль" : "Save profile")}
+              className="flex w-full items-center justify-center gap-1.5 rounded bg-accent py-2.5 text-sm font-semibold text-accent-fg transition-opacity hover:opacity-90 disabled:opacity-60">
+              {saved && <CheckIcon size={14} />}
+              {saving ? (isRu ? "Сохраняю..." : "Saving...") : saved ? (isRu ? "Сохранено" : "Saved") : (isRu ? "Сохранить профиль" : "Save profile")}
             </button>
           </div>
 

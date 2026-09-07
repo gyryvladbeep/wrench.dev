@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/lib/auth/auth-context";
 import { calcWrenchScore, getLevel } from "@/lib/wrench-score";
+import { GameIcon } from "@/components/icons/GameIcons";
 
 export function WrenchScoreBadge() {
   const { user }   = useAuth();
@@ -36,7 +37,7 @@ export function WrenchScoreBadge() {
     <span title={`${level.label} · ${score} pts`}
       className="flex items-center gap-1 rounded border px-1.5 py-px text-[10px] font-semibold transition-colors"
       style={{ borderColor: level.color + "40", background: level.color + "15", color: level.color }}>
-      {level.icon} {level.label}
+      <GameIcon id={level.icon} size={11} /> {level.label}
     </span>
   );
 }

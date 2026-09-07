@@ -1,5 +1,6 @@
 "use client";
 import { calcWrenchScore, getLevel, getNextLevel, getLevelProgress, LEVELS } from "@/lib/wrench-score";
+import { GameIcon } from "@/components/icons/GameIcons";
 
 interface Props {
   stats: {
@@ -23,7 +24,7 @@ export function WrenchScorePanel({ stats, toolsUsed, badgesCount, isRu }: Props)
     <div className="rounded-lg border bg-surface overflow-hidden" style={{ borderColor: level.color + "30" }}>
       {/* Header */}
       <div className="px-5 py-4 flex items-center gap-4" style={{ background: level.color + "08" }}>
-        <span className="text-4xl">{level.icon}</span>
+        <span style={{ color: level.color }}><GameIcon id={level.icon} size={34} /></span>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <h2 className="text-lg font-bold" style={{ color: level.color }}>
@@ -88,7 +89,7 @@ export function WrenchScorePanel({ stats, toolsUsed, badgesCount, isRu }: Props)
             return (
               <div key={l.id} className={`flex items-center gap-3 rounded-md px-3 py-2 ${isCurrent ? "border" : "opacity-50"}`}
                 style={isCurrent ? { borderColor: l.color + "40", background: l.color + "10" } : {}}>
-                <span className="text-base">{l.icon}</span>
+                <span style={{ color: isPassed ? l.color : undefined }}><GameIcon id={l.icon} size={16} /></span>
                 <span className="text-xs font-medium" style={{ color: isPassed ? l.color : undefined }}>
                   {isRu ? l.labelRu : l.label}
                 </span>
