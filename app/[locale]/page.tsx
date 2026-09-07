@@ -37,7 +37,18 @@ export default function HomePage({ params }: { params: { locale: string } }) {
         online-тулзами — и называет её нежелательной. Это task-centric,
         а не feature-centric формулировка.
       */}
-      <section className="border-b border-border">
+      <section className="relative overflow-hidden border-b border-border">
+        {/*
+          Лёгкое "космическое" свечение конкретно за hero — поверх общего
+          звёздного фона на всём сайте (.cosmic-bg в globals.css). Только
+          здесь, на входном экране, чуть заметнее остального — дальше по
+          странице фон снова тихий. Статично, без анимации, обрезано
+          по границам секции (overflow-hidden), в контент не вмешивается.
+        */}
+        <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10">
+          <div className="absolute left-1/2 top-[-160px] h-[420px] w-[820px] -translate-x-1/2 rounded-full bg-accent/10 blur-[110px]" />
+          <div className="absolute right-[-140px] top-[20px] h-[280px] w-[280px] rounded-full bg-indigo-500/10 blur-[100px]" />
+        </div>
         <div className="mx-auto max-w-5xl px-5 py-14">
           <div className="mb-2 flex flex-wrap items-center gap-2">
             <span className="rounded border border-border bg-surface px-2 py-0.5 text-xs text-text-muted font-mono">
@@ -62,7 +73,7 @@ export default function HomePage({ params }: { params: { locale: string } }) {
 
           <div className="mt-6 flex flex-wrap gap-3">
             <Link href={localePath(locale, "/tools")}
-              className="rounded bg-accent px-4 py-2 text-sm font-medium text-accent-fg hover:bg-amber-400 transition-colors">
+              className="rounded bg-accent px-4 py-2 text-sm font-medium text-accent-fg transition-opacity hover:opacity-90">
               {isRu ? "Все инструменты" : "Browse tools"}
             </Link>
           </div>
@@ -167,7 +178,7 @@ export default function HomePage({ params }: { params: { locale: string } }) {
                 </p>
               </div>
               <Link href={localePath(locale, "/challenges")}
-                className="shrink-0 rounded bg-accent px-5 py-2.5 text-sm font-medium text-accent-fg hover:bg-amber-400 transition-colors text-center">
+                className="shrink-0 rounded bg-accent px-5 py-2.5 text-sm font-medium text-accent-fg transition-opacity hover:opacity-90 text-center">
                 {isRu ? "Попробовать задачу" : "Try a Challenge"}
               </Link>
             </div>

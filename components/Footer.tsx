@@ -44,7 +44,7 @@ export function Footer({ dict, locale }: FooterProps) {
           <div className="col-span-2 sm:col-span-1 lg:col-span-2">
             <Link href={localePath(locale, "/")} className="flex items-center gap-2 mb-3 hover:opacity-80 transition-opacity w-fit">
               <LOGO />
-              <span className="text-sm font-bold text-text-primary">Wrench-Branch</span>
+              <span className="font-heading text-sm font-bold text-text-primary">Wrench-Branch</span>
             </Link>
             <p className="text-xs text-text-muted leading-relaxed max-w-[220px]">
               {isRu

@@ -208,7 +208,7 @@ function AvatarMenu() {
         {dict.auth.signIn}
       </Link>
       <Link href={localePath(locale, "/auth/signup")}
-        className="rounded bg-accent px-3 py-1.5 text-xs font-medium text-accent-fg hover:bg-amber-400 transition-colors">
+        className="rounded bg-accent px-3 py-1.5 text-xs font-medium text-accent-fg transition-opacity hover:opacity-90">
         {dict.auth.signUp}
       </Link>
     </div>
@@ -272,10 +272,12 @@ export function Header() {
       }`}>
         <div className="mx-auto flex h-12 max-w-6xl items-center gap-5 px-5">
 
-          {/* Logo */}
+          {/* Logo — вордмарк теперь на дисплейном шрифте (font-heading =
+              Unbounded), чтобы название бренда визуально отличалось от
+              обычного текста интерфейса, а не сливалось с ним. */}
           <Link href={home} className="flex shrink-0 items-center gap-2 hover:opacity-80 transition-opacity">
             <LOGO />
-            <span className="text-sm font-semibold tracking-tight">
+            <span className="font-heading text-sm font-semibold tracking-tight">
               <span className="text-text-primary">Wrench</span>
               <span className="text-text-muted">-Branch</span>
             </span>

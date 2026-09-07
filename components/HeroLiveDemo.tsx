@@ -33,7 +33,10 @@ const DEMOS: Record<DemoTool, {
       try {
         const re = new RegExp(input);
         const tests = ["user@example.com", "hello@world.io", "notanemail", "@bad.com", "test+tag@mail.co"];
-        const results = tests.map(t => `${re.test(t) ? "✓" : "✗"} ${t}`).join("\n");
+        // Раньше тут были символы "✓"/"✗" (диапазон Dingbats, формально
+        // тоже "эмодзи" по требованию убрать их отовсюду) — заменили на
+        // текстовые PASS/FAIL, той же длины, без потери читаемости.
+        const results = tests.map(t => `${re.test(t) ? "PASS" : "FAIL"}  ${t}`).join("\n");
         return { output: results, error: false };
       } catch { return { output: "// Invalid regex pattern", error: true }; }
     },
@@ -43,7 +46,7 @@ const DEMOS: Record<DemoTool, {
     title: "Base64 Encoder — Wrench-Branch",
     inputLabel: "TEXT",
     outputLabel: "BASE64",
-    defaultInput: `Hello, Wrench-Branch! 🔧`,
+    defaultInput: `Hello, Wrench-Branch!`,
     process: (input) => {
       try { return { output: btoa(unescape(encodeURIComponent(input))), error: false }; }
       catch { return { output: "// Encoding error", error: true }; }
@@ -67,6 +70,15 @@ const DEMOS: Record<DemoTool, {
     },
   },
 };
+
+// Маленькая иконка галочки в духе остальной иконки в проекте — тот же
+// path, что и на кнопке Copy ниже, вынесен отдельно, чтобы не дублировать
+// разметку и не использовать символ "✓" внутри JSX-текста.
+const CheckIcon = ({ size = 10 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 16 16" fill="none" aria-hidden>
+    <path d="M3 8l3.5 3.5L13 4.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
 
 export function HeroLiveDemo({ dict }: { dict?: unknown }) {
   const { user } = useAuth();
@@ -96,20 +108,23 @@ export function HeroLiveDemo({ dict }: { dict?: unknown }) {
         {(Object.keys(DEMOS) as DemoTool[]).map(tool => (
           <button key={tool} onClick={() => switchDemo(tool)}
             className={`rounded-md border px-2.5 py-1 text-xs transition-colors ${selected === tool
-              ? "border-[var(--accent)] bg-[var(--accent)]/10 text-[var(--accent)]"
+              ? "border-accent bg-accent/10 text-accent"
               : "border-border bg-surface text-text-muted hover:bg-surface-hover"}`}>
             {DEMOS[tool].label}
           </button>
         ))}
         {user && (
-          <span className="ml-auto text-[10px] text-text-muted">
-            ✓ {user.email?.split("@")[0]}
+          <span className="ml-auto flex items-center gap-1 text-[10px] text-text-muted">
+            <CheckIcon />
+            {user.email?.split("@")[0]}
           </span>
         )}
       </div>
 
-      {/* Demo window */}
-      <div className="overflow-hidden rounded-lg border border-border bg-[#0e0e13] shadow-xl transition-colors focus-within:border-[var(--accent)]">
+      {/* Demo window — лёгкое акцентное свечение по контуру (в духе
+          космической темы hero), не только на фокусе, но постоянно —
+          едва заметное, чтобы окно выглядело чуть "живее" на новом фоне. */}
+      <div className="overflow-hidden rounded-lg border border-border bg-surface shadow-xl shadow-black/40 ring-1 ring-accent/10 transition-colors focus-within:border-accent">
         {/* Title bar */}
         <div className="flex items-center justify-between border-b border-border px-4 py-2.5">
           <div className="flex items-center gap-1.5">
@@ -119,9 +134,9 @@ export function HeroLiveDemo({ dict }: { dict?: unknown }) {
           </div>
           <span className="text-[11px] text-text-muted font-mono">{demo.title}</span>
           <button onClick={handleCopy} disabled={!output || error}
-            className={`rounded p-1 text-xs transition-colors disabled:opacity-30 ${copied ? "text-[var(--accent)]" : "text-text-muted hover:text-text-primary"}`}>
+            className={`rounded p-1 text-xs transition-colors disabled:opacity-30 ${copied ? "text-accent" : "text-text-muted hover:text-text-primary"}`}>
             {copied
-              ? <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 8l3.5 3.5L13 4.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              ? <CheckIcon size={14} />
               : <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="5" y="5" width="8" height="8" rx="1.5" stroke="currentColor" strokeWidth="1.4"/><path d="M11 5V4a1 1 0 00-1-1H4a1 1 0 00-1 1v6a1 1 0 001 1h1" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>
             }
           </button>
