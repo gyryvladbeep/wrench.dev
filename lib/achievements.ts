@@ -1,28 +1,32 @@
+import type { GameIconId } from "@/components/icons/GameIcons";
+
 export interface Badge {
   id:          string;
   label:       string;
   labelRu:     string;
   description: string;
   descriptionRu: string;
-  icon:        string;
+  // Раньше тут был эмодзи прямо в данных — убрали эмодзи из продукта
+  // целиком, теперь тут id иконки из components/icons/GameIcons.tsx.
+  icon:        GameIconId;
   color:       string;
 }
 
 export const BADGES: Badge[] = [
-  { id: "first_solve",    label: "First Blood",     labelRu: "Первая кровь",    description: "Solved your first challenge",        descriptionRu: "Решил первую задачу",             icon: "⚡", color: "amber" },
-  { id: "streak_3",      label: "On Fire",         labelRu: "В огне",          description: "3-day streak",                       descriptionRu: "Серия 3 дня",                     icon: "🔥", color: "orange" },
-  { id: "streak_7",      label: "Week Warrior",    labelRu: "Воин недели",     description: "7-day streak",                       descriptionRu: "Серия 7 дней",                    icon: "🗡", color: "red" },
-  { id: "streak_30",     label: "Unstoppable",     labelRu: "Неостановимый",   description: "30-day streak",                      descriptionRu: "Серия 30 дней",                   icon: "💎", color: "violet" },
-  { id: "solved_10",     label: "Getting Started", labelRu: "Хорошее начало",  description: "Solved 10 challenges",               descriptionRu: "10 решённых задач",               icon: "🎯", color: "blue" },
-  { id: "solved_50",     label: "Challenger",      labelRu: "Претендент",      description: "Solved 50 challenges",               descriptionRu: "50 решённых задач",               icon: "🏆", color: "gold" },
-  { id: "solved_100",    label: "Champion",        labelRu: "Чемпион",         description: "Solved 100 challenges",              descriptionRu: "100 решённых задач",              icon: "👑", color: "amber" },
-  { id: "points_500",   label: "Point Hunter",    labelRu: "Охотник за очками",description: "Earned 500 points",                 descriptionRu: "500 очков",                       icon: "⭐", color: "yellow" },
-  { id: "points_1000",  label: "High Scorer",     labelRu: "Высокий балл",    description: "Earned 1000 points",                 descriptionRu: "1000 очков",                      icon: "🌟", color: "amber" },
-  { id: "qa_master",     label: "QA Master",       labelRu: "Мастер QA",       description: "Solved 10 QA challenges",            descriptionRu: "10 задач QA",                     icon: "🔍", color: "green" },
-  { id: "frontend_pro",  label: "Frontend Pro",    labelRu: "Frontend Pro",    description: "Solved 10 Frontend challenges",      descriptionRu: "10 задач Frontend",               icon: "🎨", color: "blue" },
-  { id: "backend_guru",  label: "Backend Guru",    labelRu: "Backend Guru",    description: "Solved 10 Backend challenges",       descriptionRu: "10 задач Backend",                icon: "⚙️", color: "slate" },
-  { id: "speed_demon",   label: "Speed Demon",     labelRu: "Скоростной демон",description: "Solved a hard challenge in under 60s", descriptionRu: "Решил сложную задачу за 60 сек", icon: "⚡", color: "cyan" },
-  { id: "pro_member",    label: "Pro Member",      labelRu: "Pro участник",    description: "Upgraded to Pro plan",               descriptionRu: "Перешёл на Pro план",             icon: "💜", color: "violet" },
+  { id: "first_solve",   label: "First Blood",     labelRu: "Первая кровь",     description: "Solved your first challenge",          descriptionRu: "Решил первую задачу",            icon: "lightning", color: "amber" },
+  { id: "streak_3",      label: "On Fire",         labelRu: "В огне",           description: "3-day streak",                         descriptionRu: "Серия 3 дня",                    icon: "fire",      color: "orange" },
+  { id: "streak_7",      label: "Week Warrior",    labelRu: "Воин недели",      description: "7-day streak",                         descriptionRu: "Серия 7 дней",                   icon: "flag",      color: "red" },
+  { id: "streak_30",     label: "Unstoppable",     labelRu: "Неостановимый",    description: "30-day streak",                        descriptionRu: "Серия 30 дней",                  icon: "diamond",   color: "violet" },
+  { id: "solved_10",     label: "Getting Started", labelRu: "Хорошее начало",   description: "Solved 10 challenges",                 descriptionRu: "10 решённых задач",              icon: "target",    color: "blue" },
+  { id: "solved_50",     label: "Challenger",      labelRu: "Претендент",       description: "Solved 50 challenges",                 descriptionRu: "50 решённых задач",              icon: "trophy",    color: "gold" },
+  { id: "solved_100",    label: "Champion",        labelRu: "Чемпион",          description: "Solved 100 challenges",                descriptionRu: "100 решённых задач",             icon: "crown",     color: "amber" },
+  { id: "points_500",    label: "Point Hunter",    labelRu: "Охотник за очками",description: "Earned 500 points",                    descriptionRu: "500 очков",                      icon: "star",      color: "yellow" },
+  { id: "points_1000",   label: "High Scorer",     labelRu: "Высокий балл",     description: "Earned 1000 points",                   descriptionRu: "1000 очков",                     icon: "sparkle",   color: "amber" },
+  { id: "qa_master",     label: "QA Master",       labelRu: "Мастер QA",        description: "Solved 10 QA challenges",              descriptionRu: "10 задач QA",                    icon: "magnifier", color: "green" },
+  { id: "frontend_pro",  label: "Frontend Pro",    labelRu: "Frontend Pro",     description: "Solved 10 Frontend challenges",        descriptionRu: "10 задач Frontend",              icon: "palette",   color: "blue" },
+  { id: "backend_guru",  label: "Backend Guru",    labelRu: "Backend Guru",     description: "Solved 10 Backend challenges",         descriptionRu: "10 задач Backend",               icon: "gear",      color: "slate" },
+  { id: "speed_demon",   label: "Speed Demon",     labelRu: "Скоростной демон", description: "Solved a hard challenge in under 60s", descriptionRu: "Решил сложную задачу за 60 сек", icon: "lightning", color: "cyan" },
+  { id: "pro_member",    label: "Pro Member",      labelRu: "Pro участник",     description: "Upgraded to Pro plan",                 descriptionRu: "Перешёл на Pro план",            icon: "medal",     color: "violet" },
 ];
 
 export function checkAchievements(stats: {

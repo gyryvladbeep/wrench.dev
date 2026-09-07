@@ -2,6 +2,7 @@
 import { useCallback, useMemo, useState } from "react";
 import { CopyButton } from "@/components/CopyButton";
 import { Dictionary } from "@/lib/i18n/dictionary-types";
+import { GameIcon, CheckIcon, ArrowLeftIcon, LightbulbIcon } from "@/components/icons/GameIcons";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -192,7 +193,9 @@ export function JsonMutatorTool({ dict }: { dict: Dictionary }) {
       {/* Header */}
       <div className="rounded-lg border border-border bg-surface/50 p-4">
         <div className="flex items-start gap-3">
-          <span className="text-2xl">🔬</span>
+          <div className="shrink-0 rounded-lg bg-accent/10 p-2 text-accent">
+            <GameIcon id="flask" size={20} />
+          </div>
           <div>
             <h3 className="text-sm font-semibold text-text-primary">
               {isRu ? "JSON Mutator — Негативное тестирование API" : "JSON Mutator — API Negative Testing"}
@@ -215,7 +218,9 @@ export function JsonMutatorTool({ dict }: { dict: Dictionary }) {
                 {isRu ? "JSON Body (из Postman/Swagger)" : "JSON Body (from Postman/Swagger)"}
               </label>
               {parsed.ok && (
-                <span className="text-[10px] text-success">✓ Valid JSON · {fields.length} {isRu ? "полей" : "fields"}</span>
+                <span className="inline-flex items-center gap-1 text-[10px] text-success">
+                  <CheckIcon size={10} /> Valid JSON · {fields.length} {isRu ? "полей" : "fields"}
+                </span>
               )}
             </div>
             <textarea value={input} onChange={e => { setInput(e.target.value); setSelectedPath(null); }}
@@ -286,7 +291,9 @@ export function JsonMutatorTool({ dict }: { dict: Dictionary }) {
         <div className="space-y-4">
           {!selected ? (
             <div className="code-surface rounded-lg h-full flex flex-col items-center justify-center py-16 text-center">
-              <span className="text-4xl mb-3">👈</span>
+              <div className="mb-3 text-text-muted">
+                <ArrowLeftIcon size={30} />
+              </div>
               <p className="text-sm font-medium text-text-primary">
                 {isRu ? "Выбери поле слева" : "Select a field on the left"}
               </p>
@@ -360,7 +367,7 @@ export function JsonMutatorTool({ dict }: { dict: Dictionary }) {
                             </span>
                             <button onClick={() => copyValue(mutated, key)}
                               className={`text-xs transition-colors ${copied === key ? "text-success" : "text-text-muted hover:text-text-primary"}`}>
-                              {copied === key ? "✓" : (isRu ? "Копировать" : "Copy")}
+                              {copied === key ? <CheckIcon size={11} className="inline-block" /> : (isRu ? "Копировать" : "Copy")}
                             </button>
                           </div>
                         </div>
@@ -382,7 +389,9 @@ export function JsonMutatorTool({ dict }: { dict: Dictionary }) {
                       allMutations.map((m, i) => `// Test case ${i+1}: ${m.label}\n${m.body}`).join("\n\n"),
                       "all"
                     )} className={`text-xs transition-colors ${copied === "all" ? "text-success" : "text-text-muted hover:text-text-primary"}`}>
-                      {copied === "all" ? "✓ Copied" : (isRu ? "Копировать всё" : "Copy all")}
+                      {copied === "all"
+                        ? <span className="inline-flex items-center gap-1"><CheckIcon size={11} /> Copied</span>
+                        : (isRu ? "Копировать всё" : "Copy all")}
                     </button>
                   </div>
                   <div className="max-h-[380px] overflow-y-auto space-y-2">
@@ -400,7 +409,7 @@ export function JsonMutatorTool({ dict }: { dict: Dictionary }) {
                             </div>
                             <button onClick={() => copyValue(m.body, key)}
                               className={`text-xs ${copied === key ? "text-success" : "text-text-muted hover:text-text-primary"}`}>
-                              {copied === key ? "✓" : (isRu ? "Копировать" : "Copy")}
+                              {copied === key ? <CheckIcon size={11} className="inline-block" /> : (isRu ? "Копировать" : "Copy")}
                             </button>
                           </div>
                           <pre className="p-2 font-mono text-[10px] text-text-secondary max-h-20 overflow-auto">{m.body}</pre>
@@ -417,8 +426,9 @@ export function JsonMutatorTool({ dict }: { dict: Dictionary }) {
 
       {/* Tips */}
       <div className="rounded-lg border border-border bg-surface/50 p-4">
-        <p className="text-xs font-semibold text-text-primary mb-2">
-          {isRu ? "💡 Как использовать:" : "💡 How to use:"}
+        <p className="flex items-center gap-1.5 text-xs font-semibold text-text-primary mb-2">
+          <LightbulbIcon size={13} />
+          {isRu ? "Как использовать:" : "How to use:"}
         </p>
         <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-3 text-xs text-text-muted">
           <span>1. {isRu ? "Вставь JSON body из Postman" : "Paste JSON body from Postman"}</span>
