@@ -1,5 +1,5 @@
 "use client";
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { CopyButton } from "@/components/CopyButton";
 import { Dictionary } from "@/lib/i18n/dictionary-types";
 
@@ -30,12 +30,19 @@ export function LoremIpsumTool({ dict }: { dict: Dictionary }) {
   const [lang,   setLang]   = useState<"en"|"ru">("en");
   const [seed,   setSeed]   = useState(0);
 
-  const output = useMemo(() => {
-    void seed;
+  // ФИКС: раньше вывод считался через useMemo прямо в рендере — Math.random()
+  // на сервере (SSR) и при первом рендере на клиенте даёт РАЗНЫЙ текст, из-за
+  // чего сразу после гидратации счётчик "N words · M chars" и содержимое
+  // textarea оказывались рассинхронизированы (ловилось в CI как флаки-тест:
+  // текст читался в один момент, а счётчик — уже после гидратации, с новым
+  // случайным текстом). Генерируем только на клиенте, в эффекте — SSR и
+  // первый клиентский рендер оба дают "", без расхождений.
+  const [output, setOutput] = useState("");
+  useEffect(() => {
     const ru = lang === "ru";
-    if (type === "words")      return genWords(count, ru);
-    if (type === "sentences")  return Array.from({ length: count }, () => genSentence(ru)).join(" ");
-    return Array.from({ length: count }, () => genParagraph(ru)).join("\n\n");
+    if (type === "words")      setOutput(genWords(count, ru));
+    else if (type === "sentences")  setOutput(Array.from({ length: count }, () => genSentence(ru)).join(" "));
+    else setOutput(Array.from({ length: count }, () => genParagraph(ru)).join("\n\n"));
   }, [type, count, lang, seed]);
 
   const typeLabels: Record<string, [string, string]> = {
