@@ -81,7 +81,7 @@ export default function CategoryPage({ params }: { params: { locale: string; cat
           <section>
             <h2 className="mb-5 text-sm font-semibold uppercase tracking-wider text-text-muted">{isRu ? "Доступные инструменты" : "Available"}</h2>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 stagger">
-              {impl.map((t) => <div key={t.slug} className="animate-fade-in"><ToolCard tool={t} /></div>)}
+              {impl.map((t) => <div key={t.slug} className="animate-fade-in"><ToolCard tool={t} showCategory={false} /></div>)}
             </div>
           </section>
         )}
@@ -89,7 +89,7 @@ export default function CategoryPage({ params }: { params: { locale: string; cat
           <section className="mt-10">
             <h2 className="mb-5 text-sm font-semibold uppercase tracking-wider text-text-muted">{isRu ? "В разработке" : "Coming Soon"}</h2>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {coming.map((t) => <ToolCard key={t.slug} tool={t} />)}
+              {coming.map((t) => <ToolCard key={t.slug} tool={t} showCategory={false} />)}
             </div>
           </section>
         )}

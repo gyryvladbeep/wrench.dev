@@ -153,7 +153,7 @@ export function ToolLayout({ tool, locale, dict, categoryName, related, children
             <div className="grid grid-cols-1 gap-px sm:grid-cols-3 border border-border rounded-xl overflow-hidden bg-border">
               {related.map((r) => (
                 <div key={r.slug} className="bg-canvas">
-                  <ToolCard tool={r} />
+                  <ToolCard tool={r} bordered={false} />
                 </div>
               ))}
             </div>

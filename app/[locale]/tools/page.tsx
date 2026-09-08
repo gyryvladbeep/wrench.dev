@@ -69,8 +69,8 @@ export default function ToolsIndexPage({ params }: { params: { locale: string } 
                 </Link>
               </div>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 stagger">
-                {impl.map((tool) => <div key={tool.slug} className="animate-fade-in"><ToolCard tool={tool} /></div>)}
-                {coming.map((tool) => <ToolCard key={tool.slug} tool={tool} />)}
+                {impl.map((tool) => <div key={tool.slug} className="animate-fade-in"><ToolCard tool={tool} showCategory={false} /></div>)}
+                {coming.map((tool) => <ToolCard key={tool.slug} tool={tool} showCategory={false} />)}
               </div>
             </section>
           );

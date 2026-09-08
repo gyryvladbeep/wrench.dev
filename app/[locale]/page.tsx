@@ -145,7 +145,7 @@ export default function HomePage({ params }: { params: { locale: string } }) {
         <div className="grid grid-cols-1 gap-px sm:grid-cols-2 lg:grid-cols-4 border border-border rounded-lg overflow-hidden bg-border stagger">
           {popularTools.map((t) => (
             <div key={t.slug} className="bg-canvas animate-fade-in">
-              <ToolCard tool={t} />
+              <ToolCard tool={t} bordered={false} />
             </div>
           ))}
         </div>

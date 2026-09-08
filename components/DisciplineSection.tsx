@@ -34,7 +34,7 @@ export function DisciplineSection({ discipline, locale, isRu, limit = 4 }: {
       <div className="grid grid-cols-1 gap-px sm:grid-cols-2 lg:grid-cols-4 border border-border rounded-xl overflow-hidden bg-border">
         {tools.map((t) => (
           <div key={t.slug} className="bg-canvas hover:bg-surface transition-colors">
-            <ToolCard tool={t} />
+            <ToolCard tool={t} bordered={false} />
           </div>
         ))}
       </div>
