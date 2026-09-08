@@ -29,7 +29,7 @@ interface IconProps {
 export type GameIconId =
   | "wrench" | "gear" | "rocket" | "star" | "sparkle" | "crown"
   | "lightning" | "fire" | "flag" | "diamond" | "target"
-  | "trophy" | "magnifier" | "palette" | "medal" | "flask" | "brackets";
+  | "trophy" | "magnifier" | "palette" | "medal" | "flask" | "brackets" | "gamepad";
 
 const icons: Record<GameIconId, (p: IconProps) => JSX.Element> = {
   wrench: ({ className = "", size = 16 }) => (
@@ -134,6 +134,17 @@ const icons: Record<GameIconId, (p: IconProps) => JSX.Element> = {
   brackets: ({ className = "", size = 16 }) => (
     <svg width={size} height={size} viewBox="0 0 16 16" fill="none" className={className} aria-hidden>
       <path d="M6 3.5L2 8l4 4.5M10 3.5l4 4.5-4 4.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  ),
+  // Gamepad — Gamedev-дисциплина. Тот же принцип, что у brackets: силуэт
+  // геометричнее и однозначнее на маленьком размере, чем буквальный
+  // рисунок консоли. Крестовина слева, две кнопки справа.
+  gamepad: ({ className = "", size = 16 }) => (
+    <svg width={size} height={size} viewBox="0 0 16 16" fill="none" className={className} aria-hidden>
+      <path d="M4.5 5.5h7a2.5 2.5 0 012.4 3.2l-.5 1.8a1.6 1.6 0 01-2.7.7L9.4 10H6.6l-1.3 1.2a1.6 1.6 0 01-2.7-.7l-.5-1.8A2.5 2.5 0 014.5 5.5z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/>
+      <path d="M5.3 7v2M4.3 8h2" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+      <circle cx="10" cy="7.3" r="0.5" stroke="currentColor" strokeWidth="1.4"/>
+      <circle cx="11.3" cy="8.6" r="0.5" stroke="currentColor" strokeWidth="1.4"/>
     </svg>
   ),
 };

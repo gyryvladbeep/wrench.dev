@@ -47,7 +47,7 @@ export function RoleSelector({ isRu, onSelect, onDismiss }: RoleSelectorProps) {
         <button onClick={onDismiss} aria-label={isRu ? "Закрыть" : "Dismiss"}
           className="shrink-0 text-text-disabled hover:text-text-muted transition-colors"><CloseIcon size={13} /></button>
       </div>
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
         {DISCIPLINES.map((d) => (
           <button key={d.id} onClick={() => onSelect(d.id)}
             className="group flex flex-col items-center gap-1.5 rounded-xl border border-border bg-canvas p-4 transition-all hover:scale-[1.03]"

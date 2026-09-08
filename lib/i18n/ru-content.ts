@@ -626,6 +626,10 @@ export const ruCategoryContent: Record<ToolCategory, { name: string; description
     name: "Веб",
     description: "Парсинг URL, проверка заголовков, генерация QR-кодов.",
   },
+  gamedev: {
+    name: "Геймдев",
+    description: "Таблицы лута, системы координат, независимая от FPS математика и другие инструменты для геймдева и игрового QA.",
+  },
   datetime: {
     name: "Дата и время",
     description: "Конвертация временных меток, расчёт разницы дат и парсинг cron.",
