@@ -85,6 +85,10 @@ import { JsonMutatorTool }          from "./JsonMutatorTool";
 import { TestCaseMatrixTool }       from "./TestCaseMatrixTool";
 import { ApiResponseValidatorTool } from "./ApiResponseValidatorTool";
 import { ContrastCheckerTool }      from "./ContrastCheckerTool";
+import { TilemapCoordinateConverterTool } from "./TilemapCoordinateConverterTool";
+import { FramerateIndependentMovementCalculatorTool } from "./FramerateIndependentMovementCalculatorTool";
+import { LootTableValidatorTool }   from "./LootTableValidatorTool";
+import { ResolutionSafezoneCalculatorTool } from "./ResolutionSafezoneCalculatorTool";
 
 /**
  * Single "use client" boundary for all interactive tool components.
@@ -153,6 +157,10 @@ export function ToolRenderer({
     case "test-case-matrix":          return <TestCaseMatrixTool dict={dict} />;
     case "api-response-validator":    return <ApiResponseValidatorTool dict={dict} />;
     case "contrast-checker":          return <ContrastCheckerTool dict={dict} />;
+    case "tilemap-coordinate-converter": return <TilemapCoordinateConverterTool dict={dict} />;
+    case "framerate-independent-movement-calculator": return <FramerateIndependentMovementCalculatorTool dict={dict} />;
+    case "loot-table-validator":      return <LootTableValidatorTool dict={dict} />;
+    case "resolution-safezone-calculator": return <ResolutionSafezoneCalculatorTool dict={dict} />;
     // ── API ─────────────────────────────────────────────────────────────────
     case "curl-generator":            return <CurlGeneratorTool dict={dict} />;
     case "rest-request-builder":      return <RestRequestBuilderTool dict={dict} />;
