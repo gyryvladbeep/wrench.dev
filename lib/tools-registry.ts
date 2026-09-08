@@ -390,17 +390,6 @@ export const tools: Tool[] = [
     keywords: ["random string generator", "random text generator"],
   },
   {
-    slug: "lorem-ipsum-generator",
-    name: "Lorem Ipsum Generator",
-    shortDescription: "Generate Lorem Ipsum placeholder text in any amount.",
-    longDescription: "Generate Lorem Ipsum placeholder text by words, sentences or paragraphs. Classic Lorem Ipsum or randomized variants.",
-    metaDescription: "Free Lorem Ipsum generator. Generate placeholder text by word, sentence or paragraph count. Instant.",
-    category: "generators", isImplemented: true,
-    aliases: ["placeholder text", "dummy text generator", "lorem ipsum"],
-    relatedSlugs: ["fake-test-data-generator", "word-counter"],
-    keywords: ["lorem ipsum generator", "placeholder text", "dummy text"],
-  },
-  {
     slug: "random-color-generator",
     name: "Random Color Generator",
     shortDescription: "Generate random colors in HEX, RGB and HSL.",
@@ -459,18 +448,6 @@ export const tools: Tool[] = [
     relatedSlugs: ["date-difference", "timestamp-converter"],
     keywords: ["age calculator", "birthday calculator", "how old am i"],
   },
-  {
-    slug: "cron-expression",
-    name: "Cron Expression Parser",
-    shortDescription: "Parse and explain cron expressions in plain English.",
-    longDescription: "Paste a cron expression to see it explained in plain English with the next execution times. Also build expressions visually.",
-    metaDescription: "Free cron expression parser and generator. Understand cron syntax, see next run times and build expressions visually.",
-    category: "datetime", isImplemented: true,
-    aliases: ["cron parser", "cron generator", "cron builder", "cron job"],
-    relatedSlugs: ["timestamp-converter"],
-    keywords: ["cron expression", "cron parser", "cron generator", "cron job builder"],
-  },
-
   // ═══════════════════════════════ WEB ════════════════════════════════════════
 
   {
@@ -576,17 +553,6 @@ export const tools: Tool[] = [
     aliases: ["css selector finder", "css path", "playwright selector"],
     relatedSlugs: ["xpath-generator", "html-formatter"],
     keywords: ["css selector generator", "css selector finder"],
-  },
-  {
-    slug: "api-request-builder",
-    name: "API Request Builder",
-    shortDescription: "Build and send HTTP requests with a visual UI.",
-    longDescription: "Compose headers, params and body for an HTTP request and preview exactly what will be sent.",
-    metaDescription: "Free online API request builder. Compose and preview HTTP requests without leaving your browser.",
-    category: "qa", isImplemented: true,
-    aliases: ["http client", "rest client", "api tester"],
-    relatedSlugs: ["curl-generator", "header-inspector", "rest-request-builder"],
-    keywords: ["api request builder", "http request tool", "online rest client"],
   },
   {
     slug: "json-mutator",
@@ -884,6 +850,26 @@ export const tools: Tool[] = [
     aliases: ["create jwt", "sign jwt", "jwt creator"],
     relatedSlugs: ["jwt-decoder", "base64-encode-decode"],
     keywords: ["jwt generator", "create jwt token", "sign jwt online", "jwt builder"],
+  },
+  {
+    slug: "contrast-checker",
+    name: "Contrast Checker",
+    shortDescription: "Check WCAG color contrast for text and UI elements.",
+    longDescription: "Enter a foreground and background color to get the exact WCAG contrast ratio, with pass/fail results for AA and AAA at both normal and large text sizes. Live preview shows how real text actually looks.",
+    metaDescription: "Free WCAG contrast checker. Check color contrast ratio for AA and AAA compliance, normal and large text. Instant, runs in your browser.",
+    category: "qa", isImplemented: true, isPopular: true,
+    aliases: ["color contrast checker", "wcag contrast ratio", "accessibility contrast checker", "a11y contrast"],
+    relatedSlugs: ["color-converter", "css-selector-generator"],
+    keywords: ["contrast checker", "wcag contrast ratio", "color contrast checker", "accessibility color contrast", "aa aaa contrast"],
+    howToSteps: [
+      "Pick or type the foreground (text) color and the background color.",
+      "Read the contrast ratio and the pass/fail badges for AA and AAA, normal and large text.",
+      "Adjust either color until the preview text is both legible and compliant.",
+    ],
+    faqs: [
+      { question: "What contrast ratio do I need to pass WCAG?", answer: "AA (the usual legal/practical bar) needs at least 4.5:1 for normal text and 3:1 for large text (18pt+, or 14pt+ bold). AAA is stricter: 7:1 for normal text and 4.5:1 for large text." },
+      { question: "Is my color data sent anywhere?", answer: "No. The contrast ratio is calculated entirely in your browser using the WCAG relative luminance formula — nothing is uploaded." },
+    ],
   },
 
   // ═══════════════════════════════ API ════════════════════════════════════════
