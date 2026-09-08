@@ -1,6 +1,7 @@
 "use client";
 import { useMemo, useState } from "react";
 import { Dictionary } from "@/lib/i18n/dictionary-types";
+import { CheckIcon } from "@/components/icons/GameIcons";
 
 type LineStatus = "added" | "removed" | "same";
 interface DiffLine { text: string; status: LineStatus; }
@@ -62,7 +63,7 @@ export function TextDiffTool({ dict }: { dict: Dictionary }) {
       <div className="mb-2 flex items-center gap-4 text-xs">
         <span className="text-green-400">+{added} added</span>
         <span className="text-red-400">-{removed} removed</span>
-        {added === 0 && removed === 0 && <span className="text-accent">✓ Identical</span>}
+        {added === 0 && removed === 0 && <span className="flex items-center gap-1 text-accent"><CheckIcon size={11} /> Identical</span>}
       </div>
 
       <div className="code-surface rounded-[10px] overflow-hidden">

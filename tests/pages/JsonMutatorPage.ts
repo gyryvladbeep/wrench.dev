@@ -5,7 +5,7 @@ import { fillRobust, clickRobust } from "../support/robust-fill";
 export class JsonMutatorPage {
   readonly page: Page;
   readonly input: Locator;
-  readonly fieldsBadge: Locator;       // "✓ Valid JSON · N fields"
+  readonly fieldsBadge: Locator;       // "Valid JSON · N fields"
   readonly parseError: Locator;
   readonly selectedFieldName: Locator; // выбранный путь под "Mutating field:"
   readonly mutationsCount: Locator;    // "N mutations"
@@ -14,7 +14,7 @@ export class JsonMutatorPage {
   constructor(page: Page) {
     this.page = page;
     this.input = page.locator("textarea");
-    this.fieldsBadge = page.getByText(/✓ Valid JSON · \d+ fields/);
+    this.fieldsBadge = page.getByText(/Valid JSON · \d+ fields/);
     this.parseError = page.locator("p.mt-1.text-xs.text-red-400");
     this.selectedFieldName = page.locator("p.font-mono.text-sm.font-semibold.text-accent");
     this.mutationsCount = page.getByText(/^\d+ mutations$/);

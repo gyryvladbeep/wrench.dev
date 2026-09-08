@@ -16,8 +16,8 @@ export class QrCodeGeneratorPage {
     this.input = page.getByPlaceholder("URL, text, email, phone…");
     this.canvas = page.locator("canvas");
     this.sizeSlider = page.locator('input[type="range"]');
-    this.pngButton = page.getByRole("button", { name: "⬇ Download PNG" });
-    this.svgButton = page.getByRole("button", { name: "⬇ Download SVG" });
+    this.pngButton = page.getByRole("button", { name: "Download PNG" });
+    this.svgButton = page.getByRole("button", { name: "Download SVG" });
     this.errorText = page.locator("p.text-red-400");
   }
 

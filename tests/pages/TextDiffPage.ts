@@ -7,7 +7,7 @@ export class TextDiffPage {
   readonly rightInput: Locator;
   readonly addedSummary:   Locator; // "+N added"
   readonly removedSummary: Locator; // "-N removed"
-  readonly identicalBadge: Locator; // "✓ Identical" — только когда added===0 && removed===0
+  readonly identicalBadge: Locator; // "Identical" — только когда added===0 && removed===0
   // Каждая строка диффа — прямой child-div контейнера с классом code-surface
   // (единственный div с этим классом на странице — у textarea тот же класс,
   // но это другой тег).
@@ -19,7 +19,7 @@ export class TextDiffPage {
     this.rightInput = page.locator("textarea").nth(1);
     this.addedSummary   = page.getByText(/^\+\d+ added$/);
     this.removedSummary = page.getByText(/^-\d+ removed$/);
-    this.identicalBadge = page.getByText("✓ Identical", { exact: true });
+    this.identicalBadge = page.getByText("Identical", { exact: true });
     this.diffRows = page.locator("div.code-surface > div");
   }
 

@@ -5,6 +5,7 @@ import { CopyButton } from "@/components/CopyButton";
 import { Dictionary } from "@/lib/i18n/dictionary-types";
 import { ToolShell } from "./ToolShell";
 import { EmptyToolInput } from "@/components/EmptyState";
+import { CloseIcon } from "@/components/icons/GameIcons";
 
 const SAMPLE = `{"name":"Ada Lovelace","born":1815,"skills":["math","programming"],"active":true}`;
 
@@ -55,7 +56,7 @@ export function JsonFormatterTool({ dict }: { dict: Dictionary }) {
         <div>
           <label className="input-label">{dict.common.output}</label>
           {!result.ok
-            ? <div className="code-surface h-72 rounded-[10px] p-3 flex items-start gap-2 text-sm text-red-400"><span className="shrink-0 mt-0.5">✕</span><span className="font-mono break-all">{result.message}</span></div>
+            ? <div className="code-surface h-72 rounded-[10px] p-3 flex items-start gap-2 text-sm text-red-400"><span className="shrink-0 mt-0.5"><CloseIcon size={12} /></span><span className="font-mono break-all">{result.message}</span></div>
             : result.value===""
               ? <div className="code-surface h-72 rounded-[10px] flex items-center justify-center"><EmptyToolInput/></div>
               : <textarea readOnly value={result.value} spellCheck={false} className="code-surface h-72 w-full rounded-[10px] p-3 font-mono text-sm text-text-primary outline-none"/>

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { CopyButton } from "@/components/CopyButton";
 import { Dictionary } from "@/lib/i18n/dictionary-types";
+import { CloseIcon } from "@/components/icons/GameIcons";
 
 const METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE"] as const;
 type Method = typeof METHODS[number];
@@ -79,7 +80,7 @@ export function RestRequestBuilderTool({ dict }: { dict: Dictionary }) {
               placeholder={t.headerName} className="code-surface flex-1 rounded-[10px] p-2 font-mono text-sm text-text-primary outline-none" />
             <input value={h.value} onChange={e => updateHeader(i, "value", e.target.value)}
               placeholder={t.headerValue} className="code-surface flex-1 rounded-[10px] p-2 font-mono text-sm text-text-primary outline-none" />
-            <Button variant="ghost" onClick={() => setHeaders(p => p.filter((_, j) => j !== i))}>✕</Button>
+            <Button variant="ghost" onClick={() => setHeaders(p => p.filter((_, j) => j !== i))}><CloseIcon size={11} /></Button>
           </div>
         ))}
       </div>

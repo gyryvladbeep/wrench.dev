@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { Dictionary } from "@/lib/i18n/dictionary-types";
+import { CheckIcon, CloseIcon } from "@/components/icons/GameIcons";
 
 const VALID_SAMPLE = `{"name": "Ada Lovelace", "born": 1815, "tags": ["math", "computing"]}`;
 const INVALID_SAMPLE = `{"name": "Ada Lovelace", "born": 1815,}`; // trailing comma — common real-world mistake
@@ -94,7 +95,7 @@ export function JsonValidatorTool({ dict }: { dict: Dictionary }) {
 
         {result.state === "valid" && (
           <div className="flex items-center gap-2 rounded-[10px] border border-accent/30 bg-accent/10 p-3 text-sm">
-            <span className="text-accent">{t.validHeading}</span>
+            <span className="flex items-center gap-1.5 text-accent"><CheckIcon size={13} /> {t.validHeading}</span>
             <span className="text-text-muted">
               {t.validSummaryPrefix} {result.summary}.
             </span>
@@ -103,7 +104,7 @@ export function JsonValidatorTool({ dict }: { dict: Dictionary }) {
 
         {result.state === "invalid" && (
           <div className="rounded-[10px] border border-red-500/30 bg-red-500/10 p-3 text-sm">
-            <p className="font-medium text-red-400">{t.invalidHeading}</p>
+            <p className="flex items-center gap-1.5 font-medium text-red-400"><CloseIcon size={12} /> {t.invalidHeading}</p>
             <p className="mt-1 text-text-muted">{result.message}</p>
             {result.location && (
               <p className="mt-1 text-text-muted">

@@ -19,7 +19,7 @@ export class JsonDiffPage {
     // (у самих diff-строк text-red-400 висит на <p>, не на <div>).
     this.errorBox = page.locator("div.text-red-400");
     this.showUnchanged = page.locator('input[type="checkbox"]');
-    this.identicalMessage = page.getByText("✓ JSONs are identical");
+    this.identicalMessage = page.getByText("JSONs are identical");
     this.rows = page.locator("div.flex.gap-3.rounded-lg.border");
   }
 

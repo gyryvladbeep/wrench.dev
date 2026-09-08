@@ -6,6 +6,7 @@ import { localizeTool } from "@/lib/i18n/localize";
 import { getImplementedTools, searchTools } from "@/lib/tools-registry";
 import { CategoryIcon } from "@/components/CategoryIcon";
 import { WORKBENCH_UI, formatWorkbenchString } from "@/lib/i18n/workbench-content";
+import { CheckIcon, CloseIcon } from "@/components/icons/GameIcons";
 
 interface ToolPickerModalProps {
   open: boolean;
@@ -67,7 +68,7 @@ export function ToolPickerModal({
             className="flex-1 bg-transparent text-sm text-text-primary outline-none placeholder:text-text-muted"
           />
           {query && (
-            <button onClick={() => setQuery("")} className="text-text-muted hover:text-text-primary text-xs">✕</button>
+            <button onClick={() => setQuery("")} className="text-text-muted hover:text-text-primary text-xs"><CloseIcon size={11} /></button>
           )}
           <kbd className="rounded border border-border px-1.5 py-0.5 text-xs text-text-muted">Esc</kbd>
         </div>
@@ -109,7 +110,7 @@ export function ToolPickerModal({
                   <p className="truncate text-xs text-text-muted">{tool.shortDescription}</p>
                 </div>
                 <span className={`shrink-0 text-base leading-none ${added ? "text-accent" : "text-text-disabled"}`}>
-                  {added ? "✓" : "+"}
+                  {added ? <CheckIcon size={13} /> : "+"}
                 </span>
               </button>
             );

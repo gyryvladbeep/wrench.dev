@@ -131,7 +131,7 @@ test.describe("JSON Mutator", () => {
     const fields = flattenPaths(PARSED_SAMPLE);
     expect(fields).toHaveLength(10);
 
-    await expect(tool.fieldsBadge).toHaveText(`✓ Valid JSON · ${fields.length} fields`);
+    await expect(tool.fieldsBadge).toHaveText(`Valid JSON · ${fields.length} fields`);
   });
 
   test("выбор строкового поля 'username' — 20 мутаций (10 shared + 5 boundary + 5 injection)", async () => {

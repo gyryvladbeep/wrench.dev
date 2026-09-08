@@ -1,6 +1,7 @@
 "use client";
 import { useMemo, useState } from "react";
 import { Dictionary } from "@/lib/i18n/dictionary-types";
+import { CheckIcon } from "@/components/icons/GameIcons";
 
 type DiffResult = { key: string; type: "added"|"removed"|"changed"|"unchanged"; left?: unknown; right?: unknown; }[];
 
@@ -134,7 +135,9 @@ export function JsonDiffTool({ dict }: { dict: Dictionary }) {
               </div>
             ))}
             {filtered.length === 0 && (
-              <p className="text-center py-4 text-sm text-success">{isRu ? "✓ JSON идентичны" : "✓ JSONs are identical"}</p>
+              <p className="flex items-center justify-center gap-1.5 py-4 text-sm text-success">
+                <CheckIcon size={12} /> {isRu ? "JSON идентичны" : "JSONs are identical"}
+              </p>
             )}
           </div>
         </div>

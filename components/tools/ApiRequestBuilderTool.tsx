@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { CopyButton } from "@/components/CopyButton";
 import { Dictionary } from "@/lib/i18n/dictionary-types";
+import { CloseIcon } from "@/components/icons/GameIcons";
 
 const METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"] as const;
 type Method = typeof METHODS[number];
@@ -126,7 +127,7 @@ export function ApiRequestBuilderTool({ dict }: { dict: Dictionary }) {
               placeholder={t.paramName} className="code-surface flex-1 rounded-[10px] p-2 font-mono text-sm text-text-primary outline-none" />
             <input value={p.value} onChange={e => updateKV(params, setParams, i, "value", e.target.value)}
               placeholder={t.paramValue} className="code-surface flex-1 rounded-[10px] p-2 font-mono text-sm text-text-primary outline-none" />
-            <Button variant="ghost" onClick={() => removeKV(params, setParams, i)}>✕</Button>
+            <Button variant="ghost" onClick={() => removeKV(params, setParams, i)}><CloseIcon size={11} /></Button>
           </div>
         ))}
       </div>
@@ -143,7 +144,7 @@ export function ApiRequestBuilderTool({ dict }: { dict: Dictionary }) {
               placeholder={t.headerName} className="code-surface flex-1 rounded-[10px] p-2 font-mono text-sm text-text-primary outline-none" />
             <input value={h.value} onChange={e => updateKV(headers, setHeaders, i, "value", e.target.value)}
               placeholder={t.headerValue} className="code-surface flex-1 rounded-[10px] p-2 font-mono text-sm text-text-primary outline-none" />
-            <Button variant="ghost" onClick={() => removeKV(headers, setHeaders, i)}>✕</Button>
+            <Button variant="ghost" onClick={() => removeKV(headers, setHeaders, i)}><CloseIcon size={11} /></Button>
           </div>
         ))}
       </div>

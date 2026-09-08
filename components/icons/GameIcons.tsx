@@ -332,6 +332,17 @@ export function WarningIcon({ className = "", size = 14 }: IconProps) {
   );
 }
 
+// Стрелка вниз в лоток — замена "⬇" (кнопки "Download PNG/SVG" в QR
+// Code Generator).
+export function DownloadIcon({ className = "", size = 12 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 16 16" fill="none" className={className} aria-hidden>
+      <path d="M8 2v7.3M4.7 6.5L8 9.8l3.3-3.3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M2.7 12h10.6" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+    </svg>
+  );
+}
+
 // Торт со свечой — замена "🎂" (Age Calculator, "до дня рождения").
 export function CakeIcon({ className = "", size = 14 }: IconProps) {
   return (

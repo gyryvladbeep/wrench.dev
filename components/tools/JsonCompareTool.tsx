@@ -2,6 +2,7 @@
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dictionary } from "@/lib/i18n/dictionary-types";
+import { CheckIcon } from "@/components/icons/GameIcons";
 
 type DiffEntry = { key: string; left: string; right: string; status: "added" | "removed" | "changed" | "same" };
 
@@ -75,8 +76,8 @@ export function JsonCompareTool({ dict }: { dict: Dictionary }) {
 
       {diff !== null && (
         <div>
-          <p className="mb-3 text-sm text-text-muted">
-            {changes === 0 ? "✓ Identical" : `${changes} difference${changes === 1 ? "" : "s"} found`}
+          <p className="mb-3 flex items-center gap-1.5 text-sm text-text-muted">
+            {changes === 0 ? <><CheckIcon size={12} /> Identical</> : `${changes} difference${changes === 1 ? "" : "s"} found`}
           </p>
           <div className="rounded-[10px] border border-border overflow-hidden">
             {diff.filter((d) => d.status !== "same" || true).map((d, i) => (

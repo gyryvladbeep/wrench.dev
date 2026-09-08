@@ -1,6 +1,7 @@
 "use client";
 import { useMemo, useState } from "react";
 import { Dictionary } from "@/lib/i18n/dictionary-types";
+import { CheckIcon } from "@/components/icons/GameIcons";
 
 interface Analysis {
   score: number; // 0-4
@@ -121,7 +122,7 @@ export function PasswordStrengthTool({ dict }: { dict: Dictionary }) {
             {analysis.checks.map((c, i) => (
               <div key={i} className="flex items-center gap-2 text-xs">
                 <span className={c.pass ? "text-success" : "text-text-disabled"}>
-                  {c.pass ? "✓" : "○"}
+                  {c.pass ? <CheckIcon size={11} /> : "○"}
                 </span>
                 <span className={c.pass ? "text-text-secondary" : "text-text-muted"}>{c.label}</span>
               </div>

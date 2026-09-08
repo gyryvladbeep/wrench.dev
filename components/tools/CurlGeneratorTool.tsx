@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { CopyButton } from "@/components/CopyButton";
 import { Dictionary } from "@/lib/i18n/dictionary-types";
+import { CloseIcon } from "@/components/icons/GameIcons";
 
 interface HeaderRow {
   key: string;
@@ -93,7 +94,7 @@ export function CurlGeneratorTool({ dict }: { dict: Dictionary }) {
                 className="code-surface flex-1 rounded-[10px] p-2 font-mono text-sm text-text-primary outline-none"
               />
               <Button variant="ghost" onClick={() => removeHeader(i)} aria-label={t.removeHeaderAria}>
-                ✕
+                <CloseIcon size={11} />
               </Button>
             </div>
           ))}

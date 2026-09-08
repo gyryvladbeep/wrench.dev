@@ -7,6 +7,7 @@ import { useToast } from "@/components/ui/Toast";
 import { useAuth } from "@/lib/auth/auth-context";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { CheckIcon, CloseIcon } from "@/components/icons/GameIcons";
 
 interface Props { role: ChallengeRole; locale: Locale; }
 
@@ -195,7 +196,7 @@ export function ChallengeArena({ role, locale }: Props) {
             {alreadySolved && (
               <>
                 <span className="text-text-disabled">·</span>
-                <span className="text-[11px] text-success">✓ {isRu ? "Решена" : "Solved"}</span>
+                <span className="flex items-center gap-1 text-[11px] text-success"><CheckIcon size={10} /> {isRu ? "Решена" : "Solved"}</span>
               </>
             )}
           </div>
@@ -272,8 +273,8 @@ export function ChallengeArena({ role, locale }: Props) {
       {result && (
         <div className={`rounded-lg border p-5 ${result.is_correct ? "border-green-800/40 bg-green-900/10" : "border-red-800/40 bg-red-900/10"}`}>
           <div className="flex items-center gap-3 mb-3">
-            <span className={`text-2xl font-bold ${result.is_correct ? "text-success" : "text-error"}`}>
-              {result.is_correct ? "✓" : "✕"}
+            <span className={result.is_correct ? "text-success" : "text-error"}>
+              {result.is_correct ? <CheckIcon size={26} /> : <CloseIcon size={26} />}
             </span>
             <div>
               <p className={`text-base font-semibold ${result.is_correct ? "text-success" : "text-error"}`}>

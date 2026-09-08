@@ -2,6 +2,7 @@
 import { useMemo, useState } from "react";
 import { CopyButton } from "@/components/CopyButton";
 import { Dictionary } from "@/lib/i18n/dictionary-types";
+import { CheckIcon, CloseIcon } from "@/components/icons/GameIcons";
 
 interface BVResult {
   value: number | string;
@@ -86,8 +87,9 @@ export function BoundaryValueTool({ dict }: { dict: Dictionary }) {
           <div className="space-y-1.5">
             {results.map((r, i) => (
               <div key={i} className={`flex items-center gap-3 rounded-lg border px-4 py-2.5 ${r.isValid ? "border-green-800/30 bg-green-900/10" : "border-red-800/30 bg-red-900/10"}`}>
-                <span className={`shrink-0 text-xs font-bold w-12 ${r.isValid ? "text-success" : "text-error"}`}>
-                  {r.isValid ? (isRu ? "✓ ОК" : "✓ OK") : (isRu ? "✗ BAD" : "✗ BAD")}
+                <span className={`flex shrink-0 items-center gap-1 text-xs font-bold w-14 ${r.isValid ? "text-success" : "text-error"}`}>
+                  {r.isValid ? <CheckIcon size={10} /> : <CloseIcon size={10} />}
+                  {r.isValid ? (isRu ? "ОК" : "OK") : "BAD"}
                 </span>
                 <span className="font-mono text-sm font-semibold text-text-primary w-16 shrink-0">{r.value}</span>
                 <span className="text-xs text-text-muted">{isRu ? r.labelRu : r.label}</span>

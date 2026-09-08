@@ -4,6 +4,7 @@ import Link from "next/link";
 import { allTools } from "@/lib/tools-registry";
 import { Locale, localePath } from "@/lib/i18n/config";
 import { CategoryIcon } from "@/components/CategoryIcon";
+import { CloseIcon } from "@/components/icons/GameIcons";
 
 const CATEGORY_COLORS: Record<string, string> = {
   formatting: "#f59e0b",
@@ -333,7 +334,7 @@ export function ToolMapClient({ locale }: { locale: Locale }) {
                 <p className="text-[10px] text-text-muted capitalize">{selectedTool.category}</p>
               </div>
             </div>
-            <button onClick={() => setSelected(null)} className="text-text-disabled hover:text-text-muted text-xs">✕</button>
+            <button onClick={() => setSelected(null)} className="text-text-disabled hover:text-text-muted text-xs"><CloseIcon size={11} /></button>
           </div>
           <p className="mt-2 text-xs text-text-muted leading-relaxed">{selectedTool.shortDescription}</p>
           <Link href={localePath(locale, `/tools/${selectedTool.slug}`)}

@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Locale } from "@/lib/i18n/config";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { useToast } from "@/components/ui/Toast";
+import { CheckIcon, CloseIcon } from "@/components/icons/GameIcons";
 
 type Flavor = "JavaScript" | "Python" | "PCRE" | "Java" | "Go";
 const FLAVORS: Flavor[] = ["JavaScript", "Python", "PCRE", "Java", "Go"];
@@ -138,8 +139,8 @@ export function RegexGeneratorClient({ locale }: { locale: Locale }) {
         {liveTest && testStr && (
           <div className={`mt-1.5 flex items-center gap-2 text-xs ${liveTest.matches.length > 0 ? "text-accent" : "text-red-400"}`}>
             {liveTest.matches.length > 0
-              ? <><span>✓</span><span>{liveTest.matches.length} {isRu ? "совпадений:" : "match(es):"} {liveTest.matches.slice(0, 3).map((m) => `"${m}"`).join(", ")}</span></>
-              : <><span>✕</span><span>{isRu ? "Нет совпадений" : "No matches"}</span></>
+              ? <><CheckIcon size={11} /><span>{liveTest.matches.length} {isRu ? "совпадений:" : "match(es):"} {liveTest.matches.slice(0, 3).map((m) => `"${m}"`).join(", ")}</span></>
+              : <><CloseIcon size={11} /><span>{isRu ? "Нет совпадений" : "No matches"}</span></>
             }
           </div>
         )}

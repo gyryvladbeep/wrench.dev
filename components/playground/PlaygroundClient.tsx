@@ -2,6 +2,7 @@
 import { useCallback, useRef, useState } from "react";
 import { Locale } from "@/lib/i18n/config";
 import { CopyButton } from "@/components/CopyButton";
+import { CheckIcon, CloseIcon, WarningIcon } from "@/components/icons/GameIcons";
 
 type Lang = "javascript" | "json" | "regex" | "sql";
 
@@ -207,7 +208,7 @@ export function PlaygroundClient({ locale }: { locale: Locale }) {
           else {
             const out = matches.map(m => ({
               type: (m.match ? "log" : "warn") as Output["type"],
-              text: `${m.match ? "✓" : "✗"} ${m.str}`,
+              text: m.str,
             }));
             setOutputs(out);
           }
@@ -330,8 +331,8 @@ export function PlaygroundClient({ locale }: { locale: Locale }) {
                     o.type === "result" ? "text-violet-400" :
                     "text-text-primary"
                   }`}>
-                    {o.type === "error"  && <span className="text-red-500 mr-2">✗</span>}
-                    {o.type === "warn"   && <span className="text-amber-500 mr-2">⚠</span>}
+                    {o.type === "error"  && <span className="text-red-500 mr-2"><CloseIcon size={11} /></span>}
+                    {o.type === "warn"   && <span className="text-amber-500 mr-2"><WarningIcon size={11} /></span>}
                     {o.type === "result" && <span className="text-violet-500 mr-2">→</span>}
                     {o.text}
                   </div>
@@ -340,7 +341,9 @@ export function PlaygroundClient({ locale }: { locale: Locale }) {
             ) : lang === "regex" ? (
               <div className="space-y-1">
                 {outputs.map((o, i) => (
-                  <div key={i} className={`leading-relaxed ${o.type === "log" ? "text-success" : o.type === "error" ? "text-red-400" : "text-text-muted"}`}>
+                  <div key={i} className={`flex items-center gap-1.5 leading-relaxed ${o.type === "log" ? "text-success" : o.type === "error" ? "text-red-400" : "text-text-muted"}`}>
+                    {o.type === "log" && <CheckIcon size={11} />}
+                    {o.type === "warn" && <CloseIcon size={11} />}
                     {o.text}
                   </div>
                 ))}

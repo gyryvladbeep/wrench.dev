@@ -86,8 +86,8 @@ test.describe("Password Strength", () => {
     const expected = analyzePassword("Password123");
 
     await expect(tool.checkIcon("No common words")).toHaveText("○");
-    await expect(tool.checkIcon("Uppercase letters")).toHaveText("✓");
-    await expect(tool.checkIcon("Numbers")).toHaveText("✓");
+    await expect(tool.checkIcon("Uppercase letters").locator("svg")).toBeVisible();
+    await expect(tool.checkIcon("Numbers").locator("svg")).toBeVisible();
     await expect(tool.strengthLabel).toHaveText(expected.label);
   });
 

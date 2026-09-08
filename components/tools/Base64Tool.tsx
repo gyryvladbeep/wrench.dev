@@ -5,6 +5,7 @@ import { CopyButton } from "@/components/CopyButton";
 import { Dictionary } from "@/lib/i18n/dictionary-types";
 import { ToolShell } from "./ToolShell";
 import { EmptyToolInput } from "@/components/EmptyState";
+import { CloseIcon } from "@/components/icons/GameIcons";
 
 export function Base64Tool({ dict }: { dict: Dictionary }) {
   const [mode, setMode] = useState<"encode"|"decode">("encode");
@@ -50,7 +51,7 @@ export function Base64Tool({ dict }: { dict: Dictionary }) {
         <div>
           <label className="input-label">{mode==="encode" ? "Base64" : (isRu?"Декодированный текст":"Decoded text")}</label>
           {!result.ok
-            ? <div className="code-surface min-h-[10rem] rounded-[10px] p-3 flex items-start gap-2 text-sm text-red-400"><span>✕</span><span>{result.message}</span></div>
+            ? <div className="code-surface min-h-[10rem] rounded-[10px] p-3 flex items-start gap-2 text-sm text-red-400"><CloseIcon size={12} /><span>{result.message}</span></div>
             : result.value === ""
               ? <div className="code-surface min-h-[10rem] rounded-[10px] flex items-center justify-center"><EmptyToolInput/></div>
               : <textarea readOnly value={result.value} spellCheck={false} rows={8}

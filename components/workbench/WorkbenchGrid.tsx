@@ -6,6 +6,7 @@ import { Locale } from "@/lib/i18n/config";
 import { CategoryIcon } from "@/components/CategoryIcon";
 import { ToolRenderer } from "@/components/tools/ToolRenderer";
 import { WORKBENCH_UI } from "@/lib/i18n/workbench-content";
+import { CloseIcon } from "@/components/icons/GameIcons";
 
 interface WorkbenchGridProps {
   tools: Tool[]; // локализованы и уже в порядке отображения
@@ -67,7 +68,7 @@ export function WorkbenchGrid({ tools, dict, locale, onRemove, onReorder }: Work
               title={t.removeToolAria}
               className="shrink-0 rounded p-1 text-text-muted transition-colors hover:bg-surface-hover hover:text-red-400"
             >
-              ✕
+              <CloseIcon size={11} />
             </button>
           </div>
           <div className="p-4">

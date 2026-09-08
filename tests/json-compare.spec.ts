@@ -62,12 +62,12 @@ test.describe("JSON Compare", () => {
     await expect(tool.rows).toHaveCount(diff.length);
   });
 
-  test("идентичные JSON — '✓ Identical', 0 отличий", async () => {
+  test("идентичные JSON — 'Identical', 0 отличий", async () => {
     const same = '{"a":1,"b":2}';
     await tool.setLeft(same);
     await tool.setRight(same);
 
-    await expect(tool.summary).toHaveText("✓ Identical");
+    await expect(tool.summary).toHaveText("Identical");
   });
 
   test("невалидный JSON в одном из полей — сообщение об ошибке вместо таблицы", async () => {

@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import QRCode from "qrcode";
 import { Button } from "@/components/ui/button";
 import { Dictionary } from "@/lib/i18n/dictionary-types";
+import { DownloadIcon } from "@/components/icons/GameIcons";
 
 export function QrCodeGeneratorTool({ dict }: { dict: Dictionary }) {
   const [input, setInput] = useState("https://devtoolbox.example.com");
@@ -72,8 +73,8 @@ export function QrCodeGeneratorTool({ dict }: { dict: Dictionary }) {
           </div>
 
           <div className="flex gap-2">
-            <Button variant="secondary" onClick={() => download("png")}>⬇ Download PNG</Button>
-            <Button variant="secondary" onClick={() => download("svg")}>⬇ Download SVG</Button>
+            <Button variant="secondary" onClick={() => download("png")}><span className="flex items-center gap-1.5"><DownloadIcon size={12} /> Download PNG</span></Button>
+            <Button variant="secondary" onClick={() => download("svg")}><span className="flex items-center gap-1.5"><DownloadIcon size={12} /> Download SVG</span></Button>
           </div>
         </div>
 
