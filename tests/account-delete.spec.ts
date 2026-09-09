@@ -1,6 +1,7 @@
 import { test, expect, Page, Locator } from "@playwright/test";
 import { SignupPage } from "./pages/SignupPage";
 import { LoginPage } from "./pages/LoginPage";
+import { hasServiceRoleKey } from "./support/supabaseAdmin";
 
 /**
  * ═══════════════════════════════════════════════════════════════
@@ -12,15 +13,33 @@ import { LoginPage } from "./pages/LoginPage";
  *
  * Тест сам создаёт себе аккаунт (email вида
  * account-delete-test-<timestamp>-<random>@wrench-test.dev) и сам же
- * его удаляет через проверяемую фичу — значит он не зависит от
- * SUPABASE_SERVICE_ROLE_KEY и не нуждается в глобальной очистке
- * (tests/global-teardown.ts, admin-ключ) для уборки за собой: если
- * тест реально прошёл, аккаунта уже не существует. Единственный
- * способ проверить это по-настоящему — не остановиться на "форма
- * показала успех", а после удаления попытаться ВОЙТИ тем же
- * email/паролем и убедиться, что вход отклонён: только это доказывает,
- * что supabase.auth.admin.deleteUser() действительно отработал на
+ * его удаляет через проверяемую фичу — значит ему не нужна глобальная
+ * очистка (tests/global-teardown.ts) для уборки за собой: если тест
+ * реально прошёл, аккаунта уже не существует. Единственный способ
+ * проверить это по-настоящему — не остановиться на "форма показала
+ * успех", а после удаления попытаться ВОЙТИ тем же email/паролем и
+ * убедиться, что вход отклонён: только это доказывает, что
+ * supabase.auth.admin.deleteUser() действительно отработал на
  * сервере, а не что клиент просто вышел из сессии локально.
+ *
+ * ПРО SUPABASE_SERVICE_ROLE_KEY — тест ОТ НЕГО ЗАВИСИТ, хоть сам
+ * ключ нигде в этом файле не используется: сам API-роут
+ * app/api/account/delete/route.ts вызывает getSupabaseAdmin() (см.
+ * lib/supabase/admin.ts), а тому ключ нужен обязательно — без него
+ * запрос падает с 500, и клик "Permanently delete" просто зависает
+ * без перехода на главную (ровно так это и проявилось: TimeoutError
+ * на page.waitForURL). Локально сервер поднимает Next.js сам и сам
+ * же подхватывает .env.local — если ключ там есть, тест пройдёт.
+ * В CI сервер поднимает `npm run start` внутри того же шага
+ * GitHub Actions, что и сами тесты (см. .github/workflows/
+ * playwright.yml) — значит ему нужен тот же секрет
+ * SUPABASE_SERVICE_ROLE_KEY, переданный в env этого шага, что и
+ * tests/global-teardown.ts. hasServiceRoleKey из
+ * tests/support/supabaseAdmin.ts проверяет ту же переменную
+ * окружения, которую увидит и сервер (тест и сервер — процессы
+ * одного и того же шага/окружения) — значит на неё можно опереться
+ * и здесь, тем же test.skip(), что уже используется в
+ * workbench-pro.spec.ts.
  */
 
 function uniqueTestEmail(): string {
@@ -58,6 +77,12 @@ test.describe.serial("Удаление аккаунта", () => {
   const email = uniqueTestEmail();
 
   test.beforeAll(async ({ browser }) => {
+    test.skip(
+      !hasServiceRoleKey,
+      "SUPABASE_SERVICE_ROLE_KEY не задан — без него app/api/account/delete/route.ts " +
+      "не может выполнить удаление на сервере (см. комментарий в шапке файла)."
+    );
+
     page = await browser.newPage();
   });
 
