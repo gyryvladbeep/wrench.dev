@@ -15,6 +15,20 @@ import { WORKBENCH_UI, formatWorkbenchString } from "@/lib/i18n/workbench-conten
 import { GameIcon } from "@/components/icons/GameIcons";
 import { CopyButton } from "@/components/CopyButton";
 
+// Высота шапки сайта (см. Header.tsx: "h-12" + border-b) — используется
+// ниже, чтобы холст занимал ровно весь вьюпорт под шапкой, а не
+// произвольный кусок страницы.
+const HEADER_HEIGHT = 49;
+const CANVAS_FALLBACK_HEIGHT = 480;
+// Место, зарезервированное сверху под плавающую панель (вкладки +
+// действия) — панель "fixed", поэтому сама по себе не толкает холст
+// вниз; без этого отступа дефолтная каскадная позиция первой добавленной
+// карточки (20, 20) пришлась бы прямо под панелью и была бы не видна,
+// пока её не утащат оттуда вслепую. Грубая оценка высоты панели с
+// запасом — не обязана быть пиксель-в-пиксель, только не давать
+// карточкам стартовать под ней.
+const PANEL_RESERVED_TOP = 230;
+
 export default function WorkbenchPage() {
   const { user, loading, isSigningOut } = useAuth();
   const { dict, locale } = useDict();
@@ -53,6 +67,19 @@ export default function WorkbenchPage() {
       document.removeEventListener("keydown", onKey);
     };
   }, [shareOpen]);
+
+  // Высота вьюпорта — холст должен занимать всю страницу под шапкой сразу,
+  // а не только когда в нём уже полно карточек (см. WorkbenchCanvas'ин
+  // minHeight). window недоступен на сервере, поэтому 0 до первого
+  // эффекта — страница всё равно не рендерит холст, пока !user || wbLoading,
+  // так что серверный/клиентский рендер тут не расходятся (гидратация).
+  const [viewportHeight, setViewportHeight] = useState(0);
+  useEffect(() => {
+    function update() { setViewportHeight(window.innerHeight); }
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, []);
 
   // Перетаскивание вкладок рабочих столов — тот же нативный HTML5 drag &
   // drop, что уже используется для карточек инструментов в WorkbenchCanvas
@@ -103,6 +130,7 @@ export default function WorkbenchPage() {
   const shareUrl = active && typeof window !== "undefined"
     ? `${window.location.origin}${localePath(locale, `/w/${active.id}`)}`
     : "";
+  const canvasMinHeight = Math.max(CANVAS_FALLBACK_HEIGHT, viewportHeight - HEADER_HEIGHT - PANEL_RESERVED_TOP);
 
   function commitRename(id: string, fallback: string) {
     renameWorkbench(id, nameDraft.trim() || fallback);
@@ -126,82 +154,84 @@ export default function WorkbenchPage() {
   }
 
   return (
-    <div className="mx-auto max-w-5xl px-5 py-8">
-      <div className="mb-6">
-        <h1 className="text-xl font-bold text-text-primary">{t.pageTitle}</h1>
-        <p className="mt-1.5 max-w-2xl text-sm text-text-secondary">{t.pageSubtitle}</p>
-      </div>
+    <div className="relative w-full">
+      {/* ═══════════════════════════════════════════════════════
+          Плавающая панель — вкладки рабочих столов + все действия
+          над ними. Раньше это был обычный блок в потоке страницы,
+          выше самой сетки; теперь холст занимает страницу целиком,
+          так что панель "плавает" поверх него отдельным окном
+          (fixed, со своей рамкой и тенью), а не толкает его вниз. */}
+      <div className="fixed left-4 top-[60px] z-30 max-w-[calc(100vw-2rem)] rounded-xl border border-border bg-surface/95 p-4 shadow-lg backdrop-blur-md">
+        <h1 className="mb-3 text-base font-bold text-text-primary">{t.pageTitle}</h1>
 
-      {/* Workspace tabs */}
-      <div className="mb-4 flex flex-wrap items-center gap-2">
-        {workbenches.map((wb) => (
-          <div
-            key={wb.id}
-            // Перетаскивать можно только саму вкладку, не поле переименования —
-            // иначе drag мешал бы выделять текст курсором внутри input.
-            draggable={renamingId !== wb.id}
-            onDragStart={() => setDraggedWorkspaceId(wb.id)}
-            onDragOver={(e) => { e.preventDefault(); if (overWorkspaceId !== wb.id) setOverWorkspaceId(wb.id); }}
-            onDragLeave={() => setOverWorkspaceId((id) => (id === wb.id ? null : id))}
-            onDrop={(e) => { e.preventDefault(); handleWorkspaceDrop(wb.id); }}
-            onDragEnd={() => { setDraggedWorkspaceId(null); setOverWorkspaceId(null); }}
-            className={`rounded-lg transition-opacity ${draggedWorkspaceId === wb.id ? "opacity-40" : ""} ${
-              overWorkspaceId === wb.id && draggedWorkspaceId && draggedWorkspaceId !== wb.id
-                ? "ring-2 ring-accent"
-                : ""
-            }`}
-          >
-            {renamingId === wb.id ? (
-              <input
-                autoFocus
-                value={nameDraft}
-                onChange={(e) => setNameDraft(e.target.value)}
-                onBlur={() => commitRename(wb.id, wb.name)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") commitRename(wb.id, wb.name);
-                  if (e.key === "Escape") setRenamingId(null);
-                }}
-                className="code-surface rounded-lg px-3 py-1.5 text-sm text-text-primary outline-none"
-              />
-            ) : (
-              <button
-                onClick={() => setActiveId(wb.id)}
-                onDoubleClick={() => { setRenamingId(wb.id); setNameDraft(wb.name); }}
-                className={`rounded-lg px-3 py-1.5 text-sm transition-colors ${
-                  activeId === wb.id
-                    ? "bg-accent/15 font-medium text-accent"
-                    : "border border-border bg-surface text-text-muted hover:bg-surface-hover"
-                }`}
-              >
-                {wb.name}
-              </button>
-            )}
-          </div>
-        ))}
+        {/* Workspace tabs */}
+        <div className="flex flex-wrap items-center gap-2">
+          {workbenches.map((wb) => (
+            <div
+              key={wb.id}
+              // Перетаскивать можно только саму вкладку, не поле переименования —
+              // иначе drag мешал бы выделять текст курсором внутри input.
+              draggable={renamingId !== wb.id}
+              onDragStart={() => setDraggedWorkspaceId(wb.id)}
+              onDragOver={(e) => { e.preventDefault(); if (overWorkspaceId !== wb.id) setOverWorkspaceId(wb.id); }}
+              onDragLeave={() => setOverWorkspaceId((id) => (id === wb.id ? null : id))}
+              onDrop={(e) => { e.preventDefault(); handleWorkspaceDrop(wb.id); }}
+              onDragEnd={() => { setDraggedWorkspaceId(null); setOverWorkspaceId(null); }}
+              className={`rounded-lg transition-opacity ${draggedWorkspaceId === wb.id ? "opacity-40" : ""} ${
+                overWorkspaceId === wb.id && draggedWorkspaceId && draggedWorkspaceId !== wb.id
+                  ? "ring-2 ring-accent"
+                  : ""
+              }`}
+            >
+              {renamingId === wb.id ? (
+                <input
+                  autoFocus
+                  value={nameDraft}
+                  onChange={(e) => setNameDraft(e.target.value)}
+                  onBlur={() => commitRename(wb.id, wb.name)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") commitRename(wb.id, wb.name);
+                    if (e.key === "Escape") setRenamingId(null);
+                  }}
+                  className="code-surface rounded-lg px-3 py-1.5 text-sm text-text-primary outline-none"
+                />
+              ) : (
+                <button
+                  onClick={() => setActiveId(wb.id)}
+                  onDoubleClick={() => { setRenamingId(wb.id); setNameDraft(wb.name); }}
+                  className={`rounded-lg px-3 py-1.5 text-sm transition-colors ${
+                    activeId === wb.id
+                      ? "bg-accent/15 font-medium text-accent"
+                      : "border border-border bg-surface text-text-muted hover:bg-surface-hover"
+                  }`}
+                >
+                  {wb.name}
+                </button>
+              )}
+            </div>
+          ))}
 
-        {canCreateWorkspace ? (
-          <button
-            onClick={() => createWorkbench(isRu ? "Новое пространство" : "New workspace")}
-            className="rounded-lg border border-dashed border-border px-3 py-1.5 text-sm text-text-muted transition-colors hover:border-border-focus hover:text-text-secondary"
-          >
-            {t.newWorkspace}
-          </button>
-        ) : (
-          <span className="text-xs text-text-muted">
-            {formatWorkbenchString(t.limitWorkspacesReached, { max: maxWorkbenches })}
-            {!isPro && (
-              <Link href={localePath(locale, "/pro")} className="ml-1.5 font-medium text-link hover:underline">
-                {t.upgradeToPro}
-              </Link>
-            )}
-          </span>
-        )}
-      </div>
+          {canCreateWorkspace ? (
+            <button
+              onClick={() => createWorkbench(isRu ? "Новое пространство" : "New workspace")}
+              className="rounded-lg border border-dashed border-border px-3 py-1.5 text-sm text-text-muted transition-colors hover:border-border-focus hover:text-text-secondary"
+            >
+              {t.newWorkspace}
+            </button>
+          ) : (
+            <span className="text-xs text-text-muted">
+              {formatWorkbenchString(t.limitWorkspacesReached, { max: maxWorkbenches })}
+              {!isPro && (
+                <Link href={localePath(locale, "/pro")} className="ml-1.5 font-medium text-link hover:underline">
+                  {t.upgradeToPro}
+                </Link>
+              )}
+            </span>
+          )}
+        </div>
 
-      {active && (
-        <>
-          {/* Toolbar */}
-          <div className="mb-6 flex flex-wrap items-center gap-3 border-b border-border pb-4">
+        {active && (
+          <div className="mt-3 flex flex-wrap items-center gap-3 border-t border-border pt-3">
             <button
               onClick={() => setPickerOpen(true)}
               className="rounded bg-accent px-3 py-1.5 text-xs font-medium text-accent-fg transition-colors hover:bg-amber-400"
@@ -285,43 +315,60 @@ export default function WorkbenchPage() {
               )}
             </div>
           </div>
+        )}
+      </div>
 
-          {activeTools.length === 0 ? (
-            <div className="rounded-lg border border-border bg-surface p-10 text-center">
-              <div className="mb-3 flex justify-center text-text-muted"><GameIcon id="wrench" size={28} /></div>
-              <p className="font-medium text-text-secondary">{t.emptyTitle}</p>
-              <p className="mt-2 text-sm text-text-muted">{t.emptyBody}</p>
-              <button
-                onClick={() => setPickerOpen(true)}
-                className="mt-4 inline-block rounded bg-accent px-4 py-2 text-sm font-medium text-accent-fg transition-colors hover:bg-amber-400"
-              >
-                {t.browseTools}
-              </button>
-            </div>
-          ) : (
-            <WorkbenchCanvas
-              tools={activeTools}
-              layout={active.layout}
-              dict={dict}
-              locale={locale}
-              onRemove={(slug) => removeTool(active.id, slug)}
-              onMove={(slug, position) => moveTool(active.id, slug, position)}
-            />
-          )}
-
-          <ToolPickerModal
-            open={pickerOpen}
-            onClose={() => setPickerOpen(false)}
+      {/* ═══════════════════════════════════════════════════════
+          Сам холст — теперь вся страница под шапкой, а не колонка
+          внутри неё. Рендерим его всегда (даже с 0 карточек), чтобы
+          точечный фон был виден сразу, а не только когда в рабочем
+          столе уже что-то есть — плавающая панель выше и модалка
+          выбора инструментов остаются единственными "окнами" поверх
+          него. */}
+      {active && (
+        <div className="relative w-full" style={{ paddingTop: PANEL_RESERVED_TOP }}>
+          <WorkbenchCanvas
+            tools={activeTools}
+            layout={active.layout}
+            dict={dict}
             locale={locale}
-            addedSlugs={active.tool_slugs}
-            maxTools={maxToolsPerWorkbench}
-            isPro={isPro}
-            onToggle={(slug) => {
-              if (active.tool_slugs.includes(slug)) removeTool(active.id, slug);
-              else addTool(active.id, slug);
-            }}
+            onRemove={(slug) => removeTool(active.id, slug)}
+            onMove={(slug, position) => moveTool(active.id, slug, position)}
+            minHeight={canvasMinHeight}
+            bordered={false}
           />
-        </>
+
+          {activeTools.length === 0 && (
+            <div className="pointer-events-none absolute inset-0 flex items-center justify-center p-6">
+              <div className="pointer-events-auto max-w-sm rounded-lg border border-border bg-surface p-10 text-center shadow-lg">
+                <div className="mb-3 flex justify-center text-text-muted"><GameIcon id="wrench" size={28} /></div>
+                <p className="font-medium text-text-secondary">{t.emptyTitle}</p>
+                <p className="mt-2 text-sm text-text-muted">{t.emptyBody}</p>
+                <button
+                  onClick={() => setPickerOpen(true)}
+                  className="mt-4 inline-block rounded bg-accent px-4 py-2 text-sm font-medium text-accent-fg transition-colors hover:bg-amber-400"
+                >
+                  {t.browseTools}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {active && (
+        <ToolPickerModal
+          open={pickerOpen}
+          onClose={() => setPickerOpen(false)}
+          locale={locale}
+          addedSlugs={active.tool_slugs}
+          maxTools={maxToolsPerWorkbench}
+          isPro={isPro}
+          onToggle={(slug) => {
+            if (active.tool_slugs.includes(slug)) removeTool(active.id, slug);
+            else addTool(active.id, slug);
+          }}
+        />
       )}
     </div>
   );

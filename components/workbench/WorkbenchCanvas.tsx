@@ -19,6 +19,18 @@ interface WorkbenchCanvasProps {
   // Публичная read-only страница показывает тот же холст без ручки
   // перетаскивания и кнопки удаления — см. app/[locale]/w/[id]/page.tsx.
   readOnly?: boolean;
+  // Нижняя граница высоты холста — по умолчанию небольшой блок (см.
+  // CANVAS_MIN_HEIGHT), но редактируемая страница /workbench передаёт
+  // высоту вьюпорта за вычетом шапки, чтобы холст занимал всю страницу
+  // сразу, даже пустой, а не только когда в нём набралось много карточек.
+  minHeight?: number;
+  // Рамка + скругления вокруg холста — уместны для холста, зажатого в
+  // обычную колонку контента (публичная read-only страница), но не
+  // нужны на полностраничном холсте /workbench: там холст ВИЗУАЛЬНО и
+  // есть страница (тот же bg-canvas, что и у <body>), рамка вокруг него
+  // смотрелась бы как случайная лишняя коробка. По умолчанию true, чтобы
+  // не трогать поведение публичной страницы.
+  bordered?: boolean;
 }
 
 // Высота, которую условно занимает карточка при расчёте общей высоты
@@ -28,7 +40,9 @@ interface WorkbenchCanvasProps {
 const ESTIMATED_CARD_HEIGHT = 420;
 const CANVAS_MIN_HEIGHT = 480;
 
-export function WorkbenchCanvas({ tools, layout, dict, locale, onRemove, onMove, readOnly = false }: WorkbenchCanvasProps) {
+export function WorkbenchCanvas({
+  tools, layout, dict, locale, onRemove, onMove, readOnly = false, minHeight, bordered = true,
+}: WorkbenchCanvasProps) {
   const t = WORKBENCH_UI[locale];
   const containerRef = useRef<HTMLDivElement>(null);
   const [draggedSlug, setDraggedSlug] = useState<string | null>(null);
@@ -39,7 +53,7 @@ export function WorkbenchCanvas({ tools, layout, dict, locale, onRemove, onMove,
   }
 
   const containerHeight = Math.max(
-    CANVAS_MIN_HEIGHT,
+    minHeight ?? CANVAS_MIN_HEIGHT,
     ...tools.map((tool, index) => positionFor(tool.slug, index).y + ESTIMATED_CARD_HEIGHT)
   );
 
@@ -81,9 +95,9 @@ export function WorkbenchCanvas({ tools, layout, dict, locale, onRemove, onMove,
       ref={containerRef}
       onDragOver={handleContainerDragOver}
       onDrop={handleContainerDrop}
-      className="relative w-full overflow-visible rounded-xl border border-border bg-canvas"
+      className={`relative w-full overflow-visible bg-canvas ${bordered ? "rounded-xl border border-border" : ""}`}
       style={{
-        height: containerHeight,
+        minHeight: containerHeight,
         // #26262f — тот же border-токен из tailwind.config.ts, что и рамка
         // самого контейнера; в hex, а не через var(--...), потому что
         // border не объявлен как CSS-переменная (в отличие от accent).
