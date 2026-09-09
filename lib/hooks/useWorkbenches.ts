@@ -159,6 +159,21 @@ export function useWorkbenches(isPro: boolean) {
     persist(id, { is_public: isPublic });
   }, [persist]);
 
+  // Изменение размера карточки на свободном холсте (ручка в правом
+  // нижнем углу — см. WorkbenchCanvas). Мержим width/height в
+  // существующую запись layout[slug], а не заменяем её целиком — иначе
+  // ресайз стёр бы позицию x/y, которую отдельно двигает moveTool.
+  // Если записи ещё нет вовсе (легаси-инструмент, добавленный до этой
+  // фичи) — считаем ей дефолтную каскадную позицию по индексу в
+  // tool_slugs, ровно как это делает WorkbenchCanvas при отрисовке, так
+  // что первый же ресайз заодно "материализует" x/y в базу.
+  const resizeTool = useCallback((id: string, slug: string, size: { width: number; height: number }) => {
+    const wb = workbenches.find((w) => w.id === id);
+    if (!wb) return;
+    const existing = wb.layout[slug] ?? defaultToolPosition(wb.tool_slugs.indexOf(slug));
+    persist(id, { layout: { ...wb.layout, [slug]: { ...existing, ...size } } });
+  }, [workbenches, persist]);
+
   // Перетаскивание самих вкладок рабочих столов (не инструментов внутри
   // одного стола — этим занимается moveTool выше). newIdOrder — id рабочих
   // столов в новом порядке отображения; position каждого пересчитывается
@@ -182,6 +197,6 @@ export function useWorkbenches(isPro: boolean) {
   return {
     workbenches, loading, maxWorkbenches, maxToolsPerWorkbench,
     createWorkbench, renameWorkbench, deleteWorkbench,
-    addTool, removeTool, moveTool, setPublic, reorderWorkbenches,
+    addTool, removeTool, moveTool, resizeTool, setPublic, reorderWorkbenches,
   };
 }

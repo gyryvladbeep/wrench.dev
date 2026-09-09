@@ -140,6 +140,27 @@ test.describe.serial("Workbench: жизненный цикл рабочего с
     expect(Math.abs(regexTester.x - jsonFormatter.x)).toBeLessThan(10);
   });
 
+  test("ручка в углу карточки меняет её размер — растёт по курсору и не сжимается меньше минимума", async () => {
+    // CSS Selector Generator — последняя карточка каскада (ряд 1, колонка
+    // 2, см. предыдущий тест): справа и снизу от неё пока нет соседей, так
+    // что рост карточки не наедет на чужую и не перехватит у неё клик —
+    // именно это и оказалось ложной тревогой при ручной проверке фичи на
+    // уже раздвинутой карточке с соседом впритык.
+    const before = await wb.cardSize("CSS Selector Generator");
+    await wb.resizeCard("CSS Selector Generator", 80, 60);
+    const grown = await wb.cardSize("CSS Selector Generator");
+    expect(Math.abs(grown.width - (before.width + 80))).toBeLessThan(3);
+    expect(Math.abs(grown.height - (before.height + 60))).toBeLessThan(3);
+
+    // Отдельно — резкая попытка сжать карточку в ничто должна упереться в
+    // MIN_CARD_WIDTH/MIN_CARD_HEIGHT (lib/workbench-layout.ts), а не
+    // схлопнуть её до нуля или отрицательных размеров.
+    await wb.resizeCard("CSS Selector Generator", -900, -900);
+    const shrunk = await wb.cardSize("CSS Selector Generator");
+    expect(shrunk.width).toBe(280);
+    expect(shrunk.height).toBe(160);
+  });
+
   test("промо-карточка Workbench на странице профиля показывает актуальное число закреплённых инструментов", async () => {
     // Сама фича задумана как крючок для регистрации (см. комментарий в
     // profile/page.tsx) — если карточка врёт про количество, весь смысл

@@ -29,6 +29,7 @@ export interface WorkbenchUIStrings {
   noResults: string;
   removeToolAria: string;
   dragHandleTitle: string;
+  resizeHandleTitle: string;
   toolsCountSuffix: string;
   // Шаринг свободного холста — публичная read-only ссылка (см.
   // app/[locale]/w/[id] + PublicWorkbenchView.tsx).
@@ -66,6 +67,7 @@ export const WORKBENCH_UI: Record<Locale, WorkbenchUIStrings> = {
     noResults: "No tools match your search.",
     removeToolAria: "Remove from workbench",
     dragHandleTitle: "Drag to move",
+    resizeHandleTitle: "Drag to resize",
     toolsCountSuffix: "tools",
     shareButton: "Share",
     sharePanelTitle: "Share this workbench",
@@ -99,6 +101,7 @@ export const WORKBENCH_UI: Record<Locale, WorkbenchUIStrings> = {
     noResults: "Ничего не найдено.",
     removeToolAria: "Убрать с рабочего стола",
     dragHandleTitle: "Перетащите, чтобы переместить",
+    resizeHandleTitle: "Потяните, чтобы изменить размер",
     toolsCountSuffix: "инструментов",
     shareButton: "Поделиться",
     sharePanelTitle: "Поделиться рабочим столом",

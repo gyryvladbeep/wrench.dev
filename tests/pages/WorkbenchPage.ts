@@ -200,6 +200,42 @@ export class WorkbenchPage {
     return { x: box.x, y: box.y };
   }
 
+  /** Текущий отрисованный размер карточки (ширина/высота в пикселях) —
+   *  для проверки ручного ресайза (см. resizeCard). */
+  async cardSize(exactToolName: string): Promise<{ width: number; height: number }> {
+    const box = await this.toolCard(exactToolName).boundingBox();
+    if (!box) throw new Error(`cardSize(): карточка "${exactToolName}" не найдена или не отрисована`);
+    return { width: box.width, height: box.height };
+  }
+
+  /** Ручка ресайза в правом нижнем углу карточки — title из
+   *  workbench-content.ts (resizeHandleTitle), как и у ручки перетаскивания
+   *  (dragHandleTitle) выше по файлу. */
+  resizeHandle(exactToolName: string): Locator {
+    return this.toolCard(exactToolName).getByTitle("Drag to resize");
+  }
+
+  /** Тянет ручку ресайза на (deltaX, deltaY) пикселей от её текущего
+   *  положения. Ручка сделана на обычных mousedown/mousemove/mouseup (см.
+   *  комментарий в WorkbenchCanvas.tsx — нужен непрерывный живой
+   *  предпросмотр размера, в отличие от перемещения карточки, у которого
+   *  единственное событие — drop), поэтому здесь курсор мыши, а не
+   *  dragTo(), как у toolCard()/workspaceTabCard() на нативном HTML5 DnD. */
+  async resizeCard(exactToolName: string, deltaX: number, deltaY: number) {
+    const handle = this.resizeHandle(exactToolName);
+    const box = await handle.boundingBox();
+    if (!box) throw new Error(`resizeCard(): ручка ресайза "${exactToolName}" не найдена или не отрисована`);
+    const startX = box.x + box.width / 2;
+    const startY = box.y + box.height / 2;
+    await this.page.mouse.move(startX, startY);
+    await this.page.mouse.down();
+    // Промежуточный шаг — обработчик реагирует на mousemove, телепорт из
+    // точки А сразу в точку Б не обязательно эквивалентен плавному жесту.
+    await this.page.mouse.move(startX + deltaX / 2, startY + deltaY / 2);
+    await this.page.mouse.move(startX + deltaX, startY + deltaY);
+    await this.page.mouse.up();
+  }
+
   async startDeleteConfirmation() {
     await this.deleteButton.click();
     await expect(this.confirmDeleteButton).toBeVisible();

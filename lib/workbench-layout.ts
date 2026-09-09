@@ -8,9 +8,17 @@
 // не в один из двух компонентов, чтобы не тянуть "use client" туда,
 // где он не нужен, и чтобы формула позиционирования жила в одном месте.
 
+// Имя не переименовал в "ToolLayoutEntry" при добавлении width/height,
+// чтобы не тащить правку через кучу файлов (useWorkbenches.ts,
+// WorkbenchCanvas.tsx, PublicWorkbenchView.tsx) ради одного только
+// названия — x/y остаются позицией, width/height теперь необязательный
+// размер: undefined значит "карточка ещё не менялась вручную, ширина —
+// CANVAS_CARD_WIDTH, высота — по содержимому" (см. WorkbenchCanvas).
 export interface ToolPosition {
   x: number;
   y: number;
+  width?: number;
+  height?: number;
 }
 
 // Фиксированная ширина карточки в режиме холста. Раньше сетка сама
@@ -32,6 +40,16 @@ export interface ToolPosition {
 // инструмент на холст всё-таки добавит.
 export const CANVAS_CARD_WIDTH = 420;
 
+// Границы ручного изменения размера карточки (см. ручку в правом нижнем
+// углу карточки в WorkbenchCanvas). Нижняя граница — чтобы шапку карточки
+// и хотя бы крупицу содержимого не сжали в нечитаемую полоску; верхняя —
+// щедрая, просто чтобы случайный рывок мышью за пределы экрана не завёл
+// карточку в абсурдные тысячи пикселей.
+export const MIN_CARD_WIDTH = 280;
+export const MIN_CARD_HEIGHT = 160;
+export const MAX_CARD_WIDTH = 900;
+export const MAX_CARD_HEIGHT = 1000;
+
 // Дефолтная раскладка для новых инструментов — аккуратная сетка 3
 // колонки, а не хаос: свобода начинается с того, что пользователь САМ
 // решает подвинуть карточку, а не с того, что она рождается в
@@ -50,8 +68,27 @@ export function defaultToolPosition(existingCount: number): ToolPosition {
 // Ограничивает позицию после драга: не даём карточке уйти за левый/
 // верхний край (в минус) или вправо за пределы контейнера. Вниз расти
 // можно свободно — контейнер сам подстраивает высоту под самую нижнюю
-// карточку (см. WorkbenchCanvas).
-export function clampToolPosition(x: number, y: number, containerWidth: number): ToolPosition {
-  const maxX = Math.max(0, containerWidth - CANVAS_CARD_WIDTH);
+// карточку (см. WorkbenchCanvas). cardWidth — РЕАЛЬНАЯ ширина именно
+// этой карточки (после ручного ресайза может отличаться от дефолтной
+// CANVAS_CARD_WIDTH), иначе для расширенной карточки maxX считался бы
+// по старой узкой ширине и разрешал бы утащить её за правый край.
+export function clampToolPosition(
+  x: number, y: number, containerWidth: number, cardWidth: number = CANVAS_CARD_WIDTH
+): ToolPosition {
+  const maxX = Math.max(0, containerWidth - cardWidth);
   return { x: Math.min(Math.max(0, x), maxX), y: Math.max(0, y) };
+}
+
+// Ограничивает размер карточки после ручного ресайза — не даёт ей стать
+// нечитаемо маленькой, абсурдно огромной, или вылезти за правый край
+// контейнера (высота вниз не ограничена самим контейнером — см.
+// комментарий выше про то, что холст сам растёт под самую нижнюю карточку).
+export function clampToolSize(
+  width: number, height: number, cardX: number, containerWidth: number
+): { width: number; height: number } {
+  const maxWidth = Math.max(MIN_CARD_WIDTH, Math.min(MAX_CARD_WIDTH, containerWidth - cardX));
+  return {
+    width: Math.min(Math.max(MIN_CARD_WIDTH, width), maxWidth),
+    height: Math.min(Math.max(MIN_CARD_HEIGHT, height), MAX_CARD_HEIGHT),
+  };
 }

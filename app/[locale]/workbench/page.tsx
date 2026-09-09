@@ -35,7 +35,7 @@ export default function WorkbenchPage() {
   const { isPro } = useSubscription();
   const {
     workbenches, loading: wbLoading, maxWorkbenches, maxToolsPerWorkbench,
-    createWorkbench, renameWorkbench, deleteWorkbench, addTool, removeTool, moveTool, setPublic,
+    createWorkbench, renameWorkbench, deleteWorkbench, addTool, removeTool, moveTool, resizeTool, setPublic,
     reorderWorkbenches,
   } = useWorkbenches(isPro);
 
@@ -369,6 +369,7 @@ export default function WorkbenchPage() {
             locale={locale}
             onRemove={(slug) => removeTool(active.id, slug)}
             onMove={(slug, position) => moveTool(active.id, slug, position)}
+            onResize={(slug, size) => resizeTool(active.id, slug, size)}
             minHeight={canvasMinHeight}
             bordered={false}
             avoidTopLeft={avoidTopLeft}
