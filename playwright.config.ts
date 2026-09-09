@@ -10,6 +10,14 @@ export default defineConfig({
   // Где лежат файлы тестов
   testDir: "./tests",
 
+  // Запускается один раз, уже после того как ВСЕ тесты закончили —
+  // подчищает тестовые аккаунты (*@wrench-test.dev), которые создают
+  // auth-flow.spec.ts / workbench.spec.ts / workbench-pro.spec.ts,
+  // чтобы они не копились в боевом Supabase-проекте. Аккуратно ничего
+  // не делает, если SUPABASE_SERVICE_ROLE_KEY не задан — см.
+  // tests/global-teardown.ts.
+  globalTeardown: "./tests/global-teardown.ts",
+
   // Запускать тесты параллельно — ускоряет прогон
   fullyParallel: true,
 

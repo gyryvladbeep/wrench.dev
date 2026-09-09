@@ -103,6 +103,19 @@ export default function ProfilePage() {
   const [saved,    setSaved]    = useState(false);
   const [tab,      setTab]      = useState<"overview"|"history"|"badges"|"favorites"|"settings">("overview");
 
+  // Удаление аккаунта — состояние живёт здесь, не в JSX Settings-вкладки,
+  // потому что вкладки условно рендерятся (см. {tab === "settings" && ...}
+  // ниже), а не размонтируют компонент целиком. Без явного сброса при
+  // переключении вкладок это была бы та же гонка, что уже один раз чинили
+  // в Workbench для confirmDeleteId (см. workbench/page.tsx): открыл
+  // подтверждение удаления, переключился на другую вкладку, вернулся на
+  // Settings — а подтверждение всё ещё висит открытым. Сбрасываем в
+  // обработчике клика по вкладкам ниже.
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
   const load = useCallback(async () => {
     if (!user) return;
     const supabase = createClient();
@@ -200,6 +213,32 @@ export default function ProfilePage() {
     setTimeout(() => setSaved(false), 2000);
   }
 
+  // Требует ввода фразы-подтверждения (кнопка "Удалить навсегда" ниже
+  // остаётся disabled, пока введённый текст не совпадёт с DELETE_PHRASE),
+  // а не просто повторного клика "точно?", как для удаления одного
+  // рабочего стола в Workbench — удаление аккаунта необратимо и стирает
+  // куда больше данных, так что лёгкого inline-подтверждения тут мало.
+  const DELETE_PHRASE = isRu ? "УДАЛИТЬ" : "DELETE";
+
+  async function handleDeleteAccount() {
+    if (deleteConfirmText.trim().toUpperCase() !== DELETE_PHRASE) return;
+    setDeleting(true);
+    setDeleteError(null);
+    try {
+      const res = await fetch("/api/account/delete", { method: "POST" });
+      if (!res.ok) throw new Error("delete failed");
+      // signOut() не await-ится специально — она синхронно (до первого
+      // await внутри) выставляет signingOutRef в auth-context.tsx, и
+      // только это важно для router.push ниже. Тот же приём уже
+      // используется в кнопках "Sign out" на этой странице.
+      signOut();
+      router.push(localePath(locale, "/"));
+    } catch {
+      setDeleting(false);
+      setDeleteError(isRu ? "Не удалось удалить аккаунт. Попробуй ещё раз." : "Couldn't delete the account. Please try again.");
+    }
+  }
+
   const initials = (profile.display_name || user?.email || "?")[0].toUpperCase();
   const totalDays = Object.keys(activity).length;
   const workbenchToolCount = workbenchList.reduce((sum, w) => sum + w.tool_slugs.length, 0);
@@ -285,7 +324,14 @@ export default function ProfilePage() {
       {/* Tabs */}
       <div className="mb-6 flex gap-1 rounded-lg border border-border bg-surface p-1">
         {TABS.map((t) => (
-          <button key={t.id} onClick={() => setTab(t.id as typeof tab)}
+          <button key={t.id} onClick={() => {
+            setTab(t.id as typeof tab);
+            // Сброс подтверждения удаления аккаунта при любом переключении
+            // вкладок — см. комментарий у useState(deleteConfirmOpen) выше.
+            setDeleteConfirmOpen(false);
+            setDeleteConfirmText("");
+            setDeleteError(null);
+          }}
             className={`flex-1 rounded-md py-1.5 text-sm transition-colors ${tab === t.id ? "bg-canvas text-text-primary font-medium" : "text-text-muted hover:text-text-secondary"}`}>
             {t.label}
           </button>
@@ -597,6 +643,62 @@ export default function ProfilePage() {
               className="rounded border border-red-500/30 px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 transition-colors">
               {isRu ? "Выйти из аккаунта" : "Sign out"}
             </button>
+          </div>
+
+          {/* Удаление аккаунта — отдельная карточка Danger zone, после
+              Sign out. Тот же визуальный язык (border-red-500/20
+              bg-red-500/5), но с вводом фразы-подтверждения вместо
+              простого повторного клика — см. комментарий у
+              handleDeleteAccount выше. */}
+          <div className="rounded-lg border border-red-500/20 bg-red-500/5 p-5">
+            <h2 className="mb-3 text-sm font-semibold text-red-400">{isRu ? "Удаление аккаунта" : "Delete account"}</h2>
+
+            {!deleteConfirmOpen ? (
+              <>
+                <p className="mb-3 max-w-md text-xs text-text-muted">
+                  {isRu
+                    ? "Профиль, история инструментов, избранное, рабочие столы и достижения будут удалены безвозвратно. Активная подписка Pro отменяется автоматически."
+                    : "Your profile, tool history, favorites, workbenches and achievements will be permanently deleted. An active Pro subscription is canceled automatically."}
+                </p>
+                <button onClick={() => setDeleteConfirmOpen(true)}
+                  className="rounded border border-red-500/30 px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 transition-colors">
+                  {isRu ? "Удалить аккаунт" : "Delete account"}
+                </button>
+              </>
+            ) : (
+              <div className="space-y-3">
+                <p className="text-xs text-red-400">
+                  {isRu
+                    ? `Это нельзя отменить. Введи ${DELETE_PHRASE}, чтобы подтвердить.`
+                    : `This can't be undone. Type ${DELETE_PHRASE} to confirm.`}
+                </p>
+                <input
+                  id="delete-confirm-input"
+                  value={deleteConfirmText}
+                  onChange={(e) => setDeleteConfirmText(e.target.value)}
+                  placeholder={DELETE_PHRASE}
+                  disabled={deleting}
+                  className="code-surface w-full max-w-xs rounded-lg px-3 py-2 text-sm text-text-primary outline-none disabled:opacity-60"
+                />
+                {deleteError && <p className="text-xs text-red-400">{deleteError}</p>}
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleDeleteAccount}
+                    disabled={deleteConfirmText.trim().toUpperCase() !== DELETE_PHRASE || deleting}
+                    className="rounded bg-red-500 px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    {deleting ? (isRu ? "Удаление..." : "Deleting...") : (isRu ? "Удалить навсегда" : "Permanently delete")}
+                  </button>
+                  <button
+                    onClick={() => { setDeleteConfirmOpen(false); setDeleteConfirmText(""); setDeleteError(null); }}
+                    disabled={deleting}
+                    className="rounded border border-border px-4 py-2 text-sm text-text-muted transition-colors hover:bg-surface-hover disabled:opacity-60"
+                  >
+                    {isRu ? "Отмена" : "Cancel"}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

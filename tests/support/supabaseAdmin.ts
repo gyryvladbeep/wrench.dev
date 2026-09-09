@@ -4,20 +4,28 @@ import { createClient, SupabaseClient } from "@supabase/supabase-js";
 
 /**
  * ═══════════════════════════════════════════════════════════════
- * Админ-доступ к Supabase — ТОЛЬКО для самих тестов
+ * Админ-доступ к Supabase — для тестов
  * ═══════════════════════════════════════════════════════════════
- * Реордер вкладок рабочих столов (workbench-pro.spec.ts) — фича
- * Pro-тарифа: free-аккаунт получает всего 1 рабочий стол, тащить
- * там нечего (см. FREE_MAX_WORKBENCHES в useWorkbenches.ts). Обычная
- * регистрация даёт free — единственный способ по-настоящему
- * проверить перетаскивание вкладок сценарием, близким к боевому, —
- * выдать тестовому аккаунту Pro напрямую в базе, в обход Stripe.
+ * Два независимых применения:
+ *  1. Реордер вкладок рабочих столов (workbench-pro.spec.ts) — фича
+ *     Pro-тарифа: free-аккаунт получает всего 1 рабочий стол, тащить
+ *     там нечего (см. FREE_MAX_WORKBENCHES в useWorkbenches.ts). Обычная
+ *     регистрация даёт free — единственный способ по-настоящему
+ *     проверить перетаскивание вкладок сценарием, близким к боевому, —
+ *     выдать тестовому аккаунту Pro напрямую в базе, в обход Stripe.
+ *  2. Очистка тестовых аккаунтов после прогона всего набора тестов
+ *     (tests/global-teardown.ts, см. deleteTestAccounts ниже) —
+ *     auth-flow.spec.ts, workbench.spec.ts и workbench-pro.spec.ts
+ *     создают настоящие аккаунты в Supabase на каждый прогон, и без
+ *     очистки они копились бы в проекте вечно.
  *
- * Это делается service_role ключом Supabase (он обходит RLS) —
- * приложение само НИКОГДА его не использует, ни на клиенте, ни на
- * сервере (см. lib/supabase/client.ts — там только анонимный ключ).
- * Ключ нужен только этому файлу и только при локальном запуске
- * тестов.
+ * Это делается service_role ключом Supabase (он обходит RLS). Сама
+ * функция удаления аккаунта в приложении (app/api/account/delete/
+ * route.ts, для кнопки "Удалить аккаунт" на /profile) использует свой
+ * отдельный service-role клиент — lib/supabase/admin.ts — не этот
+ * файл, потому что тесты и сам Next.js-процесс живут в разных Node-
+ * окружениях (см. loadEnvLocal() ниже и комментарий в lib/supabase/
+ * admin.ts).
  *
  * Разворачивание:
  *  1. Supabase Dashboard → Settings → API → скопировать "service_role"
@@ -116,4 +124,45 @@ export async function grantProPlan(userId: string): Promise<void> {
     .from("subscriptions")
     .insert({ user_id: userId, plan: "pro", status: "active" });
   if (error) throw error;
+}
+
+/**
+ * Удаляет ВСЕ аккаунты, чей email заканчивается на переданный
+ * суффикс (например "@wrench-test.dev") — используется в
+ * tests/global-teardown.ts, чтобы прогоны auth-flow.spec.ts,
+ * workbench.spec.ts и workbench-pro.spec.ts (каждый создаёт
+ * настоящий аккаунт в Supabase на каждый прогон) не копили мусор
+ * в боевом проекте вечно.
+ *
+ * Каждый аккаунт удаляется отдельным вызовом, и один неудачный
+ * вызов не останавливает обработку остальных — например, если
+ * аккаунт уже был удалён (свежедобавленная фича удаления аккаунта
+ * из самого приложения могла успеть удалить его раньше нас) между
+ * листингом и удалением.
+ */
+export async function deleteTestAccounts(emailSuffix: string): Promise<{ deleted: number; failed: number }> {
+  const admin = getAdminClient();
+  const perPage = 200;
+  let deleted = 0;
+  let failed = 0;
+
+  for (let page = 1; page <= 50; page++) {
+    const { data, error } = await admin.auth.admin.listUsers({ page, perPage });
+    if (error) throw error;
+
+    const matches = data.users.filter((u) => u.email?.toLowerCase().endsWith(emailSuffix.toLowerCase()));
+    for (const u of matches) {
+      const { error: delError } = await admin.auth.admin.deleteUser(u.id);
+      if (delError) {
+        failed++;
+        console.error(`[deleteTestAccounts] failed to delete ${u.email}:`, delError.message);
+      } else {
+        deleted++;
+      }
+    }
+
+    if (data.users.length < perPage) break; // последняя страница
+  }
+
+  return { deleted, failed };
 }
