@@ -2,7 +2,7 @@ import { Page, Locator, expect } from "@playwright/test";
 
 /**
  * Page Object для /workbench (app/[locale]/workbench/page.tsx +
- * components/workbench/ToolPickerModal.tsx + WorkbenchGrid.tsx).
+ * components/workbench/ToolPickerModal.tsx + WorkbenchCanvas.tsx).
  *
  * Смотри общее объяснение паттерна в JsonFormatterPage.ts. Здесь он
  * особенно оправдан: страница собрана из трёх файлов сразу, и без
@@ -31,6 +31,12 @@ export class WorkbenchPage {
   // чтобы уметь спрашивать про порядок ВСЕХ вкладок сразу (см.
   // workspaceTabOrder), а не про одну конкретную по имени.
   readonly workspaceTabsRow:   Locator;
+
+  // Попап "Поделиться" — публичная read-only ссылка на свободный холст.
+  readonly shareButton:        Locator;
+  readonly sharePanel:         Locator;
+  readonly sharePublicToggle:  Locator;
+  readonly shareUrlText:       Locator;
 
   constructor(page: Page) {
     this.page = page;
@@ -62,6 +68,16 @@ export class WorkbenchPage {
     // из workbench/page.tsx — единственный такой на странице, держит
     // и вкладки рабочих столов, и кнопку "+ New workspace"/лимит рядом.
     this.workspaceTabsRow  = page.locator("div.mb-4.flex.flex-wrap.items-center.gap-2");
+
+    this.shareButton       = page.getByRole("button", { name: "Share", exact: true });
+    // role="switch" делает панель однозначно адресуемой без завязки на
+    // конкретную обёртку — сам переключатель у нас единственный на странице.
+    this.sharePublicToggle = page.getByRole("switch", { name: "Public link" });
+    // Панель — ближайший общий предок переключателя, который несёт рамку
+    // попапа; проще и устойчивее, чем присваивать компоненту отдельный
+    // data-атрибут только ради теста.
+    this.sharePanel         = this.sharePublicToggle.locator("xpath=ancestor::div[contains(@class,'absolute')][1]");
+    this.shareUrlText        = this.sharePanel.locator("span.font-mono");
   }
 
   async goto() {
@@ -116,7 +132,7 @@ export class WorkbenchPage {
     if (!exactToolName) {
       throw new Error(
         "toolCardHeading() вызван без имени инструмента — вероятно, currentCardOrder() " +
-        "поймал ещё не отрисованный грид (см. комментарий в currentCardOrder())."
+        "поймал ещё не отрисованный холст (см. комментарий в currentCardOrder())."
       );
     }
     return this.page.getByRole("heading", { level: 3, name: exactToolName, exact: true });
@@ -140,26 +156,31 @@ export class WorkbenchPage {
     return this.page.getByText(/^\d+\/\d+ tools$/);
   }
 
-  /** Порядок карточек на странице сейчас — по заголовкам, сверху вниз.
+  /** Порядок карточек в DOM сейчас — по заголовкам, в порядке рендера.
    *
-   *  НАСТОЯЩАЯ причина флейка "resolved to 6 elements" в тесте на
-   *  перетаскивание карточек была здесь, а не в toolCard(): allTextContents()
-   *  не ждёт полного рендера — если вызвать её в узком окне, где грид
-   *  на мгновение пуст (например, useWorkbenches перезагружает данные
-   *  из-за фонового обновления auth-токена — тогда app/[locale]/workbench/page.tsx
-   *  на время рендерит null, пока wbLoading снова true), она молча
-   *  вернёт [] вместо 6 названий. Дальше before[0] и before[length-1]
-   *  оба оказываются undefined — а getByRole({ name: undefined }) в
-   *  Playwright означает "без фильтра по имени", то есть резолвится
-   *  сразу во ВСЕ 6 карточек. Отсюда и "resolved to 6 elements" в двух
-   *  прогонах из десяти на --repeat-each=5 (гонка чаще ловится под
-   *  нагрузкой параллельных воркеров).
+   *  На свободном холсте это БОЛЬШЕ НЕ визуальный порядок слева направо
+   *  или сверху вниз (карточки стоят там, куда их перетащили) — это
+   *  z-index: WorkbenchCanvas рисует tools.map() в порядке tool_slugs,
+   *  и moveTool() переносит перетащенный slug в конец массива, так что
+   *  последняя тронутая карточка оказывается поверх остальных. Тест на
+   *  drag & drop ниже (workbench.spec.ts) проверяет именно это — что
+   *  порядок массива меняется, а не что карточка визуально попала в
+   *  другую ячейку сетки, которой на холсте больше нет.
    *
-   *  Чиним не борьбой с симптомом (можно было бы просто перепроверять
-   *  args), а тем, что ждём, пока в гриде появится хотя бы одна
-   *  карточка, ПЕРЕД тем как читать список: React рендерит tools.map()
-   *  одним коммитом, так что если появилась первая карточка — значит,
-   *  появились и все остальные. */
+   *  НАСТОЯЩАЯ причина исходного флейка "resolved to 6 elements" была
+   *  здесь: allTextContents() не ждёт полного рендера — если вызвать её
+   *  в узком окне, где холст на мгновение пуст (например, useWorkbenches
+   *  перезагружает данные из-за фонового обновления auth-токена — тогда
+   *  app/[locale]/workbench/page.tsx на время рендерит null, пока
+   *  wbLoading снова true), она молча вернёт [] вместо 6 названий.
+   *  Дальше before[0] и before[length-1] оба оказываются undefined — а
+   *  getByRole({ name: undefined }) в Playwright означает "без фильтра
+   *  по имени", то есть резолвится сразу во ВСЕ 6 карточек.
+   *
+   *  Чиним не борьбой с симптомом, а тем, что ждём, пока в холсте
+   *  появится хотя бы одна карточка, ПЕРЕД тем как читать список: React
+   *  рендерит tools.map() одним коммитом, так что если появилась первая
+   *  карточка — значит, появились и все остальные. */
   async currentCardOrder(): Promise<string[]> {
     const headings = this.page.getByRole("heading", { level: 3 });
     await headings.first().waitFor({ state: "visible" });
@@ -168,6 +189,15 @@ export class WorkbenchPage {
 
   async dragCardOnto(sourceToolName: string, targetToolName: string) {
     await this.toolCard(sourceToolName).dragTo(this.toolCard(targetToolName));
+  }
+
+  /** Координаты карточки на холсте (левый верхний угол, в пикселях
+   *  страницы) — для проверки, что новые карточки не накладываются друг
+   *  на друга (см. тест дефолтной каскадной раскладки). */
+  async cardPosition(exactToolName: string): Promise<{ x: number; y: number }> {
+    const box = await this.toolCard(exactToolName).boundingBox();
+    if (!box) throw new Error(`cardPosition(): карточка "${exactToolName}" не найдена или не отрисована`);
+    return { x: box.x, y: box.y };
   }
 
   async startDeleteConfirmation() {
@@ -199,5 +229,32 @@ export class WorkbenchPage {
 
   async dragWorkspaceTabOnto(sourceName: string, targetName: string) {
     await this.workspaceTabCard(sourceName).dragTo(this.workspaceTabCard(targetName));
+  }
+
+  async openSharePanel() {
+    await this.shareButton.click();
+    await expect(this.sharePanel).toBeVisible();
+  }
+
+  /** Включает публичную ссылку (если ещё выключена) и возвращает её
+   *  текст — напрямую из панели, а не через буфер обмена: доступ к
+   *  системному clipboard в headless-CI не всегда настроен, а текст в
+   *  панели — тот же самый URL, что кладёт себе в буфер CopyButton. */
+  async enablePublicSharingAndGetUrl(): Promise<string> {
+    await this.openSharePanel();
+    if (await this.sharePublicToggle.getAttribute("aria-checked") !== "true") {
+      await this.sharePublicToggle.click();
+    }
+    await expect(this.shareUrlText).toBeVisible();
+    const url = await this.shareUrlText.textContent();
+    if (!url) throw new Error("enablePublicSharingAndGetUrl(): ссылка не отобразилась в панели");
+    return url.trim();
+  }
+
+  async disablePublicSharing() {
+    await this.openSharePanel();
+    if (await this.sharePublicToggle.getAttribute("aria-checked") === "true") {
+      await this.sharePublicToggle.click();
+    }
   }
 }

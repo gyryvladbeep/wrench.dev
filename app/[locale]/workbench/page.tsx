@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth/auth-context";
@@ -10,9 +10,10 @@ import { useWorkbenches } from "@/lib/hooks/useWorkbenches";
 import { allTools } from "@/lib/tools-registry";
 import { localizeTool } from "@/lib/i18n/localize";
 import { ToolPickerModal } from "@/components/workbench/ToolPickerModal";
-import { WorkbenchGrid } from "@/components/workbench/WorkbenchGrid";
+import { WorkbenchCanvas } from "@/components/workbench/WorkbenchCanvas";
 import { WORKBENCH_UI, formatWorkbenchString } from "@/lib/i18n/workbench-content";
 import { GameIcon } from "@/components/icons/GameIcons";
+import { CopyButton } from "@/components/CopyButton";
 
 export default function WorkbenchPage() {
   const { user, loading, isSigningOut } = useAuth();
@@ -22,7 +23,7 @@ export default function WorkbenchPage() {
   const { isPro } = useSubscription();
   const {
     workbenches, loading: wbLoading, maxWorkbenches, maxToolsPerWorkbench,
-    createWorkbench, renameWorkbench, deleteWorkbench, addTool, removeTool, reorderTools,
+    createWorkbench, renameWorkbench, deleteWorkbench, addTool, removeTool, moveTool, setPublic,
     reorderWorkbenches,
   } = useWorkbenches(isPro);
 
@@ -34,8 +35,27 @@ export default function WorkbenchPage() {
   const [nameDraft, setNameDraft]         = useState("");
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
+  // Попап "Поделиться" — тот же паттерн клика-вне (ref + mousedown-обработчик
+  // на document), что уже используется в AvatarMenu из Header.tsx.
+  const [shareOpen, setShareOpen] = useState(false);
+  const shareRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!shareOpen) return;
+    function onClickOutside(e: MouseEvent) {
+      if (shareRef.current && !shareRef.current.contains(e.target as Node)) setShareOpen(false);
+    }
+    function onKey(e: KeyboardEvent) { if (e.key === "Escape") setShareOpen(false); }
+    document.addEventListener("mousedown", onClickOutside);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onClickOutside);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [shareOpen]);
+
   // Перетаскивание вкладок рабочих столов — тот же нативный HTML5 drag &
-  // drop, что уже используется для карточек инструментов в WorkbenchGrid
+  // drop, что уже используется для карточек инструментов в WorkbenchCanvas
   // (см. её комментарий про выбор в пользу нативного API без библиотек).
   // Здесь состояние живёт прямо в странице, а не в отдельном компоненте —
   // вкладок мало (максимум 5 у Pro) и вся разметка тут же, в одном месте.
@@ -76,6 +96,13 @@ export default function WorkbenchPage() {
   if (!user || wbLoading) return null;
 
   const canCreateWorkspace = workbenches.length < maxWorkbenches;
+  // window недоступен при первом серверном рендере "use client"-страницы —
+  // ссылка нужна только внутри уже открытого попапа "Поделиться", то есть
+  // после монтирования в браузере, так что простой guard достаточен и не
+  // требует отдельного useEffect + состояния только ради одной строки.
+  const shareUrl = active && typeof window !== "undefined"
+    ? `${window.location.origin}${localePath(locale, `/w/${active.id}`)}`
+    : "";
 
   function commitRename(id: string, fallback: string) {
     renameWorkbench(id, nameDraft.trim() || fallback);
@@ -185,7 +212,17 @@ export default function WorkbenchPage() {
               {active.tool_slugs.length}/{maxToolsPerWorkbench} {t.toolsCountSuffix}
             </span>
 
-            <div className="ml-auto flex items-center gap-3">
+            <div className="relative ml-auto flex items-center gap-3" ref={shareRef}>
+              <button
+                onClick={() => setShareOpen((v) => !v)}
+                className={`rounded border px-3 py-1.5 text-xs font-medium transition-colors ${
+                  active.is_public
+                    ? "border-accent/40 bg-accent/10 text-accent"
+                    : "border-border bg-surface text-text-muted hover:bg-surface-hover hover:text-text-secondary"
+                }`}
+              >
+                {t.shareButton}
+              </button>
               <button
                 onClick={() => { setRenamingId(active.id); setNameDraft(active.name); }}
                 className="text-xs text-text-muted transition-colors hover:text-text-secondary"
@@ -213,6 +250,39 @@ export default function WorkbenchPage() {
                   {t.delete}
                 </button>
               )}
+
+              {shareOpen && (
+                <div className="absolute right-0 top-full z-20 mt-2 w-72 rounded-xl border border-border bg-surface p-4 shadow-lg animate-scale-in">
+                  <p className="text-sm font-medium text-text-primary">{t.sharePanelTitle}</p>
+
+                  <div className="mt-3 flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-xs font-medium text-text-secondary">{t.sharePublicLabel}</p>
+                      <p className="mt-0.5 text-xs text-text-muted">{t.sharePublicHint}</p>
+                    </div>
+                    <button
+                      role="switch"
+                      aria-checked={active.is_public}
+                      aria-label={t.sharePublicLabel}
+                      onClick={() => setPublic(active.id, !active.is_public)}
+                      className={`relative h-5 w-9 shrink-0 rounded-full transition-colors ${active.is_public ? "bg-accent" : "bg-surface-hover"}`}
+                    >
+                      <span
+                        className={`absolute top-0.5 h-4 w-4 rounded-full bg-text-primary transition-transform ${
+                          active.is_public ? "translate-x-[18px]" : "translate-x-0.5"
+                        }`}
+                      />
+                    </button>
+                  </div>
+
+                  {active.is_public && (
+                    <div className="mt-3 flex items-center gap-1.5 rounded-lg border border-border bg-canvas px-2.5 py-1.5">
+                      <span className="min-w-0 flex-1 truncate font-mono text-xs text-text-secondary">{shareUrl}</span>
+                      <CopyButton value={shareUrl} iconOnly />
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
 
@@ -229,12 +299,13 @@ export default function WorkbenchPage() {
               </button>
             </div>
           ) : (
-            <WorkbenchGrid
+            <WorkbenchCanvas
               tools={activeTools}
+              layout={active.layout}
               dict={dict}
               locale={locale}
               onRemove={(slug) => removeTool(active.id, slug)}
-              onReorder={(order) => reorderTools(active.id, order)}
+              onMove={(slug, position) => moveTool(active.id, slug, position)}
             />
           )}
 

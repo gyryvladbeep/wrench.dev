@@ -2,12 +2,20 @@
 import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth/auth-context";
 import { createClient } from "@/lib/supabase/client";
+import { ToolPosition, defaultToolPosition } from "@/lib/workbench-layout";
 
 export interface Workbench {
   id: string;
   name: string;
   tool_slugs: string[];
   position: number;
+  // Позиция каждой карточки на свободном холсте, по slug'у инструмента.
+  // Инструмент без записи в layout (например, из старого workbench,
+  // созданного до этой фичи) получает позицию на лету — см. использование
+  // defaultToolPosition() в WorkbenchCanvas и в addTool() ниже.
+  layout: Record<string, ToolPosition>;
+  // Публичная read-only ссылка на этот рабочий стол (см. app/[locale]/w/[id]).
+  is_public: boolean;
 }
 
 // ═══════════════════════════════════════════════════════
@@ -38,7 +46,7 @@ export function useWorkbenches(isPro: boolean) {
     const supabase = createClient();
     const { data, error } = await supabase
       .from("workbenches")
-      .select("id, name, tool_slugs, position")
+      .select("id, name, tool_slugs, position, layout, is_public")
       .eq("user_id", user.id)
       .order("position", { ascending: true });
 
@@ -59,8 +67,8 @@ export function useWorkbenches(isPro: boolean) {
     if (list.length === 0) {
       const { data: created, error: createError } = await supabase
         .from("workbenches")
-        .insert({ user_id: user.id, name: "My Workbench", tool_slugs: [], position: 0 })
-        .select("id, name, tool_slugs, position")
+        .insert({ user_id: user.id, name: "My Workbench", tool_slugs: [], position: 0, layout: {}, is_public: false })
+        .select("id, name, tool_slugs, position, layout, is_public")
         .single();
       if (createError) console.error("useWorkbenches: failed to create default workbench", createError);
       if (created) list = [created as Workbench];
@@ -77,8 +85,8 @@ export function useWorkbenches(isPro: boolean) {
     const supabase = createClient();
     const { data, error } = await supabase
       .from("workbenches")
-      .insert({ user_id: user.id, name, tool_slugs: [], position: workbenches.length })
-      .select("id, name, tool_slugs, position")
+      .insert({ user_id: user.id, name, tool_slugs: [], position: workbenches.length, layout: {}, is_public: false })
+      .select("id, name, tool_slugs, position, layout, is_public")
       .single();
     if (error || !data) { console.error("useWorkbenches: create failed", error); return null; }
     setWorkbenches((prev) => [...prev, data as Workbench]);
@@ -99,31 +107,60 @@ export function useWorkbenches(isPro: boolean) {
       .then(({ error }: { error: unknown }) => { if (error) console.error("useWorkbenches: delete failed", error); });
   }, []);
 
-  const setToolSlugs = useCallback((id: string, slugs: string[]) => {
-    setWorkbenches((prev) => prev.map((w) => (w.id === id ? { ...w, tool_slugs: slugs } : w)));
+  // Общий помощник для частичного обновления одного workbench — и в
+  // локальном состоянии, и в Supabase. Раньше здесь был setToolSlugs(),
+  // заточенный только под tool_slugs; свободному холсту нужно менять ещё
+  // и layout, и is_public теми же двумя шагами (оптимистично в стейте,
+  // затем запрос в фоне), так что вместо трёх похожих функций — одна
+  // обобщённая на произвольный патч колонок.
+  const persist = useCallback((id: string, patch: Partial<Pick<Workbench, "tool_slugs" | "layout" | "is_public">>) => {
+    setWorkbenches((prev) => prev.map((w) => (w.id === id ? { ...w, ...patch } : w)));
     const supabase = createClient();
-    supabase.from("workbenches").update({ tool_slugs: slugs, updated_at: new Date().toISOString() }).eq("id", id)
-      .then(({ error }: { error: unknown }) => { if (error) console.error("useWorkbenches: update tools failed", error); });
+    supabase.from("workbenches").update({ ...patch, updated_at: new Date().toISOString() }).eq("id", id)
+      .then(({ error }: { error: unknown }) => { if (error) console.error("useWorkbenches: update failed", error); });
   }, []);
 
   const addTool = useCallback((id: string, slug: string) => {
     const wb = workbenches.find((w) => w.id === id);
     if (!wb || wb.tool_slugs.includes(slug) || wb.tool_slugs.length >= maxToolsPerWorkbench) return;
-    setToolSlugs(id, [...wb.tool_slugs, slug]);
-  }, [workbenches, maxToolsPerWorkbench, setToolSlugs]);
+    const position = defaultToolPosition(wb.tool_slugs.length);
+    persist(id, {
+      tool_slugs: [...wb.tool_slugs, slug],
+      layout: { ...wb.layout, [slug]: position },
+    });
+  }, [workbenches, maxToolsPerWorkbench, persist]);
 
   const removeTool = useCallback((id: string, slug: string) => {
     const wb = workbenches.find((w) => w.id === id);
     if (!wb) return;
-    setToolSlugs(id, wb.tool_slugs.filter((s) => s !== slug));
-  }, [workbenches, setToolSlugs]);
+    const nextLayout = { ...wb.layout };
+    delete nextLayout[slug];
+    persist(id, {
+      tool_slugs: wb.tool_slugs.filter((s) => s !== slug),
+      layout: nextLayout,
+    });
+  }, [workbenches, persist]);
 
-  const reorderTools = useCallback((id: string, slugs: string[]) => {
-    setToolSlugs(id, slugs);
-  }, [setToolSlugs]);
+  // Перемещение карточки на свободном холсте. Помимо самой позиции,
+  // переносим slug в конец tool_slugs — порядок массива теперь значит не
+  // "визуальный ряд" (это делает layout), а z-index: последний элемент
+  // рисуется поверх остальных, так что последняя тронутая карточка
+  // ожидаемо оказывается сверху, если несколько случайно перекрылись.
+  const moveTool = useCallback((id: string, slug: string, position: ToolPosition) => {
+    const wb = workbenches.find((w) => w.id === id);
+    if (!wb) return;
+    persist(id, {
+      tool_slugs: [...wb.tool_slugs.filter((s) => s !== slug), slug],
+      layout: { ...wb.layout, [slug]: position },
+    });
+  }, [workbenches, persist]);
+
+  const setPublic = useCallback((id: string, isPublic: boolean) => {
+    persist(id, { is_public: isPublic });
+  }, [persist]);
 
   // Перетаскивание самих вкладок рабочих столов (не инструментов внутри
-  // одного стола — это reorderTools выше). newIdOrder — id рабочих
+  // одного стола — этим занимается moveTool выше). newIdOrder — id рабочих
   // столов в новом порядке отображения; position каждого пересчитывается
   // по его индексу в этом массиве и сохраняется той же схемой, что уже
   // используется для сортировки при загрузке (order("position")).
@@ -145,6 +182,6 @@ export function useWorkbenches(isPro: boolean) {
   return {
     workbenches, loading, maxWorkbenches, maxToolsPerWorkbench,
     createWorkbench, renameWorkbench, deleteWorkbench,
-    addTool, removeTool, reorderTools, reorderWorkbenches,
+    addTool, removeTool, moveTool, setPublic, reorderWorkbenches,
   };
 }
