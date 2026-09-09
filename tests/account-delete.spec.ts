@@ -87,7 +87,13 @@ test.describe.serial("Удаление аккаунта", () => {
   });
 
   test.afterAll(async () => {
-    await page.close();
+    // page? — не просто на всякий случай: если test.skip() выше сработал
+    // (нет SUPABASE_SERVICE_ROLE_KEY), строка "page = await browser.newPage()"
+    // так и не выполнилась, page остаётся undefined, а afterAll всё равно
+    // вызывается Playwright'ом даже для скипнутого describe-блока. Без "?"
+    // здесь падает TypeError вместо чистого skip — именно так уже один раз
+    // и было (см. workbench-pro.spec.ts — там та же защита не просто так).
+    await page?.close();
   });
 
   test("подготовка — регистрация тестового аккаунта", async () => {

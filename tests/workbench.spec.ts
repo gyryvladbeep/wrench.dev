@@ -144,17 +144,36 @@ test.describe.serial("Workbench: жизненный цикл рабочего с
     // а не через её внутренние константы — так тест ловит и регрессии в
     // самой WorkbenchCanvas (например, если она перестанет читать layout
     // из хука и станет складывать карточки в одну точку).
-    const jsonFormatter = await wb.cardPosition("JSON Formatter");   // индекс 0 → колонка 0, ряд 0
-    const uuidGenerator  = await wb.cardPosition("UUID Generator");  // индекс 1 → колонка 1, тот же ряд
-    const regexTester    = await wb.cardPosition("Regex Tester");    // индекс 3 → колонка 0, следующий ряд
+    //
+    // ВАЖНО про выбор карточек для сравнения: WorkbenchCanvas отдельно
+    // подвигает вниз любую карточку, чья дефолтная каскадная позиция
+    // попадает под плавающую панель вкладок/действий (см. avoidPanel() и
+    // avoidTopLeft в WorkbenchCanvas.tsx) — это сделано намеренно, чтобы
+    // карточка не рождалась полностью закрытой панелью и недоступной для
+    // клика, а не баг. Из-за этого раньше здесь сравнивались JSON
+    // Formatter (колонка 0, ряд 0) и UUID Generator (колонка 1, ряд 0) —
+    // при реальном/оценочном размере панели (см. INITIAL_PANEL_ESTIMATE в
+    // page.tsx, 540×230) обе эти клетки попадают под панель и обе
+    // одинаково сдвигаются вниз, а Regex Tester (колонка 0, ряд 1, y=280)
+    // уже ниже панели и никуда не сдвигается — сравнение "ряд 0 vs ряд 1"
+    // на самом деле сравнивало "сдвинутая карточка" vs "несдвинутая",
+    // получая разницу в 34px вместо ожидаемых 260. Колонка 2 (x=924)
+    // физически недостижима для панели такой ширины ни в одном ряду, а
+    // весь ряд 1 (y=280) уже ниже её высоты — сравниваем только эти
+    // заведомо не подвинутые avoidPanel() карточки.
+    const httpStatusCodes = await wb.cardPosition("HTTP Status Codes");      // индекс 2 → колонка 2, ряд 0
+    const cssSelector     = await wb.cardPosition("CSS Selector Generator"); // индекс 5 → колонка 2, ряд 1
+    const regexTester     = await wb.cardPosition("Regex Tester");          // индекс 3 → колонка 0, ряд 1
+    const xpathGenerator  = await wb.cardPosition("XPath Generator");       // индекс 4 → колонка 1, ряд 1
 
-    // Соседняя колонка — заметно правее, та же высота (одна строка каскада).
-    expect(uuidGenerator.x - jsonFormatter.x).toBeGreaterThan(200);
-    expect(Math.abs(uuidGenerator.y - jsonFormatter.y)).toBeLessThan(10);
+    // Соседняя колонка внутри одной строки каскада (ряд 1) — заметно
+    // правее, та же высота.
+    expect(xpathGenerator.x - regexTester.x).toBeGreaterThan(200);
+    expect(Math.abs(xpathGenerator.y - regexTester.y)).toBeLessThan(10);
 
-    // Следующая строка каскада — заметно ниже, та же колонка.
-    expect(regexTester.y - jsonFormatter.y).toBeGreaterThan(150);
-    expect(Math.abs(regexTester.x - jsonFormatter.x)).toBeLessThan(10);
+    // Следующая строка каскада в той же колонке (2) — заметно ниже, тот же x.
+    expect(cssSelector.y - httpStatusCodes.y).toBeGreaterThan(150);
+    expect(Math.abs(cssSelector.x - httpStatusCodes.x)).toBeLessThan(10);
   });
 
   test("ручка в углу карточки меняет её размер — растёт по курсору и не сжимается меньше минимума", async () => {
