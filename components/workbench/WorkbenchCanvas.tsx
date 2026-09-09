@@ -31,6 +31,16 @@ interface WorkbenchCanvasProps {
   // смотрелась бы как случайная лишняя коробка. По умолчанию true, чтобы
   // не трогать поведение публичной страницы.
   bordered?: boolean;
+  // Прямоугольник в левом верхнем углу (в тех же координатах, что и
+  // сам холст), который карточкам занимать нельзя — под ним на
+  // /workbench плавает панель вкладок/действий, и полностью закрытая ей
+  // карточка была бы не видна и недоступна для клика (у панели z-index
+  // выше). Холст сам подвигает вниз любую карточку, чья позиция туда
+  // попадает — и при обычном рендере, и сразу после драга — так что
+  // сама панель может свободно менять размер (больше вкладок, more
+  // длинные названия), а карточки не нужно вручную разводить. На
+  // публичной странице панели нет — там проп не передаётся.
+  avoidTopLeft?: { width: number; height: number };
 }
 
 // Высота, которую условно занимает карточка при расчёте общей высоты
@@ -41,15 +51,28 @@ const ESTIMATED_CARD_HEIGHT = 420;
 const CANVAS_MIN_HEIGHT = 480;
 
 export function WorkbenchCanvas({
-  tools, layout, dict, locale, onRemove, onMove, readOnly = false, minHeight, bordered = true,
+  tools, layout, dict, locale, onRemove, onMove, readOnly = false, minHeight, bordered = true, avoidTopLeft,
 }: WorkbenchCanvasProps) {
   const t = WORKBENCH_UI[locale];
   const containerRef = useRef<HTMLDivElement>(null);
   const [draggedSlug, setDraggedSlug] = useState<string | null>(null);
   const dragOffset = useRef({ x: 0, y: 0 });
 
+  // Если позиция (своя или дефолтная каскадная) попадает в запретный
+  // угол под панелью — сдвигаем карточку прямо под него, сохраняя x.
+  // Не трогает СОХРАНЁННЫЕ координаты в layout — это чисто отображение,
+  // сработает заново при следующем рендере, если панель станет другого
+  // размера.
+  function avoidPanel(pos: ToolPosition): ToolPosition {
+    if (!avoidTopLeft) return pos;
+    if (pos.x < avoidTopLeft.width && pos.y < avoidTopLeft.height) {
+      return { x: pos.x, y: avoidTopLeft.height + 16 };
+    }
+    return pos;
+  }
+
   function positionFor(slug: string, index: number): ToolPosition {
-    return layout[slug] ?? defaultToolPosition(index);
+    return avoidPanel(layout[slug] ?? defaultToolPosition(index));
   }
 
   const containerHeight = Math.max(
@@ -86,7 +109,7 @@ export function WorkbenchCanvas({
     const rawX = e.clientX - containerRect.left - dragOffset.current.x;
     const rawY = e.clientY - containerRect.top - dragOffset.current.y;
     const clamped = clampToolPosition(rawX, rawY, containerRect.width);
-    onMove(draggedSlug, clamped);
+    onMove(draggedSlug, avoidPanel(clamped));
     setDraggedSlug(null);
   }
 

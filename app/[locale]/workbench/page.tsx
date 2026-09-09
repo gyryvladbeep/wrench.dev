@@ -20,14 +20,12 @@ import { CopyButton } from "@/components/CopyButton";
 // произвольный кусок страницы.
 const HEADER_HEIGHT = 49;
 const CANVAS_FALLBACK_HEIGHT = 480;
-// Место, зарезервированное сверху под плавающую панель (вкладки +
-// действия) — панель "fixed", поэтому сама по себе не толкает холст
-// вниз; без этого отступа дефолтная каскадная позиция первой добавленной
-// карточки (20, 20) пришлась бы прямо под панелью и была бы не видна,
-// пока её не утащат оттуда вслепую. Грубая оценка высоты панели с
-// запасом — не обязана быть пиксель-в-пиксель, только не давать
-// карточкам стартовать под ней.
-const PANEL_RESERVED_TOP = 230;
+// Стартовая оценка размера плавающей панели — используется как
+// запретный угол для карточек ДО того, как ResizeObserver впервые
+// измерит панель по-настоящему (см. panelRect ниже). Без стартового
+// значения первый кадр отрендерил бы карточки без учёта панели вообще,
+// и они бы на мгновение мелькнули под ней, а потом дёрнулись вниз.
+const INITIAL_PANEL_ESTIMATE = { width: 540, height: 230 };
 
 export default function WorkbenchPage() {
   const { user, loading, isSigningOut } = useAuth();
@@ -53,6 +51,39 @@ export default function WorkbenchPage() {
   // на document), что уже используется в AvatarMenu из Header.tsx.
   const [shareOpen, setShareOpen] = useState(false);
   const shareRef = useRef<HTMLDivElement>(null);
+
+  // Плавающая панель измеряет сама себя — карточки на холсте не должны
+  // рождаться (и не должны застревать после драга) у неё под низом,
+  // иначе полностью закрытая панелью карточка была бы не видна и
+  // недоступна для клика (см. avoidTopLeft в WorkbenchCanvas). ResizeObserver,
+  // а не разовое измерение — ширина/высота панели меняется вместе с
+  // количеством вкладок и длиной их названий (перенос строк).
+  const panelRef = useRef<HTMLDivElement>(null);
+  // Храним запретный угол сразу в координатах холста (не сырые
+  // width/height панели) — getBoundingClientRect() даёт углы панели во
+  // viewport-координатах; canvas-local x=0 совпадает с viewport x=0
+  // (у холста нет отступа слева), а canvas-local y=0 — это viewport
+  // y=HEADER_HEIGHT (холст начинается сразу под шапкой). Так измерение
+  // не завязано на конкретные "left-4"/"top-[60px]" панели — если её
+  // позиционирование когда-то поменяется, тут ничего трогать не придётся.
+  const [avoidTopLeft, setAvoidTopLeft] = useState({
+    width: INITIAL_PANEL_ESTIMATE.width,
+    height: INITIAL_PANEL_ESTIMATE.height,
+  });
+  useEffect(() => {
+    const el = panelRef.current;
+    if (!el) return;
+    function measure() {
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      setAvoidTopLeft({ width: rect.right, height: Math.max(0, rect.bottom - HEADER_HEIGHT) });
+    }
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    window.addEventListener("resize", measure);
+    return () => { observer.disconnect(); window.removeEventListener("resize", measure); };
+  }, []);
 
   useEffect(() => {
     if (!shareOpen) return;
@@ -130,7 +161,7 @@ export default function WorkbenchPage() {
   const shareUrl = active && typeof window !== "undefined"
     ? `${window.location.origin}${localePath(locale, `/w/${active.id}`)}`
     : "";
-  const canvasMinHeight = Math.max(CANVAS_FALLBACK_HEIGHT, viewportHeight - HEADER_HEIGHT - PANEL_RESERVED_TOP);
+  const canvasMinHeight = Math.max(CANVAS_FALLBACK_HEIGHT, viewportHeight - HEADER_HEIGHT);
 
   function commitRename(id: string, fallback: string) {
     renameWorkbench(id, nameDraft.trim() || fallback);
@@ -161,7 +192,10 @@ export default function WorkbenchPage() {
           выше самой сетки; теперь холст занимает страницу целиком,
           так что панель "плавает" поверх него отдельным окном
           (fixed, со своей рамкой и тенью), а не толкает его вниз. */}
-      <div className="fixed left-4 top-[60px] z-30 max-w-[calc(100vw-2rem)] rounded-xl border border-border bg-surface/95 p-4 shadow-lg backdrop-blur-md">
+      <div
+        ref={panelRef}
+        className="fixed left-4 top-[60px] z-30 max-w-[calc(100vw-2rem)] rounded-xl border border-border bg-surface/95 p-4 shadow-lg backdrop-blur-md"
+      >
         <h1 className="mb-3 text-base font-bold text-text-primary">{t.pageTitle}</h1>
 
         {/* Workspace tabs */}
@@ -319,14 +353,15 @@ export default function WorkbenchPage() {
       </div>
 
       {/* ═══════════════════════════════════════════════════════
-          Сам холст — теперь вся страница под шапкой, а не колонка
-          внутри неё. Рендерим его всегда (даже с 0 карточек), чтобы
-          точечный фон был виден сразу, а не только когда в рабочем
-          столе уже что-то есть — плавающая панель выше и модалка
-          выбора инструментов остаются единственными "окнами" поверх
-          него. */}
+          Сам холст — вся страница под шапкой целиком, от самого верха:
+          панель выше плавает НАД ним (fixed, не занимает место в
+          потоке), а не толкает его вниз. Точечный фон виден сразу под
+          панелью и по всей странице, а не только когда в рабочем столе
+          уже что-то есть. Единственная поправка — avoidTopLeft ниже:
+          холст сам не даёт карточкам оказаться под панелью, где их не
+          было бы видно и нечем было бы кликнуть. */}
       {active && (
-        <div className="relative w-full" style={{ paddingTop: PANEL_RESERVED_TOP }}>
+        <div className="relative w-full">
           <WorkbenchCanvas
             tools={activeTools}
             layout={active.layout}
@@ -336,6 +371,7 @@ export default function WorkbenchPage() {
             onMove={(slug, position) => moveTool(active.id, slug, position)}
             minHeight={canvasMinHeight}
             bordered={false}
+            avoidTopLeft={avoidTopLeft}
           />
 
           {activeTools.length === 0 && (
