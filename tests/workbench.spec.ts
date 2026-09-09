@@ -182,6 +182,22 @@ test.describe.serial("Workbench: жизненный цикл рабочего с
     // что рост карточки не наедет на чужую и не перехватит у неё клик —
     // именно это и оказалось ложной тревогой при ручной проверке фичи на
     // уже раздвинутой карточке с соседом впритык.
+    //
+    // НО у колонки 2 в каскаде x=924 (см. CASCADE_COL_GAP в
+    // lib/workbench-layout.ts: 20 + 2*452), а ширина карточки по
+    // умолчанию 420 (CANVAS_CARD_WIDTH) — правый край на x=1344. Это шире
+    // стандартного вьюпорта Desktop Chrome, которым Playwright гоняет
+    // тесты по умолчанию (1280×720, см. playwright.config.ts). Ручка
+    // ресайза в правом нижнем углу такой карточки физически рисуется за
+    // пределами вьюпорта — курсору Playwright там некуда "навестись":
+    // resizeCard() молча промахивается мимо неё, mousedown не запускает
+    // ресайз, и размер карточки остаётся прежним (ровно это и произошло —
+    // этот тест ни разу не успевал выполниться раньше, потому что перед
+    // ним стабильно падал тест каскадной раскладки и обрывал всю
+    // serial-серию). Расширяем вьюпорт только на время этого теста и
+    // возвращаем обратно, чтобы не менять условия для тестов после него.
+    await page.setViewportSize({ width: 1600, height: 900 });
+
     const before = await wb.cardSize("CSS Selector Generator");
     await wb.resizeCard("CSS Selector Generator", 80, 60);
     const grown = await wb.cardSize("CSS Selector Generator");
@@ -195,6 +211,8 @@ test.describe.serial("Workbench: жизненный цикл рабочего с
     const shrunk = await wb.cardSize("CSS Selector Generator");
     expect(shrunk.width).toBe(280);
     expect(shrunk.height).toBe(160);
+
+    await page.setViewportSize({ width: 1280, height: 720 });
   });
 
   test("промо-карточка Workbench на странице профиля показывает актуальное число закреплённых инструментов", async () => {
