@@ -25,6 +25,19 @@ export function ToolPickerModal({
   const t = WORKBENCH_UI[locale];
   const atLimit = addedSlugs.length >= maxTools;
 
+  // Модалка не размонтируется, когда open становится false (page.tsx
+  // всегда рендерит <ToolPickerModal open={pickerOpen} .../> — компонент
+  // просто возвращает null ниже), так что query без этого эффекта
+  // пережил бы закрытие: закрыл модалку с фильтром "uuid", в следующий
+  // раз открыл её уже за другим инструментом — а список снова тихо
+  // отфильтрован под старый запрос. Сбрасываем при каждом открытии, а
+  // не при закрытии — так поле точно пустое именно в момент, когда
+  // пользователь снова видит модалку, независимо от того, как она была
+  // закрыта до этого (Escape, клик по фону, программно).
+  useEffect(() => {
+    if (open) setQuery("");
+  }, [open]);
+
   const tools = useMemo(() => {
     const base = query.trim() ? searchTools(query, locale) : getImplementedTools();
     return base.filter((tool) => tool.isImplemented).map((tool) => localizeTool(tool, locale));

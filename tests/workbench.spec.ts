@@ -78,7 +78,24 @@ test.describe.serial("Workbench: жизненный цикл рабочего с
     await expect(wb.pickerToolRow("UUID Generator")).toBeVisible();
     // JSON Formatter не должен пройти фильтр по запросу "uuid".
     await expect(wb.pickerRoot.getByText("JSON Formatter", { exact: true })).toBeHidden();
-    await wb.pickerSearchInput.fill("");
+    // Закрываем НЕ очищая поле — именно так поймали баг ниже: модалка не
+    // размонтируется при закрытии (page.tsx всегда рендерит
+    // <ToolPickerModal open={pickerOpen} .../>, компонент просто вернёт
+    // null), так что query в её локальном состоянии раньше переживал
+    // закрытие и встречал пользователя тем же фильтром в следующий раз.
+    await wb.closeToolPicker();
+  });
+
+  test("повторное открытие модалки сбрасывает старый поисковый запрос", async () => {
+    // Регрессия на баг, пойманный при тестировании фичи (2026-09-09):
+    // модалка не размонтируется на закрытии, и без явного сброса query
+    // в ToolPickerModal предыдущий запрос ("uuid" из теста выше) молча
+    // фильтровал список при следующем открытии — так что пользователь,
+    // ищущий уже другой инструмент, видел пустой/urезанный список без
+    // очевидной причины.
+    await wb.openToolPicker();
+    await expect(wb.pickerSearchInput).toHaveValue("");
+    await expect(wb.pickerToolRow("JSON Formatter")).toBeVisible();
     await wb.closeToolPicker();
   });
 

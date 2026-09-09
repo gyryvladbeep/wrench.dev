@@ -64,10 +64,16 @@ export class WorkbenchPage {
     this.pickerSearchInput = this.pickerRoot.getByPlaceholder("Search tools…");
     this.pickerLimitBanner = this.pickerRoot.getByText(/reached the .+-tool limit/);
 
-    // Тот самый div с классами "mb-4 flex flex-wrap items-center gap-2"
-    // из workbench/page.tsx — единственный такой на странице, держит
-    // и вкладки рабочих столов, и кнопку "+ New workspace"/лимит рядом.
-    this.workspaceTabsRow  = page.locator("div.mb-4.flex.flex-wrap.items-center.gap-2");
+    // Тот самый div с классами "flex flex-wrap items-center gap-2" из
+    // workbench/page.tsx — единственный такой на странице, держит и
+    // вкладки рабочих столов, и кнопку "+ New workspace"/лимит рядом.
+    // ПРИМЕЧАНИЕ: раньше здесь ещё был класс "mb-4" — локатор был на
+    // него завязан, но сам класс исчез из разметки ещё в редизайне под
+    // полностраничный холст (плавающая панель сама уже задаёт отступы),
+    // а тест на это не заметил, потому что workspaceTabOrder() тогда
+    // ещё нигде не вызывался. Нашлось только сейчас, при добавлении
+    // теста на драг вкладок — .mb-4 полностью убран из селектора.
+    this.workspaceTabsRow  = page.locator("div.flex.flex-wrap.items-center.gap-2").first();
 
     this.shareButton       = page.getByRole("button", { name: "Share", exact: true });
     // role="switch" делает панель однозначно адресуемой без завязки на

@@ -168,6 +168,18 @@ export default function WorkbenchPage() {
     setRenamingId(null);
   }
 
+  // confirmDeleteId раньше переживал переключение вкладки — начал
+  // удаление одного рабочего стола, передумал, кликнул на другую
+  // вкладку, вернулся обратно к первой — и видел "Удалить это
+  // пространство?" снова, БЕЗ повторного клика на "Удалить". Сбрасываем
+  // подтверждение при каждом переключении активного рабочего стола, а
+  // не только там, где оно явно закрывается (Cancel/подтверждённое
+  // удаление) — так предупреждение никогда не переживает смену вкладки.
+  function switchWorkspace(id: string) {
+    setActiveId(id);
+    setConfirmDeleteId(null);
+  }
+
   function handleWorkspaceDrop(targetId: string) {
     if (!draggedWorkspaceId || draggedWorkspaceId === targetId) {
       setDraggedWorkspaceId(null); setOverWorkspaceId(null); return;
@@ -231,7 +243,7 @@ export default function WorkbenchPage() {
                 />
               ) : (
                 <button
-                  onClick={() => setActiveId(wb.id)}
+                  onClick={() => switchWorkspace(wb.id)}
                   onDoubleClick={() => { setRenamingId(wb.id); setNameDraft(wb.name); }}
                   className={`rounded-lg px-3 py-1.5 text-sm transition-colors ${
                     activeId === wb.id
