@@ -343,9 +343,20 @@ export default function WorkbenchPage() {
                       onClick={() => setPublic(active.id, !active.is_public)}
                       className={`relative h-5 w-9 shrink-0 rounded-full transition-colors ${active.is_public ? "bg-accent" : "bg-surface-hover"}`}
                     >
+                      {/* left-0.5 закрепляет базовую позицию бегунка явно — без
+                          неё (как было раньше) абсолютно спозиционированный
+                          span без left/right получает "статическую позицию"
+                          по вычислению браузера, а не 0: на практике здесь
+                          она оказывалась около 18px, а не 0. В выключенном
+                          состоянии сдвиг на translate-x-0.5 поверх этого был
+                          почти незаметен, но во включённом состоянии
+                          translate-x-[18px] поверх той же базы уводил бегунок
+                          на 36px от левого края — то есть на всю ширину
+                          дорожки (36px) плюс собственная ширина, и он
+                          заметно вылезал за правый край дорожки. */}
                       <span
-                        className={`absolute top-0.5 h-4 w-4 rounded-full bg-text-primary transition-transform ${
-                          active.is_public ? "translate-x-[18px]" : "translate-x-0.5"
+                        className={`absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-text-primary transition-transform ${
+                          active.is_public ? "translate-x-4" : "translate-x-0"
                         }`}
                       />
                     </button>

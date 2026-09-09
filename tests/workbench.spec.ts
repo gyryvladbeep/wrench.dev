@@ -209,6 +209,20 @@ test.describe.serial("Workbench: жизненный цикл рабочего с
     const shareUrl = await wb.enablePublicSharingAndGetUrl();
     expect(shareUrl).toMatch(/\/w\/[^/]+$/);
 
+    // Регрессия на баг, пойманный при тестировании (2026-09-09): бегунок
+    // тогла раньше не имел явного left, полагался на "статическую
+    // позицию" браузера для абсолютно спозиционированного span'а без
+    // left/right — на практике она оказывалась не нулевой, и во
+    // включённом состоянии бегунок заметно вылезал за правый край
+    // дорожки. Проверяем геометрию впрямую: bounding box бегунка должен
+    // целиком помещаться внутри bounding box дорожки, а не просто
+    // визуально "выглядеть похоже".
+    const trackBox = await wb.sharePublicToggle.boundingBox();
+    const knobBox = await wb.sharePublicToggle.locator("span").boundingBox();
+    if (!trackBox || !knobBox) throw new Error("тогл 'Публичная ссылка' не отрисован");
+    expect(knobBox.x).toBeGreaterThanOrEqual(trackBox.x);
+    expect(knobBox.x + knobBox.width).toBeLessThanOrEqual(trackBox.x + trackBox.width);
+
     // Отдельный, полностью неавторизованный контекст — не переиспользуем
     // cookies основной сессии, иначе тест не отличил бы "страница
     // доступна всем по ссылке" от "страница доступна МНЕ, потому что я и
