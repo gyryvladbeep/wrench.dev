@@ -872,6 +872,46 @@ export const tools: Tool[] = [
       { question: "Is my color data sent anywhere?", answer: "No. The contrast ratio is calculated entirely in your browser using the WCAG relative luminance formula — nothing is uploaded." },
     ],
   },
+  {
+    slug: "live-locator-tester",
+    name: "Live Locator Tester",
+    shortDescription: "Test a CSS selector or XPath against real HTML and see exactly what it matches.",
+    longDescription: "Paste an HTML snippet and a CSS selector or XPath expression to see, live, which elements it actually matches — with a match count and a warning when a locator resolves to zero or more than one element, the two most common reasons an automated test is flaky.",
+    metaDescription: "Free live CSS selector and XPath tester. Paste HTML and a locator to see match count and matched elements instantly, right in your browser.",
+    category: "qa", isImplemented: true, isPopular: true,
+    aliases: ["css selector tester", "xpath tester", "locator playground", "selector validator", "locator debugger"],
+    relatedSlugs: ["css-selector-generator", "xpath-generator"],
+    keywords: ["css selector tester", "xpath tester online", "locator tester", "selenium locator debugger", "playwright selector tester"],
+    howToSteps: [
+      "Paste the HTML you're targeting (copy it from your app's dev tools, or write a snippet).",
+      "Switch between CSS and XPath mode and type your locator.",
+      "Check the match count — 0 means the locator won't find the element, more than 1 means it isn't unique and the test may be flaky.",
+    ],
+    faqs: [
+      { question: "Does this test against a real, live webpage?", answer: "No — it parses the HTML you paste in your browser (via DOMParser), it doesn't load or connect to any URL. That keeps it instant and avoids CORS entirely, but it won't reflect JavaScript-rendered DOM changes unless you paste the final rendered HTML." },
+      { question: "Why does my locator match more elements here than in my test framework?", answer: "CSS selectors behave identically across browsers and DOMParser, so a mismatch usually means the pasted HTML doesn't exactly match what's actually rendered at test time — check for dynamically added classes or attributes." },
+    ],
+  },
+  {
+    slug: "screenshot-diff-checker",
+    name: "Screenshot Diff Checker",
+    shortDescription: "Compare two screenshots pixel-by-pixel and highlight what changed.",
+    longDescription: "Upload two images to see a pixel-level diff overlay, the percentage of pixels that changed, and an adjustable sensitivity threshold to filter out anti-aliasing noise — a quick manual visual regression check without setting up a full screenshot-testing pipeline.",
+    metaDescription: "Free screenshot diff checker. Compare two images pixel-by-pixel, see a highlighted diff overlay and percent changed, right in your browser.",
+    category: "qa", isImplemented: true,
+    aliases: ["visual regression checker", "image diff tool", "pixel diff checker", "screenshot comparison tool"],
+    relatedSlugs: ["contrast-checker", "text-diff"],
+    keywords: ["screenshot diff tool", "visual regression testing", "image diff checker", "pixel comparison tool", "compare screenshots online"],
+    howToSteps: [
+      "Upload the baseline screenshot as Image A and the new one as Image B.",
+      "Adjust the sensitivity threshold — lower catches small color shifts, higher tolerates anti-aliasing and compression artifacts.",
+      "Click Compare and review the diff overlay and percentage — download it to attach to a bug report.",
+    ],
+    faqs: [
+      { question: "Are my images uploaded anywhere?", answer: "No — everything runs in your browser using the Canvas API. Nothing is sent to a server." },
+      { question: "What if the two images are different sizes?", answer: "They're compared on a canvas sized to the larger image; the extra area in the smaller image counts as a difference, and a warning is shown so you know the dimensions didn't match." },
+    ],
+  },
 
   // ═══════════════════════════════ API ════════════════════════════════════════
 
@@ -896,6 +936,26 @@ export const tools: Tool[] = [
     aliases: ["rest client", "api client", "http tester"],
     relatedSlugs: ["api-request-builder", "curl-generator"],
     keywords: ["rest client online", "rest request builder", "api tester"],
+  },
+  {
+    slug: "curl-to-code-converter",
+    name: "Curl to Code Converter",
+    shortDescription: "Convert a curl command into ready-to-run JavaScript, Python, Node.js or PowerShell.",
+    longDescription: "Paste a curl command — copied from your terminal, a browser's 'Copy as cURL', or Postman — and get an equivalent, ready-to-paste request in JavaScript (fetch), Node.js (axios), Python (requests) or PowerShell (Invoke-RestMethod). No more manually translating flags into code by hand.",
+    metaDescription: "Free curl to code converter. Turn any curl command into JavaScript fetch, Node axios, Python requests or PowerShell instantly, right in your browser.",
+    category: "api", isImplemented: true, isPopular: true,
+    aliases: ["curl converter", "curl to fetch", "curl to python", "curl to requests", "curl to javascript"],
+    relatedSlugs: ["curl-generator", "api-request-builder"],
+    keywords: ["curl to code", "curl to fetch converter", "curl to python requests", "curl to javascript", "convert curl command"],
+    howToSteps: [
+      "Paste a curl command — copy it from a terminal, or use 'Copy as cURL' from your browser's dev tools Network tab.",
+      "Check the detected method, URL and header count to confirm it parsed correctly.",
+      "Pick a target language tab and copy the generated code.",
+    ],
+    faqs: [
+      { question: "Which curl flags are supported?", answer: "The common ones: -X/--request, -H/--header, -d/--data (and its variants), -u/--user, -b/--cookie, -A/--user-agent, -G/--get, and JSON bodies are detected automatically and pretty-printed. Less common flags (multipart file uploads, client certificates) aren't translated." },
+      { question: "Is my curl command sent anywhere?", answer: "No — parsing and code generation both happen entirely in your browser." },
+    ],
   },
 
   // ═══════════════════════════════ GAMEDEV ════════════════════════════════════

@@ -89,6 +89,9 @@ import { TilemapCoordinateConverterTool } from "./TilemapCoordinateConverterTool
 import { FramerateIndependentMovementCalculatorTool } from "./FramerateIndependentMovementCalculatorTool";
 import { LootTableValidatorTool }   from "./LootTableValidatorTool";
 import { ResolutionSafezoneCalculatorTool } from "./ResolutionSafezoneCalculatorTool";
+import { LiveLocatorTesterTool }    from "./LiveLocatorTesterTool";
+import { ScreenshotDiffCheckerTool } from "./ScreenshotDiffCheckerTool";
+import { CurlToCodeConverterTool }  from "./CurlToCodeConverterTool";
 
 /**
  * Single "use client" boundary for all interactive tool components.
@@ -161,9 +164,12 @@ export function ToolRenderer({
     case "framerate-independent-movement-calculator": return <FramerateIndependentMovementCalculatorTool dict={dict} />;
     case "loot-table-validator":      return <LootTableValidatorTool dict={dict} />;
     case "resolution-safezone-calculator": return <ResolutionSafezoneCalculatorTool dict={dict} />;
+    case "live-locator-tester":       return <LiveLocatorTesterTool dict={dict} />;
+    case "screenshot-diff-checker":   return <ScreenshotDiffCheckerTool dict={dict} />;
     // ── API ─────────────────────────────────────────────────────────────────
     case "curl-generator":            return <CurlGeneratorTool dict={dict} />;
     case "rest-request-builder":      return <RestRequestBuilderTool dict={dict} />;
+    case "curl-to-code-converter":    return <CurlToCodeConverterTool dict={dict} />;
     case "boundary-value-generator":  return <BoundaryValueTool dict={dict} />;
     case "test-data-generator":       return <TestDataGeneratorTool dict={dict} />;
     case "json-diff":                 return <JsonDiffTool dict={dict} />;
