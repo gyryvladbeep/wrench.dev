@@ -99,10 +99,22 @@ test.describe.serial("Удаление аккаунта", () => {
     await expect(confirmInput).toBeVisible();
     await expect(confirmButton).toBeDisabled();
 
-    await confirmInput.fill("delete"); // неправильный регистр/неточная фраза
+    await confirmInput.fill("DEL"); // неполная фраза
     await expect(confirmButton).toBeDisabled();
 
     await confirmInput.fill("DELETE ME"); // похоже, но не совпадает
+    await expect(confirmButton).toBeDisabled();
+
+    await confirmInput.fill(""); // снова пусто
+    await expect(confirmButton).toBeDisabled();
+
+    // Регистр не имеет значения — это текстовая защита от случайного
+    // клика, а не проверка чувствительных данных (см. .toUpperCase() в
+    // handleDeleteAccount на /profile), так что "delete" тоже включает
+    // кнопку. Возвращаем поле в пустое состояние перед следующим тестом.
+    await confirmInput.fill("delete");
+    await expect(confirmButton).toBeEnabled();
+    await confirmInput.fill("");
     await expect(confirmButton).toBeDisabled();
   });
 
