@@ -60,6 +60,16 @@ jobs:
       # Шаг 6 — запускаем тесты против собранного приложения
       - name: Run Playwright tests
         run: npm run test
+        env:
+          # Опционально. Если в Settings → Secrets and variables → Actions
+          # этого репозитория добавлен секрет SUPABASE_SERVICE_ROLE_KEY —
+          # после прогона всех тестов автоматически удалятся тестовые
+          # аккаунты (*@wrench-test.dev), которые создают auth-flow.spec.ts /
+          # workbench.spec.ts / workbench-pro.spec.ts (см.
+          # tests/global-teardown.ts). Без этого секрета тесты всё равно
+          # проходят как обычно — просто не подчищают за собой аккаунты
+          # в Supabase, их придётся удалять вручную.
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
 
       # Шаг 7 — если тесты упали, сохраняем отчёт как "артефакт"
       # чтобы можно было скачать и посмотреть скриншоты/видео падения
