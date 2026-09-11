@@ -78,6 +78,13 @@ export function WorkbenchCanvas({
   const containerRef = useRef<HTMLDivElement>(null);
   const cardRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const [draggedSlug, setDraggedSlug] = useState<string | null>(null);
+  // Синхронное зеркало draggedSlug для функциональных проверок в обработчиках
+  // ниже (dragover/drop) — тот же приём, что signingOutRef в auth-context.tsx:
+  // React-состояние обновляется асинхронно (флаш может отстать от следующего
+  // нативного события в быстрой серии drag), а ref — всегда актуален в
+  // момент чтения. draggedSlug (state) остаётся только для визуального
+  // opacity-40 у перетаскиваемой карточки — там лаг на один кадр не виден.
+  const draggedSlugRef = useRef<string | null>(null);
   const dragOffset = useRef({ x: 0, y: 0 });
   const dragCardWidth = useRef(CANVAS_CARD_WIDTH);
 
@@ -132,6 +139,7 @@ export function WorkbenchCanvas({
     const cardRect = e.currentTarget.getBoundingClientRect();
     dragOffset.current = { x: e.clientX - cardRect.left, y: e.clientY - cardRect.top };
     dragCardWidth.current = cardRect.width;
+    draggedSlugRef.current = slug;
     setDraggedSlug(slug);
     // Firefox требует непустой dataTransfer, иначе drag не начинается.
     e.dataTransfer.setData("text/plain", slug);
@@ -139,19 +147,21 @@ export function WorkbenchCanvas({
   }
 
   function handleContainerDragOver(e: React.DragEvent<HTMLDivElement>) {
-    if (!draggedSlug) return;
+    if (!draggedSlugRef.current) return;
     e.preventDefault();
   }
 
   function handleContainerDrop(e: React.DragEvent<HTMLDivElement>) {
-    if (!draggedSlug || !onMove) { setDraggedSlug(null); return; }
+    const slug = draggedSlugRef.current;
+    draggedSlugRef.current = null;
+    if (!slug || !onMove) { setDraggedSlug(null); return; }
     e.preventDefault();
     const containerRect = containerRef.current?.getBoundingClientRect();
     if (!containerRect) { setDraggedSlug(null); return; }
     const rawX = e.clientX - containerRect.left - dragOffset.current.x;
     const rawY = e.clientY - containerRect.top - dragOffset.current.y;
     const clamped = clampToolPosition(rawX, rawY, containerRect.width, dragCardWidth.current);
-    onMove(draggedSlug, avoidPanel(clamped));
+    onMove(slug, avoidPanel(clamped));
     setDraggedSlug(null);
   }
 
@@ -226,7 +236,7 @@ export function WorkbenchCanvas({
             ref={(el) => { if (el) cardRefs.current.set(tool.slug, el); else cardRefs.current.delete(tool.slug); }}
             draggable={!readOnly}
             onDragStart={(e) => handleDragStart(e, tool.slug)}
-            onDragEnd={() => setDraggedSlug(null)}
+            onDragEnd={() => { draggedSlugRef.current = null; setDraggedSlug(null); }}
             className={`absolute flex flex-col rounded-xl border bg-surface shadow-lg transition-opacity ${
               draggedSlug === tool.slug ? "opacity-40" : "border-border"
             }`}
