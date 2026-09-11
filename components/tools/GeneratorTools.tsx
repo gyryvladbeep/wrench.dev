@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { CopyButton } from "@/components/CopyButton";
 import { Dictionary } from "@/lib/i18n/dictionary-types";
@@ -35,9 +35,29 @@ function randomHex(): string {
 export function RandomColorTool({ dict }: { dict: Dictionary }) {
   const [colors, setColors] = useState<string[]>(() => Array.from({ length: 5 }, randomHex));
   const [locked, setLocked] = useState<boolean[]>(new Array(5).fill(false));
+  // Синхронное зеркало locked для generate() — тот же приём, что
+  // draggedSlugRef в WorkbenchCanvas.tsx: generate() до этой правки читал
+  // locked из обычного замыкания, актуального только для того рендера, в
+  // котором эта функция была создана. Клик по замку и почти сразу следом
+  // клик по Generate — два отдельных React-события; если React не успел
+  // перерендерить между ними (обычно успевает, но не гарантированно —
+  // поймано на CI как редкий флейк: заблокированный цвет иногда всё равно
+  // менялся), generate() ловил обработчик из ПРЕДЫДУЩЕГО рендера с ещё
+  // старым locked (замок визуально уже включён, а функция этого не видит).
+  // Ref обновляется синхронно в момент клика и не зависит от того, успел
+  // ли отрендериться компонент.
+  const lockedRef = useRef(locked);
+
+  function toggleLock(i: number) {
+    setLocked((prev) => {
+      const next = prev.map((v, j) => (j === i ? !v : v));
+      lockedRef.current = next;
+      return next;
+    });
+  }
 
   function generate() {
-    setColors((prev) => prev.map((c, i) => locked[i] ? c : randomHex()));
+    setColors((prev) => prev.map((c, i) => lockedRef.current[i] ? c : randomHex()));
   }
 
   function copyAll() {
@@ -66,7 +86,7 @@ export function RandomColorTool({ dict }: { dict: Dictionary }) {
                 <span>HSL: {h}°,{s}%,{l}%</span>
               </div>
               <div className="flex items-center gap-2 pr-3">
-                <button onClick={() => setLocked((p) => p.map((v, j) => j === i ? !v : v))}
+                <button onClick={() => toggleLock(i)}
                   title={locked[i] ? "Unlock" : "Lock"}
                   className={`text-sm ${locked[i] ? "text-accent" : "text-text-muted hover:text-text-primary"}`}>
                   {locked[i] ? <LockIcon size={14} /> : <UnlockIcon size={14} />}

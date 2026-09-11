@@ -77,8 +77,18 @@ export function HttpStatusCodesTool({ dict }: { dict: Dictionary }) {
         </div>
       </div>
 
-      {/* List */}
-      <div className="space-y-1">
+      {/* List — со скроллом внутри фиксированной высоты, а не "по
+          содержимому": без этого 28 кодов (каждый — многострочная
+          карточка с описанием) рендерились единым блоком высотой в
+          несколько тысяч пикселей. На отдельной странице инструмента это
+          просто длинная прокрутка страницы, а на свободном холсте
+          Workbench это раздувало карточку настолько, что она накрывала
+          собой соседние карточки в том же столбце (см. WorkbenchCanvas —
+          там позиции считаются каскадом с фиксированным шагом между
+          рядами, не глядя на реальную высоту контента). Поиск/фильтр
+          сверху уже есть — прокручиваемая область ничего не отнимает у
+          удобства, даже на отдельной странице. */}
+      <div className="max-h-[420px] space-y-1 overflow-y-auto">
         {filtered.map((c) => (
           <div key={c.code} className="flex items-start gap-3 rounded-md border border-border bg-surface p-3 hover:bg-surface-hover transition-colors">
             <div className="flex items-center gap-2 shrink-0">

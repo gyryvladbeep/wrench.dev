@@ -8,7 +8,7 @@ import { ToolRenderer } from "@/components/tools/ToolRenderer";
 import { WORKBENCH_UI } from "@/lib/i18n/workbench-content";
 import { CloseIcon } from "@/components/icons/GameIcons";
 import {
-  CANVAS_CARD_WIDTH, ToolPosition, clampToolPosition, clampToolSize, defaultToolPosition,
+  CANVAS_CARD_WIDTH, CASCADE_ROW_GAP, ToolPosition, clampToolPosition, clampToolSize, defaultToolPosition,
 } from "@/lib/workbench-layout";
 
 interface WorkbenchCanvasProps {
@@ -52,10 +52,15 @@ interface WorkbenchCanvasProps {
 // Высота, которую условно занимает карточка при расчёте общей высоты
 // холста, ПОКА у неё нет собственной сохранённой высоты (ресайз ещё не
 // трогали) — сама карточка гибкая по контенту, но нам нужен ориентир,
-// чтобы контейнер не обрезал самую нижнюю карточку. Совпадает с шагом
-// каскада CASCADE_ROW_GAP + запас на футер карточки. Если высота задана
-// вручную — используется она, а не эта оценка (см. containerHeight).
-const ESTIMATED_CARD_HEIGHT = 420;
+// чтобы контейнер не обрезал самую нижнюю карточку. Берём прямо из
+// CASCADE_ROW_GAP (lib/workbench-layout.ts), а не отдельной константой —
+// раньше они были независимыми числами (420 против 260) и расходились по
+// смыслу ровно там, где это важнее всего: именно ИЗ-ЗА того, что реальная
+// высота карточек регулярно превышала CASCADE_ROW_GAP, соседние карточки
+// в одном столбце налезали друг на друга (см. комментарий у самого
+// CASCADE_ROW_GAP). Если высота задана вручную — используется она, а не
+// эта оценка (см. containerHeight).
+const ESTIMATED_CARD_HEIGHT = CASCADE_ROW_GAP;
 const CANVAS_MIN_HEIGHT = 480;
 
 // Простая diagonal-иконка ручки ресайза — три убывающие по длине
