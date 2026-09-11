@@ -1,4 +1,4 @@
-import { Page, Locator } from "@playwright/test";
+import { Page, Locator, expect } from "@playwright/test";
 
 /** Page Object для /tools/nanoid-generator (components/tools/GeneratorTools.tsx,
  *  NanoIdTool). */
@@ -35,7 +35,13 @@ export class NanoIdPage {
     await this.alphabetInput.fill(alphabet);
   }
 
+  // ФИКС: NanoIdTool больше не заполняет textarea в первом же рендере —
+  // начальный список ID теперь приходит из useEffect() на клиенте (см.
+  // комментарий в GeneratorTools.tsx про hydration mismatch). Ждём
+  // непустое значение перед чтением — та же ловушка и то же решение, что
+  // и в UuidGeneratorPage.getGeneratedLines() / RandomColorPage.waitForColors().
   async outputLines(): Promise<string[]> {
+    await expect(this.output).not.toHaveValue("");
     const value = await this.output.inputValue();
     return value.split("\n").filter((l) => l.length > 0);
   }

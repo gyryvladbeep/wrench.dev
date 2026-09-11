@@ -1,5 +1,5 @@
 "use client";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { CopyButton } from "@/components/CopyButton";
 import { Dictionary } from "@/lib/i18n/dictionary-types";
@@ -33,27 +33,62 @@ function randomHex(): string {
 }
 
 export function RandomColorTool({ dict }: { dict: Dictionary }) {
-  const [colors, setColors] = useState<string[]>(() => Array.from({ length: 5 }, randomHex));
+  // ФИКС — НАСТОЯЩАЯ причина флейка "заблокированный цвет меняется",
+  // найдена только сейчас при попытке живьём воспроизвести баг локально.
+  // Первым подозреваемым была гонка между обработчиками клика (см.
+  // lockedRef чуть ниже) — она реальна и тоже исправлена, но сама по
+  // себе не объясняла, почему баг переживал даже синхронную правку.
+  // Настоящая причина оказалась в том, КАК инициализировались colors:
+  // randomHex() использует crypto.getRandomValues(), а раньше он вызывался
+  // прямо в ленивом инициализаторе useState() — том самом, что выполняется
+  // и на сервере при SSR, и ЕЩЁ РАЗ на клиенте при первом рендере. Это два
+  // разных вызова, дающих разные цвета — React ловит расхождение как
+  // hydration mismatch (видно в консоли: "Text content did not match") и
+  // в качестве восстановления ЗАМЕНЯЕТ весь серверный DOM этого поддерева
+  // клиентским — целиком, вместе с обработчиками кликов. Если клик по
+  // замку успевал попасть в окно ДО этой замены, он проваливался в
+  // DOM-узел, который через мгновение выбрасывался, а смонтированный
+  // заново компонент стартовал с locked = [false...] — замок визуально
+  // защёлкивался, но по факту не действовал. Подтверждено напрямую: при
+  // каждой (100% из проверенных) загрузке этой страницы React пишет в
+  // консоль предупреждение о несовпадении гидратации — расхождение
+  // случается всегда, а тест ловит его как флейк только потому, что для
+  // срабатывания нужно попасть кликом именно в это узкое окно.
+  //
+  // Тот же паттерн уже был на практике исправлен в этом кодбейзе для
+  // LoremIpsumTool.tsx (см. его комментарий) — Math.random() там вызывался
+  // так же. Повторяем то же решение, а не изобретаем новое: значение,
+  // зависящее от рандома, вычисляется не в useState(), а в useEffect(),
+  // который гарантированно выполняется только на клиенте, ПОСЛЕ того как
+  // сервер и клиент уже согласились на одинаковый первый рендер (здесь —
+  // пустой массив). Хуже стало UUID Generator и NanoID Generator ниже в
+  // этом же файле — у них тот же паттерн ленивого useState() с
+  // crypto.getRandomValues()/crypto.randomUUID() внутри, тот же класс
+  // бага (просто без функции блокировки, которая делает его заметным
+  // тестом) — исправлены тем же способом заодно.
+  const [colors, setColors] = useState<string[]>([]);
   const [locked, setLocked] = useState<boolean[]>(new Array(5).fill(false));
+
+  useEffect(() => {
+    setColors(Array.from({ length: 5 }, randomHex));
+  }, []);
+
   // Синхронное зеркало locked для generate() — тот же приём, что
   // draggedSlugRef в WorkbenchCanvas.tsx: generate() до этой правки читал
   // locked из обычного замыкания, актуального только для того рендера, в
-  // котором эта функция была создана. Клик по замку и почти сразу следом
-  // клик по Generate — два отдельных React-события; если React не успел
-  // перерендерить между ними (обычно успевает, но не гарантированно —
-  // поймано на CI как редкий флейк: заблокированный цвет иногда всё равно
-  // менялся), generate() ловил обработчик из ПРЕДЫДУЩЕГО рендера с ещё
-  // старым locked (замок визуально уже включён, а функция этого не видит).
-  // Ref обновляется синхронно в момент клика и не зависит от того, успел
-  // ли отрендериться компонент.
+  // котором эта функция была создана. next считается и кладётся в
+  // lockedRef.current СИНХРОННО в самом обработчике клика, до вызова
+  // setLocked — generate() читает ref, а не state, так что ему физически
+  // нечего гонять с рендером. (Ранняя версия этой правки писала
+  // lockedRef.current ВНУТРИ колбэка setLocked((prev) => {...}) — рабочая,
+  // но не устраняющая зависимость от таймингов React полностью; текущая
+  // версия синхронна от начала до конца.)
   const lockedRef = useRef(locked);
 
   function toggleLock(i: number) {
-    setLocked((prev) => {
-      const next = prev.map((v, j) => (j === i ? !v : v));
-      lockedRef.current = next;
-      return next;
-    });
+    const next = lockedRef.current.map((v, j) => (j === i ? !v : v));
+    lockedRef.current = next;
+    setLocked(next);
   }
 
   function generate() {
@@ -118,7 +153,16 @@ export function NanoIdTool({ dict }: { dict: Dictionary }) {
   const [size, setSize] = useState(21);
   const [alphabet, setAlphabet] = useState(DEFAULT_ALPHABET);
   const [count, setCount] = useState(5);
-  const [ids, setIds] = useState<string[]>(() => Array.from({ length: 5 }, () => generateNanoId(21, DEFAULT_ALPHABET)));
+  // ФИКС — тот же класс SSR/клиент hydration mismatch, что и в
+  // RandomColorTool чуть выше (см. его подробный комментарий): generateNanoId()
+  // тоже вызывает crypto.getRandomValues(), так что список не может
+  // рождаться в ленивом инициализаторе useState(). Здесь пока нет
+  // собственного теста, ловящего именно эту гонку, но баг того же рода:
+  // React пишет в консоль hydration-warning при каждой загрузке.
+  const [ids, setIds] = useState<string[]>([]);
+  useEffect(() => {
+    setIds(Array.from({ length: 5 }, () => generateNanoId(21, DEFAULT_ALPHABET)));
+  }, []);
 
   function generate() {
     if (!alphabet.trim()) return;

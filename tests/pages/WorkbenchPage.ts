@@ -226,9 +226,27 @@ export class WorkbenchPage {
    *  комментарий в WorkbenchCanvas.tsx — нужен непрерывный живой
    *  предпросмотр размера, в отличие от перемещения карточки, у которого
    *  единственное событие — drop), поэтому здесь курсор мыши, а не
-   *  dragTo(), как у toolCard()/workspaceTabCard() на нативном HTML5 DnD. */
+   *  dragTo(), как у toolCard()/workspaceTabCard() на нативном HTML5 DnD.
+   *
+   *  scrollIntoViewIfNeeded() перед чтением boundingBox() — не
+   *  косметика. boundingBox() возвращает координаты относительно
+   *  ТЕКУЩЕГО вьюпорта как есть, даже если элемент сейчас физически
+   *  ниже/правее видимой области — mouse.move() на такие координаты
+   *  промахивается мимо реального курсора браузера. Раньше тест-вызывающая
+   *  сторона обходила это фиксированным расширением вьюпорта на время
+   *  теста (см. workbench.spec.ts), но это хрупко: подобрано под
+   *  конкретные CASCADE_COL_GAP/CASCADE_ROW_GAP на момент подбора и молча
+   *  ломается заново при следующей правке раскладки (ровно так и
+   *  случилось — рост CASCADE_ROW_GAP с 260 до 660 увеличил Y ряда 1
+   *  настолько, что ручка карточки в ряду 1 ушла ниже уже расширенных
+   *  900px по высоте). Скролл элемента в видимую область — тот же приём,
+   *  которым для клика/drag'а пользуется сам Playwright под капотом,
+   *  но нужен явно здесь из-за ручного мышиного жеста — устраняет
+   *  зависимость от конкретных чисел раскладки: тест остаётся рабочим,
+   *  какой бы ни была реальная позиция карточки. */
   async resizeCard(exactToolName: string, deltaX: number, deltaY: number) {
     const handle = this.resizeHandle(exactToolName);
+    await handle.scrollIntoViewIfNeeded();
     const box = await handle.boundingBox();
     if (!box) throw new Error(`resizeCard(): ручка ресайза "${exactToolName}" не найдена или не отрисована`);
     const startX = box.x + box.width / 2;

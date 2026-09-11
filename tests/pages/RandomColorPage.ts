@@ -23,21 +23,40 @@ export class RandomColorPage {
     await this.page.goto("/en/tools/random-color-generator");
   }
 
+  /** Ждёт, пока на странице появятся все 5 строк цветов.
+   *
+   *  RandomColorTool теперь рендерит цвета не сразу (см. её комментарий в
+   *  GeneratorTools.tsx про hydration mismatch) — первый клиентский рендер
+   *  отдаёт пустой список, реальные цвета приходят через мгновение из
+   *  useEffect(). allTextContents() (в отличие от expect(...).toHaveCount(),
+   *  которым уже пользуется первый тест этого файла) не ждёт и не
+   *  повторяет попытку — вызванная слишком рано, она молча вернёт [], и
+   *  тогда before[0] окажется undefined. Та же ловушка, что уже находили
+   *  и чинили в currentCardOrder() (tests/pages/WorkbenchPage.ts) —
+   *  решение то же: дождаться реального контента перед чтением. */
+  private async waitForColors() {
+    await this.hexSpans.nth(4).waitFor({ state: "visible" });
+  }
+
   async hexAt(i: number): Promise<string> {
+    await this.waitForColors();
     const text = await this.hexSpans.nth(i).textContent();
     return (text ?? "").replace("HEX: ", "");
   }
 
   async allHex(): Promise<string[]> {
+    await this.waitForColors();
     const texts = await this.hexSpans.allTextContents();
     return texts.map((t) => t.replace("HEX: ", ""));
   }
 
   async rgbAt(i: number): Promise<string> {
+    await this.waitForColors();
     return ((await this.rgbSpans.nth(i).textContent()) ?? "").replace("RGB: ", "");
   }
 
   async hslAt(i: number): Promise<string> {
+    await this.waitForColors();
     return ((await this.hslSpans.nth(i).textContent()) ?? "").replace("HSL: ", "");
   }
 

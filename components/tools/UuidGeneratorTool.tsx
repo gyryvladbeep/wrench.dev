@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { CopyButton } from "@/components/CopyButton";
 import { Dictionary } from "@/lib/i18n/dictionary-types";
@@ -14,7 +14,17 @@ export function UuidGeneratorTool({ dict }: { dict: Dictionary }) {
   const [count, setCount] = useState(5);
   const [uppercase, setUppercase] = useState(false);
   const [hyphens, setHyphens] = useState(true);
-  const [uuids, setUuids] = useState<string[]>(() => Array.from({ length: 5 }, generateUuid));
+  // ФИКС — тот же класс SSR/клиент hydration mismatch, что найден и
+  // исправлен в components/tools/GeneratorTools.tsx (RandomColorTool /
+  // NanoIdTool, см. подробный комментарий там) и раньше в LoremIpsumTool.tsx:
+  // generateUuid() зовёт crypto.randomUUID(), который на сервере и при
+  // первом рендере клиента даёт разные значения — список не может
+  // рождаться в ленивом инициализаторе useState(). Генерируем только на
+  // клиенте, в эффекте после монтирования.
+  const [uuids, setUuids] = useState<string[]>([]);
+  useEffect(() => {
+    setUuids(Array.from({ length: 5 }, generateUuid));
+  }, []);
   const t = dict.tools.uuid;
 
   function handleGenerate() {

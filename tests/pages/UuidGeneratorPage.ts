@@ -1,4 +1,4 @@
-import { Page, Locator } from "@playwright/test";
+import { Page, Locator, expect } from "@playwright/test";
 
 export class UuidGeneratorPage {
   readonly page: Page;
@@ -32,7 +32,17 @@ export class UuidGeneratorPage {
 
   // Метод возвращает уже РАЗОБРАННЫЙ результат (массив строк),
   // а не сырой текст — тестам так удобнее работать
+  //
+  // ФИКС: UuidGeneratorTool больше не заполняет textarea в первом же
+  // рендере — начальный список UUID теперь приходит из useEffect() на
+  // клиенте (см. её комментарий в UuidGeneratorTool.tsx про hydration
+  // mismatch). inputValue() — одноразовое чтение без ожидания; вызванное
+  // сразу после goto(), до того как эффект успел отработать, оно вернёт
+  // пустую строку. expect(...).not.toHaveValue("") ждёт и повторяет
+  // попытку, пока значение не появится, — тот же приём, что и в
+  // currentCardOrder() (WorkbenchPage.ts) и waitForColors() (RandomColorPage.ts).
   async getGeneratedLines(): Promise<string[]> {
+    await expect(this.output).not.toHaveValue("");
     const value = await this.output.inputValue();
     return value.trim().split("\n").filter(Boolean);
   }
