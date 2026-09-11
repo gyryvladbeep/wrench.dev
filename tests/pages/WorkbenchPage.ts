@@ -273,8 +273,23 @@ export class WorkbenchPage {
     await this.workspaceTabCard(sourceName).dragTo(this.workspaceTabCard(targetName));
   }
 
+  /** Идемпотентно: кнопка "Share" — это ТОГЛ (см. page.tsx: onClick =>
+   *  setShareOpen(v => !v)), а не "открыть". Один и тот же `page` живёт
+   *  на весь test.describe.serial-блок (см. шапку файла) — панель,
+   *  оставшаяся открытой после ПРЕДЫДУЩЕГО теста (никто её явно не
+   *  закрывает — "включение публичной ссылки" заканчивается на отдельном
+   *  анонимном контексте, не трогая исходную страницу), это реальный
+   *  сценарий, а не гипотетический: именно так тест "выключение..."
+   *  однажды поймал TimeoutError на toBeVisible() — его собственный вызов
+   *  openSharePanel() кликнул по уже открытой панели и ЗАКРЫЛ её. Та же
+   *  ловушка ждала бы и внутри одного теста при двух подряд вызовах
+   *  (enablePublicSharingAndGetUrl() -> disablePublicSharing(), оба сами
+   *  вызывают openSharePanel()). Проверяем текущую видимость перед
+   *  кликом вместо того, чтобы полагаться на заранее известное состояние. */
   async openSharePanel() {
-    await this.shareButton.click();
+    if (!(await this.sharePanel.isVisible())) {
+      await this.shareButton.click();
+    }
     await expect(this.sharePanel).toBeVisible();
   }
 
