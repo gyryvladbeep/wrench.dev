@@ -365,3 +365,19 @@ export function CakeIcon({ className = "", size = 14 }: IconProps) {
     </svg>
   );
 }
+
+// Стрелка, выходящая из квадрата — универсальная "внешняя ссылка", без
+// привязки к конкретному бренду (GitHub/LinkedIn и т.п.): ссылки на
+// внешние профили в Settings/публичном профиле (app/[locale]/profile,
+// components/profile/PublicProfileView.tsx) подписаны обычным текстом
+// ("GitHub", "LinkedIn", "Сайт"), а не логотипом сервиса — свои иконки
+// брендов в проекте нигде не воспроизводятся.
+export function ExternalLinkIcon({ className = "", size = 14 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 16 16" fill="none" className={className} aria-hidden>
+      <path d="M6.5 3H3.3A1.3 1.3 0 002 4.3v8.4A1.3 1.3 0 003.3 14h8.4A1.3 1.3 0 0013 12.7V9.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M9.5 2H14v4.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M14 2L7.3 8.7" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+    </svg>
+  );
+}
