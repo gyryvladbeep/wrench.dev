@@ -103,6 +103,8 @@ export const ru: Dictionary = {
   },
   toolLayout: {
     home: "Главная",
+    whyItMattersHeading: "Зачем это нужно",
+    exampleLabel: "Пример",
     howToUseHeading: "Как пользоваться",
     faqHeading: "Часто задаваемые вопросы",
     relatedToolsHeading: "Похожие инструменты",

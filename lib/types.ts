@@ -23,6 +23,18 @@ export interface FaqEntry {
   answer: string;
 }
 
+// "Зачем это нужно" — блок под инструментом, отдельный от механических
+// howToSteps ("куда нажимать"): why объясняет реальную причину, зачем
+// вообще тянуться за этим инструментом, а example — короткий жизненный
+// сценарий, где это происходит на практике. Задумано специально для
+// новичков, которые технически могут разобраться, куда жать, но не
+// понимают, зачем — см. комментарий в components/ToolLayout.tsx о месте
+// рендера в разметке.
+export interface WhyItMatters {
+  why: string;
+  example: string;
+}
+
 export interface Tool {
   slug: string;
   name: string;
@@ -38,6 +50,7 @@ export interface Tool {
   relatedSlugs?: string[];
   howToSteps?: string[];
   faqs?: FaqEntry[];
+  whyItMatters?: WhyItMatters;
   keywords: string[];
   aliases?: string[];
 }

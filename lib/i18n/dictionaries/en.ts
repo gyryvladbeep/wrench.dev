@@ -103,6 +103,8 @@ export const en: Dictionary = {
   },
   toolLayout: {
     home: "Home",
+    whyItMattersHeading: "Why this matters",
+    exampleLabel: "Example",
     howToUseHeading: "How to use this tool",
     faqHeading: "Frequently asked questions",
     relatedToolsHeading: "Related tools",

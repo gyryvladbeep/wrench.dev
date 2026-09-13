@@ -20,6 +20,7 @@ export const tools: Tool[] = [
 
   {
     slug: "json-formatter",
+    whyItMatters: { why: "APIs and logs often return JSON crammed onto one line, which is unreadable when you're trying to find a bug; formatting it makes structure and nesting visible at a glance, and validating it catches a broken response before you waste time debugging the wrong thing.", example: "You just got a 500 error from a payment API and the response body is a 2,000-character single line — paste it in, hit Format, and you immediately spot the \"error\" field buried three levels deep instead of scrolling through raw text." },
     name: "JSON Formatter",
     shortDescription: "Format, validate and minify JSON instantly.",
     longDescription: "Paste any JSON to pretty-print it with proper indentation, validate its syntax, or minify it to a single line. Runs entirely in your browser — nothing is uploaded.",
@@ -33,6 +34,7 @@ export const tools: Tool[] = [
   },
   {
     slug: "json-validator",
+    whyItMatters: { why: "A single missing comma or stray quote makes an entire JSON payload unusable, but the error your code throws is often cryptic and points at the wrong place — a validator tells you exactly where the syntax actually breaks.", example: "A teammate hand-edited a config.json file and now the app won't start with \"Unexpected token in JSON\" — paste the file in here and it points straight at the trailing comma they left after the last key." },
     name: "JSON Validator",
     shortDescription: "Validate JSON syntax and get clear error messages.",
     longDescription: "Quickly validate JSON syntax and get a clear error message with the exact line and column if it's invalid.",
@@ -44,6 +46,7 @@ export const tools: Tool[] = [
   },
   {
     slug: "json-minify",
+    whyItMatters: { why: "Every extra space and newline in a JSON payload adds bytes that get sent over the network on every request — minifying strips that dead weight before it goes into a production config or API response fixture.", example: "You're committing a large mock-data JSON file that a teammate formatted with 4-space indentation, doubling its size — minify it first so it doesn't bloat the repo." },
     name: "JSON Minify",
     shortDescription: "Remove all whitespace from JSON to minimize size.",
     longDescription: "Compress JSON by removing all unnecessary whitespace, newlines and indentation. Perfect for reducing payload size in APIs.",
@@ -55,6 +58,7 @@ export const tools: Tool[] = [
   },
   {
     slug: "json-sort",
+    whyItMatters: { why: "Two JSON objects with the same data but keys in a different order look completely different in a diff, which hides the real changes and makes code review painful — sorting keys consistently is what makes diffs actually mean something.", example: "You export a JSON fixture from two different tools and git shows the whole file as changed even though only one value differs — sort both files first and the diff shrinks to the one real change." },
     name: "JSON Key Sorter",
     shortDescription: "Sort JSON keys alphabetically, recursively.",
     longDescription: "Sort all keys in a JSON object alphabetically, with optional recursive sorting of nested objects. Makes large JSON structures easier to diff and review.",
@@ -66,6 +70,7 @@ export const tools: Tool[] = [
   },
   {
     slug: "json-compare",
+    whyItMatters: { why: "Manually scanning two large JSON responses for what changed is slow and error-prone once you're past a handful of fields — a structural diff finds every added, removed or changed key instantly.", example: "An API version bump silently renamed a field from \"user_id\" to \"userId\" — paste the old and new sample responses in and the diff highlights exactly that change instead of you re-reading both payloads line by line." },
     name: "JSON Compare",
     shortDescription: "Compare two JSON objects and highlight differences.",
     longDescription: "Paste two JSON documents and see exactly what changed — added, removed and modified keys are highlighted clearly.",
@@ -77,6 +82,7 @@ export const tools: Tool[] = [
   },
   {
     slug: "json-escape",
+    whyItMatters: { why: "Putting raw JSON inside another string (a shell command, a config value, a log line) breaks unless the quotes and special characters are escaped correctly — doing this by hand is fiddly and easy to get wrong.", example: "You need to pass a JSON body as a single command-line argument to a curl script — escape it here first so the embedded quotes don't terminate the string early." },
     name: "JSON Escape / Unescape",
     shortDescription: "Escape JSON for embedding in strings, or unescape it.",
     longDescription: "Escape special characters in JSON for safe embedding in strings, or unescape an escaped JSON string back to readable format.",
@@ -88,6 +94,7 @@ export const tools: Tool[] = [
   },
   {
     slug: "json-to-yaml",
+    whyItMatters: { why: "Some tools and teams standardize on YAML (Kubernetes manifests, CI configs) while your data or API response is JSON — converting by hand risks indentation mistakes that YAML is notoriously strict about.", example: "You have an API response you want to drop straight into a Kubernetes ConfigMap, which expects YAML — convert it here instead of retyping the whole structure with hand-counted spaces." },
     name: "JSON → YAML Converter",
     shortDescription: "Convert JSON to YAML and back instantly.",
     longDescription: "Convert between JSON and YAML formats. Supports complex nested structures, arrays and all YAML scalar types.",
@@ -99,6 +106,7 @@ export const tools: Tool[] = [
   },
   {
     slug: "xml-formatter",
+    whyItMatters: { why: "Minified or copy-pasted XML — from a SOAP response, an Android layout, or a config file — is unreadable as one long line; formatting restores the nesting so you can actually see the document structure.", example: "A SOAP API error response comes back as one unbroken line of XML — format it here to actually read which element the fault is nested under." },
     name: "XML Formatter",
     shortDescription: "Pretty-print and validate XML documents.",
     longDescription: "Format messy or minified XML into clean, indented, readable markup. Uses the browser's native XML parser for genuine validation.",
@@ -132,6 +140,7 @@ export const tools: Tool[] = [
   },
   {
     slug: "sql-formatter",
+    whyItMatters: { why: "A query copy-pasted from a log or built by an ORM often lands as one dense line, which makes it hard to spot which JOIN or WHERE clause is doing what — formatting turns it into something you can actually reason about.", example: "You're debugging a slow query pulled straight from a database's slow-query log as one 400-character line — format it here before staring at an EXPLAIN plan so you can see each clause separately." },
     name: "SQL Formatter",
     shortDescription: "Format SQL queries for readability.",
     longDescription: "Turn dense, single-line SQL into clean, indented, readable queries. Supports SELECT, INSERT, UPDATE, DELETE, CREATE and more.",
@@ -143,6 +152,7 @@ export const tools: Tool[] = [
   },
   {
     slug: "html-formatter",
+    whyItMatters: { why: "HTML generated by a template engine or minified for production is often one giant line with no indentation — formatting it back out makes it possible to actually read the markup structure when debugging a layout issue.", example: "You \"View Source\" on a page to check a suspicious meta tag and get one 15,000-character line — format it here to find the tag in readable, indented markup instead." },
     name: "HTML Formatter",
     shortDescription: "Pretty-print and clean up HTML markup.",
     longDescription: "Format minified or messy HTML into clean, indented markup with proper nesting.",
@@ -157,6 +167,7 @@ export const tools: Tool[] = [
 
   {
     slug: "base64-encode-decode",
+    whyItMatters: { why: "Base64 shows up constantly in the wild (email attachments, Basic Auth headers, embedded images, API tokens) as scrambled text — decoding it turns that noise back into something you can actually read and verify.", example: "A support ticket includes an \"Authorization: Basic dXNlcjpwYXNz\" header from a failed request — decode the value here to instantly see it's just user:pass, which explains the auth failure." },
     name: "Base64 Encode / Decode",
     shortDescription: "Encode text to Base64 or decode Base64 to text.",
     longDescription: "Convert text and UTF-8 strings to Base64, or decode Base64 back to readable text. Supports full UTF-8 including emoji.",
@@ -170,6 +181,7 @@ export const tools: Tool[] = [
   },
   {
     slug: "url-encode-decode",
+    whyItMatters: { why: "Special characters (spaces, &, ?, non-Latin letters) break URLs and query strings unless they're percent-encoded — this saves you from constructing a broken link by hand or from staring at an unreadable encoded one.", example: "A user reports a search that returns nothing, and their browser's address bar shows \"%D0%BF%D1%80%D0%B8%D0%B2%D0%B5%D1%82\" — decode it here to see they searched for a Cyrillic word your backend isn't handling correctly." },
     name: "URL Encode / Decode",
     shortDescription: "Percent-encode or decode URLs and query strings.",
     longDescription: "Encode special characters for safe use in URLs, or decode percent-encoded strings back to plain text.",
@@ -181,6 +193,7 @@ export const tools: Tool[] = [
   },
   {
     slug: "html-encode-decode",
+    whyItMatters: { why: "Characters like < and & have special meaning in HTML, so user-submitted text has to be encoded before it's safely displayed on a page — otherwise you get broken markup or, worse, an XSS hole.", example: "A user's bio field with \"5 < 10 & counting\" is rendering as broken HTML on the profile page — encode the sample text here to see what the escaped version should actually look like in the page source." },
     name: "HTML Encode / Decode",
     shortDescription: "Encode HTML entities or decode them back to text.",
     longDescription: "Convert characters like <, >, &, \" and ' to their HTML entity equivalents, or decode HTML entities back to readable text.",
@@ -192,6 +205,7 @@ export const tools: Tool[] = [
   },
   {
     slug: "hex-encode-decode",
+    whyItMatters: { why: "Low-level protocols, binary file headers and crypto output are usually shown as hex — converting it to text (or back) is how you check what a byte sequence actually represents without writing a script for a one-off look.", example: "A colleague pastes a hex string from a packet capture and asks what it says — decode it here instead of spinning up a script just to check five bytes." },
     name: "Hex Encoder / Decoder",
     shortDescription: "Convert text to hexadecimal and back.",
     longDescription: "Encode any text string to its hexadecimal representation, or decode hex back to readable text.",
@@ -203,6 +217,7 @@ export const tools: Tool[] = [
   },
   {
     slug: "binary-converter",
+    whyItMatters: { why: "Binary is how computer science courses and low-level debugging represent data, but almost nobody reads long strings of 1s and 0s fluently — converting it to text bridges that gap for a quick check.", example: "A CS-course exercise gives you an ASCII message as pure binary and asks you to decode it by hand — verify your manual conversion here before submitting." },
     name: "Binary Converter",
     shortDescription: "Convert text to binary and binary back to text.",
     longDescription: "Translate any text string into its binary (0s and 1s) representation, or decode binary back to readable text.",
@@ -214,6 +229,7 @@ export const tools: Tool[] = [
   },
   {
     slug: "rot13",
+    whyItMatters: { why: "ROT13 is a trivial, non-secret cipher used to hide spoilers or answers in plain sight (forum posts, puzzle hints) rather than for real security — this tool reverses it instantly instead of you doing letter arithmetic by hand.", example: "An old forum thread hides a puzzle's answer as ROT13 text so it isn't spoiled at a glance — decode it here once you've actually tried to solve it yourself." },
     name: "ROT13 Encoder",
     shortDescription: "Encode or decode text with the ROT13 cipher.",
     longDescription: "Apply ROT13 substitution cipher to encode or decode text. ROT13 is its own inverse — applying it twice returns the original.",
@@ -225,6 +241,7 @@ export const tools: Tool[] = [
   },
   {
     slug: "jwt-decoder",
+    whyItMatters: { why: "A JWT looks like meaningless noise, but its header and payload are just Base64 — decoding it lets you see who it claims to be, what permissions it grants and whether it's already expired, all without writing a line of code.", example: "A user says they're logged in but keep getting 401s — decode their JWT here and see the \"exp\" timestamp is actually in the past, which explains the failure immediately." },
     name: "JWT Decoder",
     shortDescription: "Decode and inspect JSON Web Tokens.",
     longDescription: "Paste a JWT to instantly see its decoded header and payload, including expiry status. Decoding only — no signature verification.",
@@ -241,6 +258,7 @@ export const tools: Tool[] = [
 
   {
     slug: "text-diff",
+    whyItMatters: { why: "When two versions of the same document differ in more than a couple of places, eyeballing them side by side misses changes — a line-by-line diff shows exactly what was added, removed or edited.", example: "A teammate says they \"just fixed a typo\" in a config file, but you want to confirm nothing else changed before merging — diff the before and after and see the actual full extent of the edit." },
     name: "Text Diff Checker",
     shortDescription: "Compare two texts line-by-line and highlight changes.",
     longDescription: "Paste two blocks of text to see exactly what changed — added, removed and modified lines are highlighted clearly.",
@@ -252,6 +270,7 @@ export const tools: Tool[] = [
   },
   {
     slug: "word-counter",
+    whyItMatters: { why: "Character and word limits are everywhere (tweet length, meta descriptions, form fields, resume word counts) and manually counting is slow and inaccurate past a sentence or two.", example: "You're writing a meta description for a job-search cover letter section that has to stay under 200 characters — paste it in and watch the live count instead of guessing and re-pasting into the target field repeatedly." },
     name: "Word & Character Counter",
     shortDescription: "Count words, characters, sentences and paragraphs.",
     longDescription: "Get instant statistics for your text: word count, character count (with and without spaces), sentence count, paragraph count, and estimated reading time.",
@@ -263,6 +282,7 @@ export const tools: Tool[] = [
   },
   {
     slug: "case-converter",
+    whyItMatters: { why: "Different parts of a codebase expect different naming conventions (camelCase in JS, snake_case in Python/SQL, kebab-case in URLs), and manually retyping a name in a new convention is slow and easy to typo.", example: "A backend field is \"user_signup_date\" in the database but the frontend needs \"userSignupDate\" for its TypeScript interface — convert it here instead of retyping and second-guessing the capitalization." },
     name: "Case Converter",
     shortDescription: "Convert text between camelCase, snake_case, Title Case and more.",
     longDescription: "Convert text between camelCase, PascalCase, snake_case, kebab-case, UPPER_CASE, lower case and Title Case instantly.",
@@ -274,6 +294,7 @@ export const tools: Tool[] = [
   },
   {
     slug: "slug-generator",
+    whyItMatters: { why: "URLs, file names and IDs can't safely contain spaces, accents or punctuation — turning a human title into a clean, predictable slug avoids broken links and inconsistent formatting across a site.", example: "You're publishing a blog post titled \"QA & Testing: What's Next?\" and need a URL for it — generate the slug here instead of manually stripping punctuation and guessing where the hyphens go." },
     name: "Slug Generator",
     shortDescription: "Convert text to a URL-friendly slug.",
     longDescription: "Turn any text into a clean, URL-safe slug by lowercasing, removing special characters and replacing spaces with hyphens.",
@@ -285,6 +306,7 @@ export const tools: Tool[] = [
   },
   {
     slug: "sort-lines",
+    whyItMatters: { why: "A list that isn't sorted is hard to scan for duplicates or a specific entry, and manually reordering more than a dozen lines by hand is tedious and error-prone.", example: "You exported a list of 200 test-environment usernames in random order and need to quickly check if a specific one is present — sort it here first so scanning (or a browser search) is actually reliable." },
     name: "Sort Lines",
     shortDescription: "Sort lines alphabetically, numerically or by length.",
     longDescription: "Sort lines of text alphabetically (A-Z or Z-A), numerically, or by line length. Optionally case-insensitive.",
@@ -296,6 +318,7 @@ export const tools: Tool[] = [
   },
   {
     slug: "remove-duplicates",
+    whyItMatters: { why: "Lists built by merging exports from multiple sources (spreadsheets, API responses, copy-pasted notes) almost always end up with repeated entries that skew counts or cause duplicate actions if processed as-is.", example: "You merged two exported CSV columns of email addresses to build a test mailing list and now some addresses would get double-sent — dedupe the list here before importing it." },
     name: "Remove Duplicate Lines",
     shortDescription: "Remove duplicate lines from text, keeping unique lines only.",
     longDescription: "Paste text and remove all duplicate lines, keeping only the first occurrence of each line. Optionally case-insensitive.",
@@ -307,6 +330,7 @@ export const tools: Tool[] = [
   },
   {
     slug: "remove-empty-lines",
+    whyItMatters: { why: "Blank lines left over from copy-pasting or exporting data pad out a file and can break tools that expect one record per line with no gaps.", example: "You copied a config list out of a Word document and it's now full of stray blank lines that a script processing \"one entry per line\" chokes on — strip them here before feeding the file in." },
     name: "Remove Empty Lines",
     shortDescription: "Strip blank lines from text instantly.",
     longDescription: "Remove all empty or whitespace-only lines from a block of text, cleaning it up for further processing.",
@@ -318,6 +342,7 @@ export const tools: Tool[] = [
   },
   {
     slug: "markdown-preview",
+    whyItMatters: { why: "Markdown syntax (asterisks, brackets, backticks) is easy to get subtly wrong, and you often can't tell until it renders — previewing it live catches a broken link or unintended bold text before you actually publish it.", example: "You're writing a GitHub README with a table and a code block and want to make sure the table columns actually line up before pushing — preview it here first instead of pushing, checking on GitHub, and pushing again." },
     name: "Markdown Preview",
     shortDescription: "Live-preview Markdown as rendered HTML.",
     longDescription: "Write or paste Markdown on the left and see the rendered HTML preview on the right in real time. Supports GitHub Flavored Markdown.",
@@ -332,6 +357,7 @@ export const tools: Tool[] = [
 
   {
     slug: "hash-generator",
+    whyItMatters: { why: "Hashes let you verify that a file or piece of text hasn't been altered, and are the basis of things like checking a download's integrity or (for learning) understanding how a system might store a password — recalculating one by hand isn't practical.", example: "You downloaded a large installer and the vendor's site lists its SHA-256 checksum — hash the file (or, for a quick text check, paste a string here) and compare the result to make sure nothing got corrupted or tampered with in transit." },
     name: "Hash Generator",
     shortDescription: "Generate MD5, SHA-1, SHA-256 and SHA-512 hashes.",
     longDescription: "Calculate cryptographic hashes for any text using MD5, SHA-1, SHA-256 and SHA-512 algorithms. All computation happens locally in your browser.",
@@ -347,6 +373,7 @@ export const tools: Tool[] = [
 
   {
     slug: "uuid-generator",
+    whyItMatters: { why: "Any time you need an identifier that's guaranteed not to collide with another one — a test user ID, a placeholder primary key, a request-tracing ID — a real UUID is safer than making one up (\"user-1\", \"test-2\") that might already exist somewhere.", example: "You're writing a Postman collection with 5 fake \"order\" records and each needs a unique ID that won't collide with real production data — generate a batch of UUIDs here instead of typing \"order-1\", \"order-2\"." },
     name: "UUID Generator",
     shortDescription: "Generate random v4 UUIDs in bulk.",
     longDescription: "Generate one or many cryptographically random version-4 UUIDs, with optional uppercase and hyphen formatting.",
@@ -359,6 +386,7 @@ export const tools: Tool[] = [
   },
   {
     slug: "nanoid-generator",
+    whyItMatters: { why: "A full UUID (36 characters) is often longer than you actually need for a short-lived ID that has to fit in a URL or a UI element — NanoID gives you the same \"won't collide\" guarantee in a much shorter string.", example: "You're building a short link feature (\"wrench.dev/r/xk3f9a\") and a 36-character UUID would make an ugly, unreadable URL — generate a short NanoID here instead." },
     name: "NanoID Generator",
     shortDescription: "Generate compact, URL-safe unique IDs.",
     longDescription: "Generate NanoIDs — short, URL-safe, unique string identifiers. Configurable length and character set.",
@@ -370,6 +398,7 @@ export const tools: Tool[] = [
   },
   {
     slug: "random-password-generator",
+    whyItMatters: { why: "A password you make up yourself tends to be more predictable than you think (patterns, reused words) — a properly random one with real length and character variety is what actually resists a brute-force guess.", example: "You're creating a throwaway test account for a staging environment and don't want to reuse your real password anywhere near it — generate a strong random one here instead." },
     name: "Password Generator",
     shortDescription: "Generate strong, random passwords instantly.",
     longDescription: "Generate strong random passwords with configurable length and character sets (lowercase, uppercase, digits, symbols).",
@@ -392,6 +421,7 @@ export const tools: Tool[] = [
   },
   {
     slug: "random-color-generator",
+    whyItMatters: { why: "Picking colors \"by feel\" for a quick mockup, a chart palette, or placeholder UI is slow and the results often look muddy together — a random generator gives you fast options to react to and refine instead of starting from a blank color picker.", example: "You need 5 distinct colors to represent categories on a quick internal dashboard chart and don't want to spend 20 minutes in a color picker — generate a palette here and pick the ones that read clearly against each other." },
     name: "Random Color Generator",
     shortDescription: "Generate random colors in HEX, RGB and HSL.",
     longDescription: "Generate random colors in HEX, RGB and HSL formats. Generate palettes, lock specific colors and copy values instantly.",
@@ -403,6 +433,7 @@ export const tools: Tool[] = [
   },
   {
     slug: "fake-test-data-generator",
+    whyItMatters: { why: "Testing with real user data is a privacy risk and often isn't available yet anyway — realistic-looking fake names, emails and addresses let you populate a form or database convincingly without using anyone's actual information.", example: "You need to demo a new signup flow to a client tomorrow and the database is empty — generate a batch of realistic fake users here so the demo doesn't show \"Test User 1, Test User 2.\"" },
     name: "Fake Data Generator",
     shortDescription: "Generate realistic fake names, emails and addresses.",
     longDescription: "Generate batches of realistic-looking fake data — names, emails, addresses, phone numbers — for populating test environments.",
@@ -417,6 +448,7 @@ export const tools: Tool[] = [
 
   {
     slug: "timestamp-converter",
+    whyItMatters: { why: "Systems and logs store time as a raw Unix timestamp (a number of seconds), which is meaningless to a human at a glance — converting it to a real date is how you actually understand when something happened.", example: "A server log shows an error at timestamp 1717430400 with no further context — convert it here to see it actually happened at 3am on a deploy day, which explains a lot." },
     name: "Unix Timestamp Converter",
     shortDescription: "Convert between Unix timestamps and human-readable dates.",
     longDescription: "Convert Unix timestamps (seconds or milliseconds) to human-readable dates and back, with timezone support.",
@@ -429,6 +461,7 @@ export const tools: Tool[] = [
   },
   {
     slug: "date-difference",
+    whyItMatters: { why: "Manually counting days, weeks or months between two dates — especially across month boundaries or leap years — is error-prone, but this comes up constantly in scheduling, billing periods and SLA tracking.", example: "A support SLA promises a response \"within 5 business days\" and a ticket was opened on a Friday — calculate the exact date difference here instead of counting on your fingers across the weekend." },
     name: "Date Difference Calculator",
     shortDescription: "Calculate the difference between two dates.",
     longDescription: "Calculate the exact difference between two dates in years, months, weeks, days, hours, minutes and seconds.",
@@ -440,6 +473,7 @@ export const tools: Tool[] = [
   },
   {
     slug: "age-calculator",
+    whyItMatters: { why: "\"How old will they be on this date\" involves month and day rounding that's easy to get subtly wrong doing it in your head — an exact calculation avoids an off-by-one mistake in eligibility checks or forms.", example: "A form needs to verify someone will be 18 by a cutoff date next year, not just today — calculate their exact age on that future date here instead of eyeballing it." },
     name: "Age Calculator",
     shortDescription: "Calculate exact age from a birth date.",
     longDescription: "Calculate someone's exact age in years, months and days from their date of birth. Also shows the next birthday countdown.",
@@ -453,6 +487,7 @@ export const tools: Tool[] = [
 
   {
     slug: "qr-code-generator",
+    whyItMatters: { why: "A URL or piece of text is easy to share digitally but awkward to hand someone in person or put on a printed flyer — a QR code lets someone go from \"physical object\" to \"your link\" with just a phone camera.", example: "You're printing flyers for a local meetup and want people to scan straight to the RSVP page instead of typing a long URL by hand — generate the QR code here and drop it into the flyer design." },
     name: "QR Code Generator",
     shortDescription: "Generate QR codes for URLs, text and more.",
     longDescription: "Generate QR codes for any text, URL, email or phone number. Download as PNG or SVG.",
@@ -464,6 +499,7 @@ export const tools: Tool[] = [
   },
   {
     slug: "header-inspector",
+    whyItMatters: { why: "A lot of real-world bugs (a page not caching, a CORS error, a missing security header) live entirely in the HTTP response headers, which are invisible unless you actually go look for them.", example: "A page seems to ignore your cache settings and reloads every asset on every visit — inspect the response headers here to check whether Cache-Control is actually being sent the way you configured it." },
     name: "HTTP Header Inspector",
     shortDescription: "Inspect HTTP response headers for any URL.",
     longDescription: "Check the HTTP response headers returned by any public URL — useful for debugging caching, CORS and security headers.",
@@ -475,6 +511,7 @@ export const tools: Tool[] = [
   },
   {
     slug: "api-response-mocker",
+    whyItMatters: { why: "Frontend work often can't wait for a real backend endpoint to exist — generating a ready-to-use mock (MSW, json-server, Express, Postman) from just an example response lets you build and test against realistic data before the real API is ready.", example: "The backend team says the new endpoint \"will be ready next sprint,\" but your frontend PR is due Friday — paste the agreed example response here, generate an MSW mock, and keep building against it today." },
     name: "API Response Mocker",
     shortDescription: "Generate mock server snippets from an example JSON response.",
     longDescription: "Paste an example JSON response and instantly get a ready-to-use mock snippet for MSW, json-server, an Express route, or a Postman mock example — pick a method, status code and URL.",
@@ -486,6 +523,7 @@ export const tools: Tool[] = [
   },
   {
     slug: "http-status-codes",
+    whyItMatters: { why: "A three-digit status code like 402 or 422 doesn't explain itself, and guessing wrong wastes time chasing the wrong kind of bug — a quick lookup tells you exactly what a code means and what usually causes it.", example: "An API you're integrating with returns 422 instead of the 400 you expected for bad input — look it up here to learn it specifically means \"well-formed but semantically invalid,\" which points you at a validation rule instead of a syntax error." },
     name: "HTTP Status Codes",
     shortDescription: "Look up HTTP status codes and their meanings.",
     longDescription: "Searchable reference for all HTTP status codes — 1xx, 2xx, 3xx, 4xx, 5xx — with detailed descriptions, common use cases and fix suggestions.",
@@ -497,6 +535,7 @@ export const tools: Tool[] = [
   },
   {
     slug: "password-strength",
+    whyItMatters: { why: "\"Looks complicated\" and \"is actually hard to crack\" aren't the same thing — a password strength checker estimates real entropy and brute-force time so you can tell whether a password is genuinely strong or just looks that way.", example: "You want to know if \"Password123!\" is actually a safe choice for a shared team account — check it here and see it's technically longer than 8 characters but still crackable in seconds because it's a common pattern." },
     name: "Password Strength Checker",
     shortDescription: "Check password strength with entropy, crack time and suggestions.",
     longDescription: "Analyze any password for strength: entropy bits, estimated brute-force crack time, rule checklist and improvement suggestions. Everything runs in your browser — your password is never sent anywhere.",
@@ -524,6 +563,7 @@ export const tools: Tool[] = [
 
   {
     slug: "regex-tester",
+    whyItMatters: { why: "A regex that looks right can still silently fail to match the one edge case you actually care about — testing it live against real sample strings, with matches highlighted, catches that before it ships inside actual code.", example: "Your email-validation regex rejects a coworker's real email address that includes a \"+\" for filtering — test it here against that exact address to see precisely where the pattern fails to match." },
     name: "Regex Tester",
     shortDescription: "Test regular expressions with live match highlighting.",
     longDescription: "Write a regex pattern and test it against a string in real time. See all matches highlighted with group details.",
@@ -535,6 +575,7 @@ export const tools: Tool[] = [
   },
   {
     slug: "xpath-generator",
+    whyItMatters: { why: "Writing a robust XPath by hand for test automation means understanding the DOM structure well enough to avoid a selector that's too brittle (breaks on any markup change) or too broad (matches the wrong element) — generating one from real markup skips that trial and error.", example: "A Selenium test keeps breaking every time a developer tweaks unrelated markup around a button — generate a more targeted XPath here from the actual HTML instead of hand-writing another selector that's just as fragile." },
     name: "XPath Generator",
     shortDescription: "Generate XPath selectors from HTML.",
     longDescription: "Paste an HTML snippet and generate robust XPath selectors for test automation.",
@@ -546,6 +587,7 @@ export const tools: Tool[] = [
   },
   {
     slug: "css-selector-generator",
+    whyItMatters: { why: "The difference between a selector that survives a redesign and one that breaks on the next markup change usually comes down to picking the right attribute to target — generating one from the real HTML helps you see the more stable option.", example: "You need to automate clicking a \"Submit\" button that has an auto-generated class like \"btn-x82f\", which will change on the next build — generate a selector here based on a more stable attribute instead." },
     name: "CSS Selector Generator",
     shortDescription: "Generate CSS selectors from HTML for automation.",
     longDescription: "Paste an HTML snippet and generate precise CSS selectors for use in test automation or scraping.",
@@ -557,6 +599,7 @@ export const tools: Tool[] = [
   },
   {
     slug: "json-mutator",
+    whyItMatters: { why: "Testing only the \"happy path\" — valid input — misses how an API actually behaves with wrong types, missing fields or malicious input, and hand-writing dozens of broken payload variants for negative testing is tedious.", example: "You need to verify an API properly rejects a negative \"quantity\" value and a \"price\" sent as a string instead of a number — generate both mutated payloads here instantly instead of hand-editing the JSON twice." },
     name: "JSON Mutator",
     shortDescription: "Generate mutated API payloads for negative testing.",
     longDescription: "Paste your JSON body from Postman or Swagger, select a field, and get dozens of mutated variants — wrong types, boundary values, injection payloads — ready to copy and test.",
@@ -568,6 +611,7 @@ export const tools: Tool[] = [
   },
   {
     slug: "test-case-matrix",
+    whyItMatters: { why: "Testing every possible combination of even a few parameters (browser × OS × user role) explodes fast, but pairwise testing gets strong coverage with far fewer test cases than a full combinatorial matrix — working that out by hand is genuinely hard.", example: "You have 3 browsers, 3 OSes and 2 user roles to cover — full combinatorial testing is 18 cases, but a pairwise matrix generated here gets solid coverage in a fraction of that, saving real test-execution time." },
     name: "Test Case Matrix",
     shortDescription: "Generate pairwise or full combinatorial test case matrices.",
     longDescription: "Enter parameters and their possible values to generate an optimized pairwise test matrix or full combinatorial set. Export as table, CSV, Gherkin or JSON.",
@@ -579,6 +623,7 @@ export const tools: Tool[] = [
   },
   {
     slug: "api-response-validator",
+    whyItMatters: { why: "\"The API didn't change\" is a claim, not a fact — comparing a real response against its documented schema is how you actually catch a silently added field, a type that quietly changed, or a required field that went missing.", example: "A frontend bug appears right after a backend deploy that was supposedly \"no breaking changes\" — validate today's actual response against the agreed schema here to find the real discrepancy instead of debugging blind." },
     name: "API Response Validator",
     shortDescription: "Validate API responses against JSON Schema and find mismatches.",
     longDescription: "Paste a JSON Schema (expected structure) and the actual API response — instantly find missing fields, wrong types, null values and extra data.",
@@ -590,6 +635,7 @@ export const tools: Tool[] = [
   },
   {
     slug: "test-case-generator",
+    whyItMatters: { why: "Turning a user story into a thorough set of test cases (happy path, edge cases, negative scenarios) from scratch takes real time and it's easy to forget an edge case under deadline pressure — generating a structured starting set means you edit and add rather than start from a blank page.", example: "You're handed a user story the night before a release with no time to write test cases from scratch — generate a starting set here covering happy-path, boundary and negative cases, then review and adjust for anything specific to your app." },
     name: "Test Case Generator",
     shortDescription: "Generate professional test cases from user stories using AI.",
     longDescription: "Describe a feature, user story or acceptance criteria and get structured, professional test cases in seconds. Supports Markdown, Gherkin, JSON and Table formats. Covers happy path, negative, boundary and edge cases automatically.",
@@ -614,6 +660,7 @@ export const tools: Tool[] = [
   },
   {
     slug: "bug-report-generator",
+    whyItMatters: { why: "A vague bug report (\"it's broken\") wastes a developer's time reproducing the issue, but writing a complete one — steps, expected vs actual, environment, severity — from scratch every time is repetitive.", example: "You found a real bug five minutes before a stand-up and need to file it properly, not just say \"the button doesn't work\" in Slack — generate a structured report here so nothing important gets left out under time pressure." },
     name: "Bug Report Generator",
     shortDescription: "Generate professional bug reports from reproduction steps using AI.",
     longDescription: "Describe the steps to reproduce a bug and get a complete, professional bug report in seconds. Supports Markdown, Jira and JSON formats. Includes severity, environment, expected vs actual results and impact analysis.",
@@ -637,6 +684,7 @@ export const tools: Tool[] = [
   },
   {
     slug: "boundary-value-generator",
+    whyItMatters: { why: "Bugs cluster at the edges of valid input ranges (exactly the minimum, one below it, exactly the maximum) far more than in the safe middle — boundary value analysis is the standard way to test those edges deliberately instead of by luck.", example: "A form field accepts ages 18 to 65 — generate the boundary test cases here (17, 18, 19, 64, 65, 66) instead of guessing which edge cases to check by hand." },
     name: "Boundary Value Generator",
     shortDescription: "Generate boundary value test cases for input validation.",
     longDescription: "Enter a min/max range and get all 7 boundary value analysis test cases: below min, min, min+1, nominal, max-1, max, above max.",
@@ -646,6 +694,7 @@ export const tools: Tool[] = [
   },
   {
     slug: "pairwise-testing",
+    whyItMatters: { why: "Testing every combination of several input parameters grows exponentially, but most real bugs are triggered by the interaction of just two parameters at a time — pairwise testing covers those interactions with dramatically fewer test cases.", example: "A settings screen has 4 toggles with 2-3 options each — full combinatorial testing means dozens of cases, but a pairwise set covers every pairing of options in a fraction of the runs." },
     name: "Pairwise Testing Generator",
     shortDescription: "Generate pairwise (all-pairs) test combinations.",
     longDescription: "Enter your test parameters and values to generate an optimal pairwise test suite that covers all parameter pairs.",
@@ -655,6 +704,7 @@ export const tools: Tool[] = [
   },
   {
     slug: "json-schema-validator",
+    whyItMatters: { why: "A JSON Schema documents exactly what shape a payload should have, but eyeballing a response against it by hand misses subtle issues like a field being the wrong type or an extra field that shouldn't be there — automated validation catches every mismatch at once.", example: "The backend team says they didn't change the API contract, but your integration test started failing — validate today's real response against the documented schema and see the actual field-by-field mismatch instead of guessing." },
     name: "JSON Schema Validator",
     shortDescription: "Validate JSON data against a JSON Schema definition.",
     longDescription: "Paste your JSON and schema to instantly validate structure, required fields, types, string formats, numeric ranges and more. Supports Draft-07 features.",
@@ -667,6 +717,7 @@ export const tools: Tool[] = [
   },
   {
     slug: "yaml-formatter",
+    whyItMatters: { why: "YAML's meaning depends entirely on indentation, so a config file that \"looks fine\" can still be structurally wrong — formatting and converting to JSON exposes the real nesting so mistakes are obvious.", example: "A CI pipeline is silently skipping a step because of one misaligned space in the YAML file — convert it to JSON here to see the actual nesting the parser sees, not the nesting your eyes assume." },
     name: "YAML Formatter",
     shortDescription: "Format and validate YAML. Convert YAML to JSON.",
     longDescription: "Paste YAML to format it cleanly or convert it to JSON. Validates structure and highlights errors.",
@@ -678,6 +729,7 @@ export const tools: Tool[] = [
   },
   {
     slug: "url-parser",
+    whyItMatters: { why: "A long URL with a dozen query parameters is hard to read at a glance, and manually counting where one parameter ends and the next begins invites mistakes — breaking it into its actual components makes it instantly clear what's being sent.", example: "A shared link has a huge tracking query string and you need to find just the one parameter that controls which page it opens to — parse it here to see every parameter listed out separately instead of squinting at one long line." },
     name: "URL Parser",
     shortDescription: "Break any URL into protocol, host, path, query params and hash.",
     longDescription: "Paste any URL to instantly see all its components: protocol, hostname, port, path, query parameters (as a table), fragment and more.",
@@ -689,6 +741,7 @@ export const tools: Tool[] = [
   },
   {
     slug: "cron-expression",
+    whyItMatters: { why: "Cron syntax (0 3 * * 1-5) is dense and easy to misread — get the schedule slightly wrong and a job runs at 3pm instead of 3am, or every day instead of just weekdays — building it visually and previewing the next run times catches that before it ships.", example: "You're setting up a nightly backup job and need it to run at 3am on weekdays only — build the expression here and check the preview shows the next 5 runs landing exactly where you expect, not on the weekend." },
     name: "Cron Expression Builder",
     shortDescription: "Build and explain cron expressions. See next 5 run times.",
     longDescription: "Create cron schedules visually with presets, get a human-readable description and preview the next 5 execution times.",
@@ -700,6 +753,7 @@ export const tools: Tool[] = [
   },
   {
     slug: "string-escape",
+    whyItMatters: { why: "The same piece of text needs different escaping depending on where it's going — a JSON string, a SQL literal, a URL, a CSV cell — and getting the wrong one produces a broken query, a malformed request, or a CSV column split in the wrong place.", example: "A file path with backslashes needs to go inside both a JSON config value and, separately, a SQL WHERE clause — escape it for each target here instead of guessing which characters need doubling in which context." },
     name: "String Escape / Unescape",
     shortDescription: "Escape and unescape strings for JSON, HTML, URL, Regex, SQL and CSV.",
     longDescription: "Escape or unescape text for any context: JSON strings, HTML entities, URL encoding, regex special chars, SQL string literals and CSV fields.",
@@ -711,6 +765,7 @@ export const tools: Tool[] = [
   },
   {
     slug: "chmod-calculator",
+    whyItMatters: { why: "Linux file permissions (owner/group/other × read/write/execute) are represented as a single octal number like 755, which isn't self-explanatory — working out what permissions a number actually grants (or the reverse) by hand means memorizing a lookup table.", example: "A deploy script fails with \"permission denied\" on a file that shows mode 644 — check here what 644 actually grants (no execute for anyone) to immediately see why the script can't run it." },
     name: "Chmod Calculator",
     shortDescription: "Calculate Linux file permissions visually. Get octal and symbolic notation.",
     longDescription: "Set read, write and execute permissions for owner, group and others. Instantly get the octal number (755, 644) and symbolic notation (-rwxr-xr-x).",
@@ -722,6 +777,7 @@ export const tools: Tool[] = [
   },
   {
     slug: "regex-generator",
+    whyItMatters: { why: "Writing regex from scratch means remembering exact syntax for character classes, quantifiers and groups — describing what you want in plain language and getting a working, explained pattern back skips the memorization and the trial-and-error.", example: "You need a pattern that matches a phone number in either \"+1-555-123-4567\" or \"5551234567\" format and don't want to look up regex syntax from scratch — describe it in plain words here and get a working, explained pattern." },
     name: "Regex Generator",
     shortDescription: "Describe a pattern in plain words — AI writes the regex.",
     longDescription: "Describe what you want to match in plain language and get a precise, well-explained regular expression. Supports JavaScript, Python, PCRE, Java and Go. Includes live testing against your own strings.",
@@ -733,6 +789,7 @@ export const tools: Tool[] = [
   },
   {
     slug: "json-to-typescript",
+    whyItMatters: { why: "Writing TypeScript interfaces by hand for a large or deeply nested API response is slow and easy to get subtly wrong (an optional field marked as required, a wrong type) — generating them from a real example keeps your types honest.", example: "You're about to consume a new endpoint and the only documentation is one example response — paste it in and get a starting TypeScript interface instead of typing every field by hand and guessing types." },
     name: "JSON to TypeScript",
     shortDescription: "Convert any JSON sample into TypeScript interfaces.",
     longDescription: "Paste a JSON object and get TypeScript interfaces generated automatically, with proper types, optional fields and nested interfaces.",
@@ -744,6 +801,7 @@ export const tools: Tool[] = [
   },
   {
     slug: "color-converter",
+    whyItMatters: { why: "Design tools, CSS and different codebases don't agree on one color format — a designer hands you a HEX value but your charting library wants RGBA with a specific alpha — converting by hand risks a typo in the numbers.", example: "A designer gives you a brand color as \"#3B82F6\" but the CSS you're editing needs it as rgba() with 80% opacity — convert it here instead of doing the hex-to-decimal math yourself." },
     name: "Color Converter",
     shortDescription: "Convert colors between HEX, RGB, HSL, HSV and CSS names.",
     longDescription: "Convert any color between HEX, RGB, RGBA, HSL, HSLA, HSV and CSS color names. Preview the color and copy values in any format.",
@@ -755,6 +813,7 @@ export const tools: Tool[] = [
   },
   {
     slug: "number-base-converter",
+    whyItMatters: { why: "The same quantity looks totally different in decimal, hex, binary and octal, and low-level work (permissions, color codes, memory addresses, protocol fields) constantly demands converting between them — doing it by hand invites arithmetic mistakes.", example: "A file's chmod shows as octal 644 but a script wants it as a decimal bitmask — convert it here instead of doing the base-8-to-base-10 math yourself." },
     name: "Number Base Converter",
     shortDescription: "Convert numbers between binary, octal, decimal and hexadecimal.",
     longDescription: "Convert integers between any number base: binary (2), octal (8), decimal (10) and hexadecimal (16). Shows all representations simultaneously.",
@@ -766,6 +825,7 @@ export const tools: Tool[] = [
   },
   {
     slug: "html-to-markdown",
+    whyItMatters: { why: "Content copy-pasted from a web page or rich-text editor comes out as HTML, but docs, READMEs and many CMSs want clean Markdown — converting by hand means manually stripping every tag.", example: "You copied a support article from a competitor's help center to use as a starting outline for your own docs — convert it to Markdown here to get clean, editable text instead of a page full of nested <div> tags." },
     name: "HTML to Markdown",
     shortDescription: "Convert HTML markup to clean Markdown.",
     longDescription: "Paste HTML and get clean, readable Markdown. Handles headings, lists, links, bold, italic, code blocks and tables.",
@@ -777,6 +837,7 @@ export const tools: Tool[] = [
   },
   {
     slug: "markdown-to-html",
+    whyItMatters: { why: "Markdown is easy to write but most places that actually display content (emails, a CMS's rich-text field, a static page) need real HTML — converting it by hand means retyping every heading and link as a tag.", example: "You wrote a release announcement in Markdown but the email tool you use only accepts HTML — convert it here and paste the HTML straight into the email editor." },
     name: "Markdown to HTML",
     shortDescription: "Convert Markdown to HTML with live preview.",
     longDescription: "Paste Markdown and instantly get clean HTML output. Toggle live preview to see how it renders.",
@@ -788,6 +849,7 @@ export const tools: Tool[] = [
   },
   {
     slug: "json-diff",
+    whyItMatters: { why: "When two versions of the same JSON object differ in a dozen small ways, scanning both by eye is how real changes get missed — a diff view shows exactly what was added, removed or changed.", example: "A vendor sends you an \"updated\" webhook payload sample and claims nothing structural changed — diff it against the old sample to confirm, instead of trusting the claim." },
     name: "JSON Diff",
     shortDescription: "Compare two JSON objects and highlight differences.",
     longDescription: "Paste two JSON objects side by side to see added, removed and changed fields highlighted. Shows a flat diff of all changes.",
@@ -799,6 +861,7 @@ export const tools: Tool[] = [
   },
   {
     slug: "lorem-ipsum-generator",
+    whyItMatters: { why: "A layout with real content isn't ready yet, but \"asdasdasd\" as placeholder text makes a mockup look unfinished and doesn't reveal how the design handles a realistic amount of text — proper placeholder text fills the space believably.", example: "You're building a card component and need to see how it behaves with a full paragraph of body text, not just one short test sentence — generate a realistic paragraph here to actually stress-test the layout." },
     name: "Lorem Ipsum Generator",
     shortDescription: "Generate placeholder text in words, sentences or paragraphs.",
     longDescription: "Generate Lorem Ipsum placeholder text for any design or development project. Choose words, sentences or paragraphs. English and Russian variants.",
@@ -810,6 +873,7 @@ export const tools: Tool[] = [
   },
   {
     slug: "test-data-generator",
+    whyItMatters: { why: "Populating a test environment with dozens of realistic-looking user or product records by hand is slow, and using real production data for testing is a privacy risk — bulk-generating exportable fake data solves both problems at once.", example: "QA needs 50 test user accounts with varied names, emails and roles to properly test a permissions feature — generate them here as a CSV instead of typing each one by hand or reusing the same 3 test accounts for everything." },
     name: "Test Data Generator",
     shortDescription: "Generate realistic test data — users, profiles, products.",
     longDescription: "Generate realistic fake test data for names, emails, phones, addresses, roles and more. Export as JSON or CSV. Choose fields and row count.",
@@ -821,6 +885,7 @@ export const tools: Tool[] = [
   },
   {
     slug: "api-request-builder",
+    whyItMatters: { why: "Testing an API by writing a full script just to check one endpoint is overkill, but you still need real control over headers, query params and body — a visual request builder gives you that control without writing throwaway code.", example: "You need to check whether an endpoint requires a specific custom header to return real data instead of a 401 — build and send the request here with that header added, without spinning up a script just for one test call." },
     name: "API Request Builder",
     shortDescription: "Build and send HTTP requests with headers, params and body.",
     longDescription: "A full-featured HTTP client for testing REST APIs. Set method, URL, query params, headers and request body. See response status, headers and body.",
@@ -832,6 +897,7 @@ export const tools: Tool[] = [
   },
   {
     slug: "text-to-ascii",
+    whyItMatters: { why: "A plain-text terminal or README can't render a logo image, but a bold ASCII-art banner still grabs attention where a normal heading would blend in — it's a low-effort way to make a CLI tool or project header stand out.", example: "You're publishing a CLI tool's README on GitHub and want the project name to stand out at the very top of the terminal output when someone runs --help — generate an ASCII banner here to paste into the help text." },
     name: "ASCII Art Generator",
     shortDescription: "Convert text to ASCII art with various font styles.",
     longDescription: "Transform any text into ASCII art using different font styles. Perfect for README headers, terminal banners and fun text decorations.",
@@ -843,6 +909,7 @@ export const tools: Tool[] = [
   },
   {
     slug: "jwt-generator",
+    whyItMatters: { why: "Testing an API that requires a JWT shouldn't require standing up a full auth server first — generating a signed test token with a custom payload lets you exercise protected endpoints directly during development.", example: "The backend expects a JWT with a specific \"role\": \"admin\" claim, but the real login flow isn't wired up yet in your local environment — generate a matching test token here and hit the protected endpoint directly." },
     name: "JWT Generator",
     shortDescription: "Generate signed JWTs with custom payload and secret.",
     longDescription: "Create JSON Web Tokens with custom payload, expiration and signing secret. Supports HS256, HS384 and HS512 algorithms. For testing and development only.",
@@ -854,6 +921,7 @@ export const tools: Tool[] = [
   },
   {
     slug: "contrast-checker",
+    whyItMatters: { why: "Text that \"looks fine\" to you might still fail WCAG accessibility guidelines for users with low vision — checking the actual contrast ratio, not just eyeballing it, is how you know a color choice is genuinely legible and compliant.", example: "A designer picked light-gray text on a white background because it \"looks clean\" — check the actual contrast ratio here and see it fails even the baseline AA requirement, which explains user complaints about readability." },
     name: "Contrast Checker",
     shortDescription: "Check WCAG color contrast for text and UI elements.",
     longDescription: "Enter a foreground and background color to get the exact WCAG contrast ratio, with pass/fail results for AA and AAA at both normal and large text sizes. Live preview shows how real text actually looks.",
@@ -874,6 +942,7 @@ export const tools: Tool[] = [
   },
   {
     slug: "live-locator-tester",
+    whyItMatters: { why: "A locator that matches zero elements or more than one is one of the most common causes of a flaky automated test, and finding out only when the full test suite fails is slow — testing it directly against real HTML shows the actual match count immediately.", example: "A Playwright test intermittently fails to click a button that \"definitely exists\" — paste the page's HTML and your selector here and discover it actually matches two elements, not one, which is why the click sometimes hits the wrong one." },
     name: "Live Locator Tester",
     shortDescription: "Test a CSS selector or XPath against real HTML and see exactly what it matches.",
     longDescription: "Paste an HTML snippet and a CSS selector or XPath expression to see, live, which elements it actually matches — with a match count and a warning when a locator resolves to zero or more than one element, the two most common reasons an automated test is flaky.",
@@ -894,6 +963,7 @@ export const tools: Tool[] = [
   },
   {
     slug: "screenshot-diff-checker",
+    whyItMatters: { why: "Manually comparing a \"before\" and \"after\" screenshot pixel by pixel misses small visual regressions (a shifted button, a color that's slightly off) that a computed diff catches instantly.", example: "A CSS refactor was supposed to be purely internal cleanup with no visual changes — diff a screenshot from before and after the change here to confirm nothing actually shifted, instead of trusting the claim." },
     name: "Screenshot Diff Checker",
     shortDescription: "Compare two screenshots pixel-by-pixel and highlight what changed.",
     longDescription: "Upload two images to see a pixel-level diff overlay, the percentage of pixels that changed, and an adjustable sensitivity threshold to filter out anti-aliasing noise — a quick manual visual regression check without setting up a full screenshot-testing pipeline.",
@@ -917,6 +987,7 @@ export const tools: Tool[] = [
 
   {
     slug: "curl-generator",
+    whyItMatters: { why: "Remembering every curl flag (-X, -H, -d, quoting rules) from memory is unnecessary friction when you just need one command to test a request — building it visually and copying the result is faster and less error-prone.", example: "You need to quickly re-test a POST endpoint with two custom headers and a JSON body from your terminal — build it here visually instead of trying to recall curl's exact flag order and quoting rules." },
     name: "Curl Generator",
     shortDescription: "Build curl commands from a visual request builder.",
     longDescription: "Compose a request visually and get a ready-to-paste curl command.",
@@ -928,6 +999,7 @@ export const tools: Tool[] = [
   },
   {
     slug: "rest-request-builder",
+    whyItMatters: { why: "Sometimes you just need to poke at an API right in the browser without installing a separate desktop app or writing a script — a lightweight built-in REST client covers that quick-check use case.", example: "You're on a machine without Postman installed and just need to confirm one GET endpoint actually returns data — compose the request here directly instead of installing a whole new app for a 30-second check." },
     name: "REST Request Builder",
     shortDescription: "Compose and inspect REST API requests.",
     longDescription: "A lightweight REST client for quickly composing and inspecting API requests in the browser.",
@@ -939,6 +1011,7 @@ export const tools: Tool[] = [
   },
   {
     slug: "curl-to-code-converter",
+    whyItMatters: { why: "A curl command copied from a browser's dev tools or Postman's \"Copy as cURL\" isn't directly usable in your codebase — manually translating every flag into a fetch call or a requests.post() by hand is slow and easy to get wrong (especially headers).", example: "You copied a working request as \"Copy as cURL\" from the Network tab to reproduce a bug, but you actually need it as a Python requests call for a test script — convert it here instead of retyping every header and the body by hand." },
     name: "Curl to Code Converter",
     shortDescription: "Convert a curl command into ready-to-run JavaScript, Python, Node.js or PowerShell.",
     longDescription: "Paste a curl command — copied from your terminal, a browser's 'Copy as cURL', or Postman — and get an equivalent, ready-to-paste request in JavaScript (fetch), Node.js (axios), Python (requests) or PowerShell (Invoke-RestMethod). No more manually translating flags into code by hand.",
@@ -962,6 +1035,7 @@ export const tools: Tool[] = [
 
   {
     slug: "loot-table-validator",
+    whyItMatters: { why: "Designers tune drop probabilities, but a typo in the weights or a bug in the implementation can silently shift the real odds away from what's configured — simulating a large number of rolls reveals whether the actual implementation behaves the way it was designed to.", example: "A designer configured a rare item to drop at a 1% rate, but players in chat complain it shows up far too often — run a 50,000-roll simulation here and compare the actual rate against the configured one to tell whether it's a real bug or just a small-sample impression." },
     name: "Loot Table Validator",
     shortDescription: "Simulate a drop table to verify its real odds match the configured rates.",
     longDescription: "Enter your loot table as items with weights, run a Monte Carlo simulation of any number of rolls, and compare the simulated drop rate against the configured probability for each item — a quick sanity check before a drop table or gacha system ships.",
@@ -982,6 +1056,7 @@ export const tools: Tool[] = [
   },
   {
     slug: "resolution-safezone-calculator",
+    whyItMatters: { why: "UI that looks perfect at the resolution you designed on can get clipped or spill outside the safe zone on a different aspect ratio — a TV screen, a narrow phone, an ultra-wide monitor — and manually recalculating the safe zone for each one takes forever.", example: "You need to check whether a HUD fits inside the safe zone on a 21:9 TV, even though the design was built against a standard 16:9 monitor — generate the table here for every target aspect ratio instead of recalculating each one by hand." },
     name: "Resolution & Safe Zone Calculator",
     shortDescription: "Generate a compatibility test matrix across aspect ratios and UI safe zones.",
     longDescription: "Pick a reference resolution and a safe-zone margin, and get the resulting frame size and safe-zone box for every target aspect ratio (16:9, 21:9, 4:3, mobile portrait and more) — a ready-made checklist for UI compatibility testing across devices.",
@@ -1002,6 +1077,7 @@ export const tools: Tool[] = [
   },
   {
     slug: "tilemap-coordinate-converter",
+    whyItMatters: { why: "Converting between grid coordinates (column/row) and screen pixels — especially for isometric projection — needs a formula that's easy to get backwards or sign-flipped; a converter gives you the correct result in either direction immediately.", example: "A character is supposed to move to tile (3, 5) on an isometric map, but your hand-calculated screen position puts it in the wrong spot — check the conversion here, and see the formula, to spot where your code's math went wrong." },
     name: "Tilemap Coordinate Converter",
     shortDescription: "Convert between grid, isometric and screen coordinates.",
     longDescription: "Convert 2D game coordinates between grid (col/row), orthogonal screen pixels and isometric screen pixels, in both directions. Set your tile width and height and get the exact formula used.",
@@ -1022,6 +1098,7 @@ export const tools: Tool[] = [
   },
   {
     slug: "framerate-independent-movement-calculator",
+    whyItMatters: { why: "Moving an object by a fixed amount every frame instead of every second makes its speed depend on FPS — it'll run faster on a powerful machine than a slow one — converting to a per-second speed or the correct smoothing factor fixes that once and for all.", example: "On a 30 FPS test device, a character moves at half the speed it does on your 60 FPS dev machine, even though the code is identical — convert your tuned speed to a per-second value here and use it with delta time instead of a fixed per-frame step." },
     name: "Framerate-Independent Movement Calculator",
     shortDescription: "Convert per-frame speed and lerp factors so movement doesn't depend on FPS.",
     longDescription: "Two calculators in one: convert a per-frame speed value between framerates, and get the correct exponential-decay lerp factor for a target frame time — so smoothing and movement behave the same at 30, 60 or 144 FPS instead of speeding up or slowing down with the frame rate.",

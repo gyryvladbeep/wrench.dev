@@ -101,6 +101,8 @@ export interface Dictionary {
   };
   toolLayout: {
     home: string;
+    whyItMattersHeading: string;
+    exampleLabel: string;
     howToUseHeading: string;
     faqHeading: string;
     relatedToolsHeading: string;

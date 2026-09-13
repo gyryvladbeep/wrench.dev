@@ -16,6 +16,7 @@ export function localizeTool(tool: Tool, locale: Locale): Tool {
     metaDescription: ru.metaDescription ?? tool.metaDescription,
     howToSteps: ru.howToSteps ?? tool.howToSteps,
     faqs: ru.faqs ?? tool.faqs,
+    whyItMatters: ru.whyItMatters ?? tool.whyItMatters,
   };
 }
 

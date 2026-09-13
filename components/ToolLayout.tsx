@@ -8,6 +8,7 @@ import { FavoriteButton } from "@/components/FavoriteButton";
 import { CategoryIcon } from "@/components/CategoryIcon";
 import { useRecentlyUsed } from "@/lib/hooks/useRecentlyUsed";
 import { ToolCard } from "@/components/ToolCard";
+import { LightbulbIcon, BookIcon } from "@/components/icons/GameIcons";
 
 const CATEGORY_GRADIENT: Record<string, string> = {
   formatting: "from-amber-500/10  to-transparent",
@@ -105,6 +106,33 @@ export function ToolLayout({ tool, locale, dict, categoryName, related, children
       {/* Tool content */}
       <div className="mx-auto max-w-4xl px-6 py-8">
         {children}
+
+        {/* Why this matters — the reason to reach for this tool at all, plus
+            a short real-life scenario, deliberately separate from "How to
+            use" below: that section is the mechanical click-by-click steps,
+            this one is the "what problem does this actually solve" context
+            a beginner needs to retain it, not just replicate it. Placed
+            right under the tool itself (as asked) rather than at the very
+            top, so someone can try the tool first and read the reasoning
+            right after, without it blocking the interactive part. */}
+        {tool.whyItMatters && (
+          <section className="mt-14">
+            <h2 className="mb-4 flex items-center gap-2 text-base font-semibold text-text-primary">
+              <LightbulbIcon size={16} />
+              {dict.toolLayout.whyItMattersHeading}
+            </h2>
+            <div className="rounded-xl border border-border bg-surface p-5 space-y-4">
+              <p className="text-sm text-text-secondary leading-relaxed">{tool.whyItMatters.why}</p>
+              <div className="rounded-lg border border-border bg-canvas p-4">
+                <p className="mb-1.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-text-muted">
+                  <BookIcon size={12} />
+                  {dict.toolLayout.exampleLabel}
+                </p>
+                <p className="text-sm text-text-secondary leading-relaxed">{tool.whyItMatters.example}</p>
+              </div>
+            </div>
+          </section>
+        )}
 
         {/* How to use */}
         {tool.howToSteps && tool.howToSteps.length > 0 && (
