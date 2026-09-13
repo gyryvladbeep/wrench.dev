@@ -72,18 +72,19 @@ test.describe("Шапка сайта — навигация", () => {
     await expect(page).toHaveURL(/\/categories\//);
   });
 
-  test("дропдаун 'Learn' открывается и содержит 5 пунктов: Challenges/Interview/Playground/Knowledge/Salaries", async () => {
+  test("дропдаун 'Learn' открывается и содержит 6 пунктов: Challenges/Interview/Playground/Knowledge/Salaries/Mock API", async () => {
     await header.openLearn();
-    // 5 — было 4 до добавления калькулятора зарплат (2026-09):
+    // 6 — было 5 до добавления mock-API песочницы (2026-09):
     // components/Header.tsx → LearnDropdown → items. Если кто-то добавит
     // или уберёт пункт меню Learn, этот тест — сигнал обновить и число
     // здесь, и список проверяемых ссылок ниже.
-    await expect(header.dropdownLinks()).toHaveCount(5);
+    await expect(header.dropdownLinks()).toHaveCount(6);
     await expect(header.dropdownLinks().filter({ hasText: "Challenges" })).toBeVisible();
     await expect(header.dropdownLinks().filter({ hasText: "Interview" })).toBeVisible();
     await expect(header.dropdownLinks().filter({ hasText: "Playground" })).toBeVisible();
     await expect(header.dropdownLinks().filter({ hasText: "Knowledge" })).toBeVisible();
     await expect(header.dropdownLinks().filter({ hasText: "Salaries" })).toBeVisible();
+    await expect(header.dropdownLinks().filter({ hasText: "Mock API" })).toBeVisible();
   });
 
   test("Escape закрывает открытый дропдаун", async () => {

@@ -157,6 +157,7 @@ function LearnDropdown({ locale }: { locale: Locale }) {
     { key: "playground", href: localePath(locale, "/playground"), label: "Playground" },
     { key: "knowledge",  href: localePath(locale, "/knowledge"),  label: isRu ? "База знаний" : "Knowledge" },
     { key: "salary",     href: localePath(locale, "/salary"),     label: isRu ? "Зарплаты" : "Salaries" },
+    { key: "mock-api",   href: localePath(locale, "/mock-api"),   label: isRu ? "Mock API" : "Mock API" },
   ];
   const active = items.some((i) => pathname.startsWith(i.href));
   return (
