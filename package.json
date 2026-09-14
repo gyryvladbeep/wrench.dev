@@ -21,6 +21,7 @@
     "@vercel/analytics": "^2.0.1",
     "ai": "^7.0.66",
     "axe-core": "^4.13.0",
+    "badge-maker": "^6.0.0",
     "clsx": "^2.1.0",
     "js-yaml": "^5.2.0",
     "marked": "^18.0.5",

@@ -355,6 +355,16 @@ export default function ProfilePage() {
   const publicProfileUrl = profile.username && typeof window !== "undefined"
     ? `${window.location.origin}${localePath(locale, `/u/${profile.username}`)}`
     : "";
+  // Бейдж — картинка, не страница, поэтому без localePath: /api/badge/
+  // сам ничего не локализует и не должен, это чистый SVG для README.
+  // Ссылка под картинкой — тот же publicProfileUrl, чтобы клик по бейджу
+  // в чужом README вёл на публичный профиль, а не на голый URL картинки.
+  const badgeUrl = profile.username && typeof window !== "undefined"
+    ? `${window.location.origin}/api/badge/${profile.username}`
+    : "";
+  const badgeMarkdown = badgeUrl && publicProfileUrl
+    ? `[![Wrench Score](${badgeUrl})](${publicProfileUrl})`
+    : "";
 
   // Очки и текущий уровень Wrench Score — считаются той же формулой, что
   // и внутри WrenchScorePanel (lib/wrench-score.ts), но теперь ещё и
@@ -894,6 +904,30 @@ export default function ProfilePage() {
                   {isRu ? "Укажи имя пользователя выше, чтобы получить ссылку." : "Set a username above to get a link."}
                 </p>
               )
+            )}
+
+            {/* Бейдж для README — вставляется отдельным блоком, а не
+                довеском к строке выше: там ссылка на страницу, тут —
+                встраиваемая картинка с отдельным markdown-сниппетом под
+                неё, обеим нужно своё место, чтобы не путать одно с
+                другим. Живая картинка (не статичный мокап) — тот же
+                /api/badge/[username], что отдаёт чужой GitHub при
+                реальном показе README, поэтому то, что видно здесь,
+                это ровно то, что увидят другие. */}
+            {profile.is_public && badgeUrl && (
+              <div className="space-y-2 border-t border-border pt-4">
+                <label className="input-label">{isRu ? "Бейдж для README" : "Badge for your README"}</label>
+                <img src={badgeUrl} alt="Wrench Score" width={162} height={20} className="h-5 w-auto" />
+                <div className="flex items-center gap-1.5 rounded-lg border border-border bg-canvas px-2.5 py-1.5">
+                  <span className="min-w-0 flex-1 truncate font-mono text-xs text-text-secondary">{badgeMarkdown}</span>
+                  <CopyButton value={badgeMarkdown} iconOnly />
+                </div>
+                <p className="text-xs text-text-muted">
+                  {isRu
+                    ? "Вставь этот markdown в README своего репозитория — бейдж обновляется сам, каждый раз показывая текущий Wrench Score."
+                    : "Paste this markdown into your repo's README — the badge stays live and always shows your current Wrench Score."}
+                </p>
+              </div>
             )}
 
             {/* Витрина закреплённых задач — до MAX_PINNED штук из уже
