@@ -177,6 +177,24 @@ export const en: Dictionary = {
       expired: "Expired",
       expires: "Expires",
       note: "Note: this only decodes the token — it does not verify the signature.",
+      securityTitle: "Security check",
+      noSecurityIssues: "No issues found in the header or payload claims.",
+      severityCritical: "Critical",
+      severityHigh: "High",
+      severityMedium: "Medium",
+      severityInfo: "Info",
+      findingAlgNone:
+        "Algorithm is \"none\" — this token has no signature at all and can be forged by anyone. Never accept alg:none tokens.",
+      findingNoExpiry:
+        "No \"exp\" claim — this token never expires. A token without an expiry is a lasting risk if it ever leaks.",
+      findingExpBeforeIat:
+        "\"exp\" is not after \"iat\" — this token is already invalid the moment it's issued. Check how exp is calculated on the issuing side.",
+      findingLongLifetime:
+        "Token lifetime is longer than 1 year. That may be intentional (e.g. an API key), but is unusual for a session token.",
+      findingFutureNbf:
+        "\"nbf\" is in the future — this token isn't valid yet.",
+      findingSymmetricAlg:
+        "Algorithm is symmetric (HS*) — the same secret signs and verifies the token. Never expose that secret to a client or ship it in frontend code.",
     },
     timestamp: {
       timestampLabel: "Unix timestamp (seconds or milliseconds)",

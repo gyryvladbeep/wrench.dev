@@ -174,6 +174,18 @@ export interface Dictionary {
       expired: string;
       expires: string;
       note: string;
+      securityTitle: string;
+      noSecurityIssues: string;
+      severityCritical: string;
+      severityHigh: string;
+      severityMedium: string;
+      severityInfo: string;
+      findingAlgNone: string;
+      findingNoExpiry: string;
+      findingExpBeforeIat: string;
+      findingLongLifetime: string;
+      findingFutureNbf: string;
+      findingSymmetricAlg: string;
     };
     timestamp: {
       timestampLabel: string;

@@ -16,6 +16,30 @@ function base64UrlDecode(input: string): string {
   return new TextDecoder().decode(bytes);
 }
 
+// ═══════════════════════════════════════════════════════════════
+// Security findings — rule-based, static checks on the decoded
+// header/payload (no signature verification, this tool never sees
+// the secret). Severity scale and visual treatment mirror
+// HttpSecurityHeadersTool's SEVERITY_META so the two "check my
+// thing" tools feel like the same product.
+// ═══════════════════════════════════════════════════════════════
+type Severity = "critical" | "high" | "medium" | "info";
+
+interface Finding {
+  id: string;
+  severity: Severity;
+  message: string;
+}
+
+const SEVERITY_STYLE: Record<Severity, { color: string; bg: string; badge: string }> = {
+  critical: { color: "text-red-400",    bg: "border-red-500/30 bg-red-500/5",       badge: "bg-red-500" },
+  high:     { color: "text-orange-400", bg: "border-orange-500/30 bg-orange-500/5", badge: "bg-orange-500" },
+  medium:   { color: "text-amber-400",  bg: "border-amber-500/30 bg-amber-500/5",   badge: "bg-amber-500" },
+  info:     { color: "text-blue-400",   bg: "border-blue-500/30 bg-blue-500/5",     badge: "bg-blue-500" },
+};
+
+const YEAR_SECONDS = 365 * 24 * 60 * 60;
+
 export function JwtDecoderTool({ dict }: { dict: Dictionary }) {
   const [token, setToken] = useState(SAMPLE_JWT);
   const t = dict.tools.jwt;
@@ -40,6 +64,44 @@ export function JwtDecoderTool({ dict }: { dict: Dictionary }) {
     const expDate = new Date(decoded.payload.exp * 1000);
     const expired = expDate.getTime() < Date.now();
     expiryNote = `${expired ? t.expired : t.expires} ${expDate.toLocaleString()}`;
+  }
+
+  const findings = useMemo<Finding[]>(() => {
+    if (!decoded.ok) return [];
+    const list: Finding[] = [];
+    const alg = typeof decoded.header?.alg === "string" ? decoded.header.alg : "";
+    const payload = decoded.payload ?? {};
+    const exp = typeof payload.exp === "number" ? payload.exp : null;
+    const iat = typeof payload.iat === "number" ? payload.iat : null;
+    const nbf = typeof payload.nbf === "number" ? payload.nbf : null;
+
+    if (alg.toLowerCase() === "none") {
+      list.push({ id: "alg-none", severity: "critical", message: t.findingAlgNone });
+    }
+    if (exp === null) {
+      list.push({ id: "no-exp", severity: "medium", message: t.findingNoExpiry });
+    }
+    if (exp !== null && iat !== null && exp <= iat) {
+      list.push({ id: "exp-before-iat", severity: "high", message: t.findingExpBeforeIat });
+    }
+    if (exp !== null && iat !== null && exp > iat && exp - iat > YEAR_SECONDS) {
+      list.push({ id: "long-lifetime", severity: "info", message: t.findingLongLifetime });
+    }
+    if (nbf !== null && nbf * 1000 > Date.now()) {
+      list.push({ id: "future-nbf", severity: "info", message: t.findingFutureNbf });
+    }
+    if (/^hs(256|384|512)$/i.test(alg)) {
+      list.push({ id: "symmetric-alg", severity: "info", message: t.findingSymmetricAlg });
+    }
+    return list;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [decoded]);
+
+  function severityLabel(s: Severity): string {
+    if (s === "critical") return t.severityCritical;
+    if (s === "high") return t.severityHigh;
+    if (s === "medium") return t.severityMedium;
+    return t.severityInfo;
   }
 
   return (
@@ -86,6 +148,31 @@ export function JwtDecoderTool({ dict }: { dict: Dictionary }) {
             </pre>
             {expiryNote && <p className="mt-2 text-xs text-text-muted">{expiryNote}</p>}
           </div>
+        </div>
+      )}
+
+      {decoded.ok && (
+        <div className="mt-4">
+          <span className="mb-1.5 block text-xs font-medium text-text-muted">{t.securityTitle}</span>
+          {findings.length === 0 ? (
+            <p className="rounded-[10px] border border-border bg-surface px-3 py-2 text-xs text-text-muted">
+              {t.noSecurityIssues}
+            </p>
+          ) : (
+            <div className="space-y-1.5">
+              {findings.map((f) => {
+                const style = SEVERITY_STYLE[f.severity];
+                return (
+                  <div key={f.id} className={`rounded-[10px] border px-3 py-2 ${style.bg}`}>
+                    <span className={`rounded px-1.5 py-px text-[9px] font-bold text-white ${style.badge}`}>
+                      {severityLabel(f.severity)}
+                    </span>
+                    <p className={`mt-1 text-xs ${style.color}`}>{f.message}</p>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
 
