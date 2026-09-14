@@ -13,6 +13,8 @@ import { useWorkbenches } from "@/lib/hooks/useWorkbenches";
 import { allTools } from "@/lib/tools-registry";
 import { WrenchScorePanel } from "@/components/WrenchScorePanel";
 import { THEME_COLORS, applyAndSaveAccent } from "@/components/ThemeProvider";
+import { AVATAR_EMBLEMS } from "@/lib/profile-emblems";
+import { AvatarGlyph } from "@/components/profile/AvatarGlyph";
 import { GameIcon, CheckIcon, StarIcon, CloseIcon, ExternalLinkIcon, type GameIconId } from "@/components/icons/GameIcons";
 import { ROLE_TAGS } from "@/lib/profile-roles";
 import { BANNER_GRADIENTS, getBannerGradient } from "@/lib/profile-banners";
@@ -24,6 +26,10 @@ interface Profile {
   display_name: string;
   bio: string;
   avatar_color: string;
+  // id пресета из lib/profile-emblems.ts, или null — см.
+  // supabase/profile-emblem-migration.sql. Необязательный слой поверх
+  // avatar_color, не замена ему (см. AvatarGlyph).
+  avatar_emblem: string | null;
   role_tag: string;
   // Публичный профиль (/u/[username]) — добавлено вместе с ним, см.
   // supabase/profile-public-migration.sql. is_public уже существовал в
@@ -119,7 +125,7 @@ export default function ProfilePage() {
   const { workbenches: workbenchList } = useWorkbenches(isPro);
 
   const [profile,  setProfile]  = useState<Profile>({
-    username: "", display_name: "", bio: "", avatar_color: "#f59e0b", role_tag: "developer",
+    username: "", display_name: "", bio: "", avatar_color: "#f59e0b", avatar_emblem: null, role_tag: "developer",
     is_public: true, banner_gradient: null, tagline: null,
     github_url: null, linkedin_url: null, website_url: null, pinned_challenge_ids: [],
   });
@@ -334,10 +340,13 @@ export default function ProfilePage() {
         <div className={`flex items-start gap-5 ${banner ? "-mt-8 px-5 pb-5" : ""}`}>
           {/* Avatar */}
           <div className="relative shrink-0">
-            <div className={`flex h-20 w-20 items-center justify-center rounded-full text-3xl font-bold text-white shadow-lg ${banner ? "border-4 border-surface" : ""}`}
-              style={{ background: profile.avatar_color }}>
-              {initials}
-            </div>
+            <AvatarGlyph
+              color={profile.avatar_color}
+              emblemId={profile.avatar_emblem}
+              initials={initials}
+              sizeClass="h-20 w-20 text-3xl"
+              className={banner ? "border-4 border-surface" : ""}
+            />
             {isPro && (
               <div className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full border-2 border-canvas bg-violet-500 text-[10px] font-bold text-white">
                 P
@@ -676,6 +685,40 @@ export default function ProfilePage() {
                         <path d="M3 8l3.5 3.5L13 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
                       </svg>
                     )}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Эмблема аватарки — необязательный слой поверх цвета выше
+                (lib/profile-emblems.ts), не замена ему: "Без эмблемы" —
+                явная первая опция, тот же приём, что уже у баннера чуть
+                ниже, а не просто "ничего не выбрано". Превью самих
+                пресетов рисуется через тот же AvatarGlyph, что и сама
+                аватарка, — если картинка конкретного пресета ещё не
+                сгенерирована и не лежит в /public, кнопка сама покажет
+                инициал вместо сломанной иконки, а не сломается визуально. */}
+            <div>
+              <label className="input-label">{isRu ? "Эмблема аватарки" : "Avatar emblem"}</label>
+              <p className="text-xs text-text-muted mb-2">
+                {isRu ? "Значок поверх цвета аватарки — необязательно" : "An icon layered on top of your avatar color — optional"}
+              </p>
+              <div className="flex gap-2 flex-wrap">
+                <button onClick={() => setProfile(p => ({ ...p, avatar_emblem: null }))}
+                  title={isRu ? "Без эмблемы" : "No emblem"}
+                  className={`flex h-9 w-9 items-center justify-center rounded-full border border-border bg-surface text-text-muted transition-all ${!profile.avatar_emblem ? "ring-2 ring-white ring-offset-2 ring-offset-canvas scale-110" : "hover:scale-105"}`}>
+                  <CloseIcon size={12} />
+                </button>
+                {AVATAR_EMBLEMS.map((emblem) => (
+                  <button key={emblem.id} onClick={() => setProfile(p => ({ ...p, avatar_emblem: emblem.id }))}
+                    title={isRu ? emblem.labelRu : emblem.label}
+                    className={`rounded-full transition-all ${profile.avatar_emblem === emblem.id ? "ring-2 ring-white ring-offset-2 ring-offset-canvas scale-110" : "hover:scale-105"}`}>
+                    <AvatarGlyph
+                      color={profile.avatar_color}
+                      emblemId={emblem.id}
+                      initials={initials}
+                      sizeClass="h-9 w-9 text-xs"
+                    />
                   </button>
                 ))}
               </div>

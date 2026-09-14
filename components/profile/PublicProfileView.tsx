@@ -9,6 +9,7 @@ import { BADGES, BADGE_COLOR, checkAchievements } from "@/lib/achievements";
 import { ROLE_META, DIFFICULTY_META, ChallengeRole, ChallengeDifficulty } from "@/lib/challenges/types";
 import { WrenchScorePanel } from "@/components/WrenchScorePanel";
 import { GameIcon, ExternalLinkIcon } from "@/components/icons/GameIcons";
+import { AvatarGlyph } from "@/components/profile/AvatarGlyph";
 
 interface PublicProfile {
   id:                    string;
@@ -16,6 +17,7 @@ interface PublicProfile {
   display_name:          string;
   bio:                   string;
   avatar_color:          string;
+  avatar_emblem:         string | null;
   role_tag:              string;
   banner_gradient:       string | null;
   tagline:               string | null;
@@ -77,7 +79,7 @@ export function PublicProfileView({ locale, username }: PublicProfileViewProps) 
     // проверки доступа, не дублируем её в JS.
     supabase
       .from("profiles")
-      .select("id, username, display_name, bio, avatar_color, role_tag, banner_gradient, tagline, github_url, linkedin_url, website_url, pinned_challenge_ids")
+      .select("id, username, display_name, bio, avatar_color, avatar_emblem, role_tag, banner_gradient, tagline, github_url, linkedin_url, website_url, pinned_challenge_ids")
       .eq("username", username)
       .single()
       .then(async ({ data: profile, error }: { data: PublicProfile | null; error: unknown }) => {
@@ -169,10 +171,13 @@ export function PublicProfileView({ locale, username }: PublicProfileViewProps) 
         <div className="h-24 w-full" style={{ background: banner?.css ?? "var(--accent)" }} />
         <div className="px-5 pb-5">
           <div className="-mt-10 flex items-end gap-4">
-            <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full border-4 border-surface text-3xl font-bold text-white shadow-lg"
-              style={{ background: profile.avatar_color }}>
-              {initials}
-            </div>
+            <AvatarGlyph
+              color={profile.avatar_color}
+              emblemId={profile.avatar_emblem}
+              initials={initials}
+              sizeClass="h-20 w-20 text-3xl"
+              className="shrink-0 border-4 border-surface"
+            />
           </div>
 
           <div className="mt-3">
