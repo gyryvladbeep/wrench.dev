@@ -1024,6 +1024,28 @@ export const tools: Tool[] = [
       { question: "Why would I want parents with zero children?", answer: "A user with no orders yet, an author with no published books — these \"empty\" cases are exactly the ones that break a UI (an unhandled empty list) or a query (an INNER JOIN that silently drops them) that only ever got tested against fully-populated rows. Set min children to 0 to make sure some appear." },
     ],
   },
+  {
+    slug: "a11y-checker",
+    whyItMatters: { why: "Accessibility bugs (a missing alt text, a form input with no label, text that fails color contrast) are invisible if you only look at the page — they only show up when something actually checks the markup against WCAG, and by the time a real screen-reader user or an audit finds them, it's a much more expensive fix.", example: "You just built a signup form and it looks fine visually, but a screen reader user can't tell which field is which — paste the markup here and see that the email input has no associated <label>, exactly the kind of issue that's invisible until you specifically check for it." },
+    name: "A11y Quick Checker",
+    shortDescription: "Check pasted HTML against WCAG A/AA rules with axe-core, right in your browser.",
+    longDescription: "Paste an HTML snippet or a full page and run it through axe-core (the same engine behind axe DevTools) against WCAG 2.0/2.1 A and AA rules. See each violation's severity, a plain description, and the specific elements that triggered it — entirely in your browser, nothing is uploaded.",
+    metaDescription: "Free accessibility checker. Paste HTML and check it against WCAG A/AA rules with axe-core, right in your browser. No upload, no signup.",
+    category: "qa", isImplemented: true, isPopular: true,
+    aliases: ["accessibility checker", "wcag checker", "axe checker", "a11y tester", "html accessibility scanner"],
+    relatedSlugs: ["contrast-checker", "live-locator-tester"],
+    keywords: ["accessibility checker", "wcag checker online", "axe-core checker", "a11y checker", "html accessibility scanner", "wcag aa checker"],
+    howToSteps: [
+      "Paste your HTML — a component snippet or a full page.",
+      "Click Check. Scripts and event handlers are stripped first, so nothing in the pasted HTML runs — the markup is just rendered off-screen so axe-core can measure real layout and contrast.",
+      "Read the violations, grouped by severity, each with the specific element that triggered it.",
+    ],
+    faqs: [
+      { question: "Is this the same engine as axe DevTools / Lighthouse's accessibility audit?", answer: "It's the same underlying library, axe-core, that powers axe DevTools and is used inside Lighthouse's accessibility checks — the difference here is you paste raw markup instead of scanning a live loaded page, so results reflect only what's in the HTML you pasted, not scripts that run after load." },
+      { question: "Why does it only check WCAG A and AA, not AAA or best practices?", answer: "AA is the practical, most commonly required bar (and what most legal accessibility standards reference) — AAA is stricter and often impractical for real content, and axe-core's \"best practice\" rules are opinions beyond WCAG itself, not violations. Keeping the scope to A/AA keeps results focused on real compliance issues." },
+      { question: "Is my HTML uploaded anywhere?", answer: "No — everything, including the axe-core scan itself, runs in your browser. The HTML is rendered off-screen only long enough to check it, then removed." },
+    ],
+  },
 
   // ═══════════════════════════════ API ════════════════════════════════════════
 
