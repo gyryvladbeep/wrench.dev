@@ -10,25 +10,35 @@ import { useLocalStorage } from "@/lib/hooks/useLocalStorage";
 import { EmptySearchResults } from "@/components/EmptyState";
 import { CategoryIcon } from "@/components/CategoryIcon";
 import { CloseIcon } from "@/components/icons/GameIcons";
+import { createClient } from "@/lib/supabase/client";
+import { searchProfiles, DirectoryProfile } from "@/lib/profile-directory";
+import { AvatarGlyph } from "@/components/profile/AvatarGlyph";
 
 const MAX_RECENT = 5;
+// Сколько людей показывать прямо в ⌘K — полный список с фильтром по
+// роли живёт на /people (см. ссылка "Все результаты" в секции ниже),
+// здесь только быстрый переход, если ищут конкретного человека.
+const MAX_PEOPLE_RESULTS = 4;
 
 const UI: Record<Locale, {
   placeholder: string; noResults: string; hint: string;
   comingSoon: string; navigate: string; open: string; close: string;
   recentSearches: string; popularTools: string; clearRecent: string;
+  people: string; seeAllPeople: string;
 }> = {
   en: {
-    placeholder: "Search tools…", noResults: "No results found",
+    placeholder: "Search tools or people…", noResults: "No results found",
     hint: "Type a tool name or description", comingSoon: "soon",
     navigate: "↑↓ navigate", open: "↵ open", close: "Esc close",
     recentSearches: "Recent", popularTools: "Popular tools", clearRecent: "Clear",
+    people: "People", seeAllPeople: "All people results →",
   },
   ru: {
-    placeholder: "Поиск инструментов…", noResults: "Ничего не найдено",
+    placeholder: "Поиск инструментов или людей…", noResults: "Ничего не найдено",
     hint: "Введите название или описание инструмента", comingSoon: "скоро",
     navigate: "↑↓ навигация", open: "↵ открыть", close: "Esc закрыть",
     recentSearches: "Недавние", popularTools: "Популярные", clearRecent: "Очистить",
+    people: "Люди", seeAllPeople: "Все результаты по людям →",
   },
 };
 
@@ -56,6 +66,7 @@ export function SearchModal({ locale, open, onClose }: SearchModalProps) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<Tool[]>([]);
   const [selected, setSelected] = useState(0);
+  const [people, setPeople] = useState<DirectoryProfile[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   const t = UI[locale];
 
@@ -64,7 +75,7 @@ export function SearchModal({ locale, open, onClose }: SearchModalProps) {
 
   useEffect(() => {
     if (open) {
-      setQuery(""); setResults([]); setSelected(0);
+      setQuery(""); setResults([]); setSelected(0); setPeople([]);
       setTimeout(() => inputRef.current?.focus(), 50);
     }
   }, [open]);
@@ -75,6 +86,28 @@ export function SearchModal({ locale, open, onClose }: SearchModalProps) {
     setResults(raw);
     setSelected(0);
   }, [query, locale]);
+
+  // Отдельный, дебаунсированный (300мс) эффект — люди ищутся сетевым
+  // запросом к Supabase, а не по статическому массиву в памяти, как
+  // инструменты выше, поэтому не гоняем его на каждое нажатие клавиши.
+  // Своя клавиатурная навигация (стрелки/Enter) сюда не заведена — этот
+  // список маленький (MAX_PEOPLE_RESULTS) и кликабельный, а раздельные
+  // ArrowDown/ArrowUp между двумя списками результатов усложнили бы
+  // логику непропорционально пользе; полный список с фильтром — на
+  // /people, ссылка сразу под этой секцией.
+  useEffect(() => {
+    if (!open || query.trim().length < 2) { setPeople([]); return; }
+    let cancelled = false;
+    const timer = setTimeout(() => {
+      const supabase = createClient();
+      searchProfiles(supabase, { query, limit: MAX_PEOPLE_RESULTS })
+        .then(({ data, error }) => {
+          if (cancelled || error) return;
+          setPeople(data);
+        });
+    }, 300);
+    return () => { cancelled = true; clearTimeout(timer); };
+  }, [query, open]);
 
   useEffect(() => {
     if (!open) return;
@@ -174,7 +207,7 @@ export function SearchModal({ locale, open, onClose }: SearchModalProps) {
           )}
 
           {/* No results */}
-          {!showEmpty && results.length === 0 && (
+          {!showEmpty && results.length === 0 && people.length === 0 && (
             <EmptySearchResults query={query} />
           )}
 
@@ -207,6 +240,44 @@ export function SearchModal({ locale, open, onClose }: SearchModalProps) {
               </Link>
             );
           })}
+
+          {/* Люди — компактная секция, полный список с фильтром по
+              роли живёт на /people (см. комментарий у MAX_PEOPLE_RESULTS
+              выше). Своей клавиатурной навигации нет намеренно. */}
+          {people.length > 0 && (
+            <div className="border-t border-border py-2">
+              <div className="px-3 py-1.5">
+                <span className="text-xs font-medium text-text-muted">{t.people}</span>
+              </div>
+              {people.map((p) => {
+                const name = p.display_name || `@${p.username}`;
+                return (
+                  <Link key={p.id}
+                    href={localePath(locale, `/u/${p.username}`)}
+                    onClick={() => handleSelect(p.username, query.trim())}
+                    className="flex items-center gap-3 rounded-[8px] px-3 py-2 text-sm transition-colors hover:bg-surface"
+                  >
+                    <AvatarGlyph color={p.avatar_color} emblemId={p.avatar_emblem}
+                      initials={name[0].toUpperCase()} sizeClass="h-6 w-6 text-[10px]" className="shrink-0" />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate font-medium text-text-primary"><Highlight text={name} query={query} /></p>
+                      <p className="truncate text-xs text-text-muted">@{p.username}</p>
+                    </div>
+                  </Link>
+                );
+              })}
+              {/* Просто /people, без query-параметра — useSearchParams()
+                  потребовал бы Suspense-границы вокруг всей страницы
+                  ради одного поля поиска, которое и так под рукой на
+                  самой странице; нигде больше в проекте этот паттерн не
+                  используется, заводить его тут ради этого не стоит. */}
+              <Link href={localePath(locale, "/people")}
+                onClick={() => handleSelect("", query.trim())}
+                className="block px-3 py-2 text-xs text-link hover:underline">
+                {t.seeAllPeople}
+              </Link>
+            </div>
+          )}
         </div>
 
         {/* Footer */}
