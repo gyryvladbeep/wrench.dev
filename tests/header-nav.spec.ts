@@ -72,16 +72,17 @@ test.describe("Шапка сайта — навигация", () => {
     await expect(page).toHaveURL(/\/categories\//);
   });
 
-  test("дропдаун 'Learn' открывается и содержит 6 пунктов: Challenges/Interview/Playground/Knowledge/Salaries/Mock API", async () => {
+  test("дропдаун 'Learn' открывается и содержит 7 пунктов: Challenges/Interview/Playground/Trainer/Knowledge/Salaries/Mock API", async () => {
     await header.openLearn();
-    // 6 — было 5 до добавления mock-API песочницы (2026-09):
+    // 7 — было 6 до добавления тренажёра кода (2026-09):
     // components/Header.tsx → LearnDropdown → items. Если кто-то добавит
     // или уберёт пункт меню Learn, этот тест — сигнал обновить и число
     // здесь, и список проверяемых ссылок ниже.
-    await expect(header.dropdownLinks()).toHaveCount(6);
+    await expect(header.dropdownLinks()).toHaveCount(7);
     await expect(header.dropdownLinks().filter({ hasText: "Challenges" })).toBeVisible();
     await expect(header.dropdownLinks().filter({ hasText: "Interview" })).toBeVisible();
     await expect(header.dropdownLinks().filter({ hasText: "Playground" })).toBeVisible();
+    await expect(header.dropdownLinks().filter({ hasText: "Trainer" })).toBeVisible();
     await expect(header.dropdownLinks().filter({ hasText: "Knowledge" })).toBeVisible();
     await expect(header.dropdownLinks().filter({ hasText: "Salaries" })).toBeVisible();
     await expect(header.dropdownLinks().filter({ hasText: "Mock API" })).toBeVisible();
