@@ -12,10 +12,13 @@ import { useFavorites } from "@/lib/hooks/useFavorites";
 import { useWorkbenches } from "@/lib/hooks/useWorkbenches";
 import { allTools } from "@/lib/tools-registry";
 import { WrenchScorePanel } from "@/components/WrenchScorePanel";
+import { calcWrenchScore, getLevel } from "@/lib/wrench-score";
 import { THEME_COLORS, applyAndSaveAccent } from "@/components/ThemeProvider";
 import { AVATAR_EMBLEMS } from "@/lib/profile-emblems";
 import { AvatarGlyph } from "@/components/profile/AvatarGlyph";
-import { GameIcon, CheckIcon, StarIcon, CloseIcon, ExternalLinkIcon, type GameIconId } from "@/components/icons/GameIcons";
+import { ProfileHero } from "@/components/profile/ProfileHero";
+import { StatsHud, type StatHudItem } from "@/components/profile/StatsHud";
+import { GameIcon, CheckIcon, StarIcon, CloseIcon } from "@/components/icons/GameIcons";
 import { ROLE_TAGS } from "@/lib/profile-roles";
 import { BANNER_GRADIENTS, getBannerGradient } from "@/lib/profile-banners";
 import { ROLE_META, DIFFICULTY_META, ChallengeRole, ChallengeDifficulty } from "@/lib/challenges/types";
@@ -314,11 +317,21 @@ export default function ProfilePage() {
   const totalDays = Object.keys(activity).length;
   const workbenchToolCount = workbenchList.reduce((sum, w) => sum + w.tool_slugs.length, 0);
   const banner = getBannerGradient(profile.banner_gradient);
+  const role = ROLE_TAGS.find((r) => r.id === profile.role_tag);
   // window недоступен при первом серверном рендере "use client"-страницы —
   // тот же guard, что уже используется для shareUrl в workbench/page.tsx.
   const publicProfileUrl = profile.username && typeof window !== "undefined"
     ? `${window.location.origin}${localePath(locale, `/u/${profile.username}`)}`
     : "";
+
+  // Очки и текущий уровень Wrench Score — считаются той же формулой, что
+  // и внутри WrenchScorePanel (lib/wrench-score.ts), но теперь ещё и
+  // здесь, на уровне страницы: ProfileHero использует их для "гало"
+  // вокруг аватарки и чипа уровня в шапке, чего раньше в шапке не было
+  // вообще. Один и тот же calcWrenchScore с одинаковыми аргументами в
+  // обоих местах — расхождения между шапкой и панелью ниже невозможны.
+  const score = stats ? calcWrenchScore({ ...stats, tools_used: history.length, badges_count: badges.length }) : 0;
+  const level = getLevel(score);
 
   if (!user) return null;
 
@@ -332,92 +345,41 @@ export default function ProfilePage() {
 
   return (
     <div className="mx-auto max-w-4xl px-5 py-8">
-      {/* Header — баннер показывается только если пользователь его выбрал
-          (Settings → "Публичный профиль"); без него шапка выглядит ровно
-          так же, как и раньше, без пустой цветной полосы просто так. */}
-      <div className={`mb-8 ${banner ? "overflow-hidden rounded-xl border border-border bg-surface" : ""}`}>
-        {banner && <div className="h-20 w-full" style={{ background: banner.css }} />}
-        <div className={`flex items-start gap-5 ${banner ? "-mt-8 px-5 pb-5" : ""}`}>
-          {/* Avatar */}
-          <div className="relative shrink-0">
-            <AvatarGlyph
-              color={profile.avatar_color}
-              emblemId={profile.avatar_emblem}
-              initials={initials}
-              sizeClass="h-20 w-20 text-3xl"
-              className={banner ? "border-4 border-surface" : ""}
-            />
-            {isPro && (
-              <div className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full border-2 border-canvas bg-violet-500 text-[10px] font-bold text-white">
-                P
-              </div>
-            )}
-          </div>
+      <ProfileHero
+        displayName={profile.display_name || user.email?.split("@")[0] || ""}
+        username={profile.username}
+        email={user.email ?? ""}
+        tagline={profile.tagline}
+        bio={profile.bio}
+        avatarColor={profile.avatar_color}
+        avatarEmblem={profile.avatar_emblem}
+        initials={initials}
+        roleLabel={role ? (isRu ? role.labelRu : role.label) : null}
+        isPro={isPro}
+        level={level}
+        score={score}
+        bannerGradient={banner}
+        publicProfileUrl={profile.is_public ? publicProfileUrl : ""}
+        isRu={isRu}
+        onSignOut={() => { signOut(); router.push(localePath(locale, "/")); }}
+      />
 
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-xl font-bold text-text-primary">
-                {profile.display_name || user.email?.split("@")[0]}
-              </h1>
-              {isPro && (
-                <span className="rounded border border-violet-500/30 bg-violet-500/10 px-2 py-px text-xs font-medium text-violet-400">Pro</span>
-              )}
-            </div>
-            {profile.username && <p className="text-sm text-text-muted">@{profile.username}</p>}
-            {profile.tagline && <p className="mt-1 text-sm font-medium text-accent">{profile.tagline}</p>}
-            {profile.bio && <p className="mt-1 text-sm text-text-secondary max-w-md">{profile.bio}</p>}
-            <div className="mt-2 flex flex-wrap items-center gap-2">
-              {(() => {
-                const role = ROLE_TAGS.find(r => r.id === profile.role_tag);
-                return role ? (
-                  <span className="rounded border border-border px-2 py-0.5 text-xs text-text-muted">
-                    {isRu ? role.labelRu : role.label}
-                  </span>
-                ) : null;
-              })()}
-              <span className="text-xs text-text-muted">{user.email}</span>
-              {/* Видно только когда есть реально рабочая публичная ссылка —
-                  нужны и username, и включённый is_public (см. карточку
-                  "Публичный профиль" в Settings ниже). */}
-              {profile.is_public && publicProfileUrl && (
-                <a href={publicProfileUrl} target="_blank" rel="noopener noreferrer"
-                  className="flex items-center gap-1 text-xs text-link hover:underline">
-                  {isRu ? "Публичный профиль" : "Public profile"} <ExternalLinkIcon size={10} />
-                </a>
-              )}
-            </div>
-          </div>
-
-          <button onClick={() => { signOut(); router.push(localePath(locale, "/")); }}
-            className="shrink-0 rounded border border-red-500/20 px-3 py-1.5 text-xs text-red-400 hover:bg-red-500/10 transition-colors">
-            {isRu ? "Выйти" : "Sign out"}
-          </button>
-        </div>
-      </div>
-
-      {/* Quick stats row — раньше у каждой карточки было поле icon с
-          эмодзи, но оно нигде не рендерилось (мёртвый код), а «Серия»
-          вообще вставляла 🔥 прямо в число. Теперь иконка реально
-          показывается (маленькая, над числом), а число — чистое. */}
+      {/* Quick stats row — HUD-полоска вместо четырёх одинаковых карточек
+          с пустым местом внутри (см. components/profile/StatsHud.tsx). */}
       {stats && (
-        <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {([
-            { label: isRu ? "Решено"    : "Solved",    value: String(stats.total_solved),               icon: "target"    as GameIconId },
-            { label: isRu ? "Очки"      : "Points",    value: String(stats.total_points),               icon: "star"      as GameIconId },
-            { label: isRu ? "Серия"     : "Streak",    value: String(stats.current_streak),             icon: "fire"      as GameIconId },
-            { label: isRu ? "AI сегодня": "AI today",  value: isPro ? "∞" : `${aiUsed}/3`,               icon: "sparkle"   as GameIconId },
-          ]).map(({ label, value, icon }) => (
-            <div key={label} className="rounded-lg border border-border bg-surface p-4 text-center">
-              <div className="flex justify-center text-text-muted"><GameIcon id={icon} size={16} /></div>
-              <p className="mt-1 text-2xl font-bold text-text-primary">{value}</p>
-              <p className="mt-0.5 text-xs text-text-muted">{label}</p>
-            </div>
-          ))}
-        </div>
+        <StatsHud items={([
+          { id: "solved", icon: "target",  value: String(stats.total_solved),      label: isRu ? "Решено"     : "Solved" },
+          { id: "points", icon: "star",    value: String(stats.total_points),      label: isRu ? "Очки"       : "Points" },
+          { id: "streak", icon: "fire",    value: String(stats.current_streak),    label: isRu ? "Серия"      : "Streak",
+            accentClass: "text-orange-400", pulsing: stats.current_streak > 0 },
+          { id: "ai",     icon: "sparkle", value: isPro ? "∞" : `${aiUsed}/3`,     label: isRu ? "AI сегодня" : "AI today",
+            accentClass: isPro ? "text-violet-400" : undefined },
+        ]) as StatHudItem[]} />
       )}
 
-      {/* Tabs */}
-      <div className="mb-6 flex gap-1 rounded-lg border border-border bg-surface p-1">
+      {/* Tabs — подчёркивание со свечением вместо плоских кнопок-таблеток,
+          в духе остального сайта (акцентные акценты, а не серые). */}
+      <div className="mb-6 flex gap-1 border-b border-border">
         {TABS.map((t) => (
           <button key={t.id} onClick={() => {
             setTab(t.id as typeof tab);
@@ -427,30 +389,91 @@ export default function ProfilePage() {
             setDeleteConfirmText("");
             setDeleteError(null);
           }}
-            className={`flex-1 rounded-md py-1.5 text-sm transition-colors ${tab === t.id ? "bg-canvas text-text-primary font-medium" : "text-text-muted hover:text-text-secondary"}`}>
+            className={`relative px-3 py-2.5 text-sm transition-colors ${tab === t.id ? "font-medium text-text-primary" : "text-text-muted hover:text-text-secondary"}`}>
             {t.label}
+            {tab === t.id && (
+              <span className="absolute inset-x-0 -bottom-px h-0.5 rounded-full bg-accent shadow-[0_0_8px_rgb(var(--accent-rgb)/0.6)]" />
+            )}
           </button>
         ))}
       </div>
 
-      {/* Overview tab */}
+      {/* Overview tab — бенто-сетка вместо стопки одинаковых карточек:
+          Wrench Score — крупная плитка на 2×2, справа сверху вниз —
+          Награды и Активность, внизу — Workbench и Подписка. Порядок
+          карточек в разметке ниже задаёт порядок auto-placement сетки
+          (CSS сам расставляет плитки по свободным местам), явных
+          grid-column/row нигде не расставляем. */}
       {tab === "overview" && (
-        <div className="space-y-6">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
           {/* Wrench Score */}
           {stats && (
-            <WrenchScorePanel
-              stats={stats}
-              toolsUsed={history.length}
-              badgesCount={badges.length}
-              isRu={isRu}
-            />
+            <div className="md:col-span-2 md:row-span-2">
+              <WrenchScorePanel
+                stats={stats}
+                toolsUsed={history.length}
+                badgesCount={badges.length}
+                isRu={isRu}
+              />
+            </div>
           )}
 
+          {/* Награды — раньше пряталась целиком при badges.length === 0,
+              теперь всегда на месте со своим пустым состоянием, чтобы
+              сетка не "прыгала" в зависимости от того, есть ли данные. */}
+          <div className="rounded-lg border border-border bg-surface p-5 card-shine md:col-span-2">
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-text-primary">
+                {isRu ? "Награды" : "Badges"}{badges.length > 0 ? ` · ${badges.length}` : ""}
+              </h2>
+              <button onClick={() => setTab("badges")} className="text-xs text-link hover:underline">
+                {isRu ? "Все →" : "All →"}
+              </button>
+            </div>
+            {badges.length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                {badges.slice(0, 8).map((bid) => {
+                  const b = BADGES.find(x => x.id === bid);
+                  if (!b) return null;
+                  return (
+                    <div key={bid} title={isRu ? b.descriptionRu : b.description}
+                      className={`flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs ${BADGE_COLOR[b.color] ?? BADGE_COLOR.amber}`}>
+                      <GameIcon id={b.icon} size={13} />
+                      <span className="font-medium">{isRu ? b.labelRu : b.label}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="text-xs text-text-muted">
+                {isRu ? "Пока нет наград — реши первую задачу, чтобы получить первую." : "No badges yet — solve your first challenge to earn one."}
+              </p>
+            )}
+          </div>
+
+          {/* Activity calendar */}
+          <div className="rounded-lg border border-border bg-surface p-5 md:col-span-2">
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-text-primary">
+                {isRu ? "Активность за 90 дней" : "Activity — last 90 days"}
+              </h2>
+              <span className="text-xs text-text-muted">
+                {totalDays} {isRu ? "активных дней" : "active days"}
+              </span>
+            </div>
+            <ActivityCalendar activity={activity} />
+            <div className="mt-2 flex items-center gap-2 text-xs text-text-muted justify-end">
+              <span>{isRu ? "Меньше" : "Less"}</span>
+              {["bg-surface border border-border","bg-accent/20","bg-accent/40","bg-accent/70","bg-accent"].map((c, i) => (
+                <div key={i} className={`h-3 w-3 rounded-sm ${c}`} />
+              ))}
+              <span>{isRu ? "Больше" : "More"}</span>
+            </div>
+          </div>
+
           {/* Workbench promo — самый заметный крючок для тех, кто ещё не
-              пробовал фичу, и быстрый доступ для тех, кто уже пользуется.
-              Стоит сразу после Wrench Score, до активности и наград —
-              намеренно на видном месте наверху вкладки. */}
-          <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-accent/20 bg-accent/5 p-5">
+              пробовал фичу, и быстрый доступ для тех, кто уже пользуется. */}
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-accent/20 bg-accent/5 p-5 card-shine md:col-span-2">
             <div>
               <h2 className="text-sm font-semibold text-text-primary">
                 {isRu ? "Рабочий стол" : "Workbench"}
@@ -471,55 +494,8 @@ export default function ProfilePage() {
             </Link>
           </div>
 
-          {/* Activity calendar */}
-          <div className="rounded-lg border border-border bg-surface p-5">
-            <div className="mb-3 flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-text-primary">
-                {isRu ? "Активность за 90 дней" : "Activity — last 90 days"}
-              </h2>
-              <span className="text-xs text-text-muted">
-                {totalDays} {isRu ? "активных дней" : "active days"}
-              </span>
-            </div>
-            <ActivityCalendar activity={activity} />
-            <div className="mt-2 flex items-center gap-2 text-xs text-text-muted justify-end">
-              <span>{isRu ? "Меньше" : "Less"}</span>
-              {["bg-surface border border-border","bg-accent/20","bg-accent/40","bg-accent/70","bg-accent"].map((c, i) => (
-                <div key={i} className={`h-3 w-3 rounded-sm ${c}`} />
-              ))}
-              <span>{isRu ? "Больше" : "More"}</span>
-            </div>
-          </div>
-
-          {/* Badges preview */}
-          {badges.length > 0 && (
-            <div className="rounded-lg border border-border bg-surface p-5">
-              <div className="mb-3 flex items-center justify-between">
-                <h2 className="text-sm font-semibold text-text-primary">
-                  {isRu ? "Награды" : "Badges"} · {badges.length}
-                </h2>
-                <button onClick={() => setTab("badges")} className="text-xs text-link hover:underline">
-                  {isRu ? "Все →" : "All →"}
-                </button>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {badges.slice(0, 8).map((bid) => {
-                  const b = BADGES.find(x => x.id === bid);
-                  if (!b) return null;
-                  return (
-                    <div key={bid} title={isRu ? b.descriptionRu : b.description}
-                      className={`flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs ${BADGE_COLOR[b.color] ?? BADGE_COLOR.amber}`}>
-                      <GameIcon id={b.icon} size={13} />
-                      <span className="font-medium">{isRu ? b.labelRu : b.label}</span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
           {/* Subscription */}
-          <div className="rounded-lg border border-border bg-surface p-5">
+          <div className="rounded-lg border border-border bg-surface p-5 md:col-span-2">
             <h2 className="mb-4 text-sm font-semibold text-text-primary">
               {isRu ? "Подписка" : "Subscription"}
             </h2>
@@ -598,7 +574,7 @@ export default function ProfilePage() {
           {BADGES.map((b) => {
             const earned = badges.includes(b.id);
             return (
-              <div key={b.id} className={`flex items-start gap-3 rounded-lg border p-4 transition-colors ${earned ? `${BADGE_COLOR[b.color] ?? "border-border bg-surface"}` : "border-border bg-surface opacity-40"}`}>
+              <div key={b.id} className={`flex items-start gap-3 rounded-lg border p-4 transition-colors ${earned ? `${BADGE_COLOR[b.color] ?? "border-border bg-surface"} card-shine` : "border-border bg-surface opacity-40"}`}>
                 <GameIcon id={b.icon} size={24} />
                 <div>
                   <p className={`text-sm font-semibold ${earned ? "" : "text-text-muted"}`}>
@@ -640,7 +616,7 @@ export default function ProfilePage() {
                   const tool = allTools.find(t => t.slug === slug);
                   if (!tool) return null;
                   return (
-                    <div key={slug} className="flex items-center gap-3 rounded-lg border border-border bg-surface p-3 hover:border-border-focus hover:bg-surface-hover transition-all group">
+                    <div key={slug} className="flex items-center gap-3 rounded-lg border border-border bg-surface p-3 hover:border-border-focus hover:bg-surface-hover transition-all card-shine group">
                       <Link href={localePath(locale, `/tools/${slug}`)} className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-text-primary group-hover:text-accent transition-colors truncate">
                           {tool.name}
@@ -695,7 +671,8 @@ export default function ProfilePage() {
                 явная первая опция, тот же приём, что уже у баннера чуть
                 ниже, а не просто "ничего не выбрано". Превью самих
                 пресетов рисуется через тот же AvatarGlyph, что и сама
-                аватарка, — если картинка конкретного пресета ещё не
+                аватарка (включая нейтральную подложку под эмблемой,
+                см. компонент), — если картинка конкретного пресета ещё не
                 сгенерирована и не лежит в /public, кнопка сама покажет
                 инициал вместо сломанной иконки, а не сломается визуально. */}
             <div>
@@ -727,13 +704,17 @@ export default function ProfilePage() {
             {/* Баннер профиля — тот же принцип выбора из готовых
                 пресетов, что и у цвета аватарки чуть выше, но
                 двухцветный градиент вместо одного цвета (lib/profile-banners.ts).
-                "Без баннера" — явная первая опция, а не просто "ничего не
-                выбрано", чтобы можно было вернуться к прежнему виду
-                шапки одним кликом. */}
+                Теперь заливает всю карточку-шапку (ProfileHero), а не
+                тонкую полоску сверху, как раньше — это же место в
+                будущем станет слотом под покупные фоны/скины (см.
+                комментарий в ProfileHero.tsx). "Без баннера" — явная
+                первая опция: карточка тогда падает на бесплатный фон по
+                умолчанию — свечение в цвет текущего уровня Wrench Score,
+                а не на пустоту. */}
             <div>
               <label className="input-label">{isRu ? "Баннер профиля" : "Profile banner"}</label>
               <p className="text-xs text-text-muted mb-2">
-                {isRu ? "Показывается сверху на публичном профиле и здесь, в шапке" : "Shown at the top of your public profile and here in the header"}
+                {isRu ? "Показывается на публичном профиле и как фон карточки профиля здесь" : "Shown on your public profile and as your profile card's background here"}
               </p>
               <div className="flex gap-2 flex-wrap">
                 <button onClick={() => setProfile(p => ({ ...p, banner_gradient: null }))}

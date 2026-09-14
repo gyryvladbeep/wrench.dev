@@ -56,11 +56,23 @@ export function AvatarGlyph({
 
   return (
     <div
-      className={`flex items-center justify-center rounded-full font-bold text-white shadow-lg ${sizeClass} ${className}`}
+      className={`relative flex items-center justify-center rounded-full font-bold text-white shadow-lg ${sizeClass} ${className}`}
       style={{ background: color }}
     >
       {showEmblem ? (
-        <img src={emblem!.src} alt="" className={`${emblemSizeClass} object-contain`} />
+        <>
+          {/* Нейтральная подложка под эмблемой — без неё светлый силуэт
+              эмблемы (все 16 текущих пресетов светлые, см.
+              lib/profile-emblems.ts) сливается с фоном на светлых
+              цветах аватарки (особенно "Белый") и теряет контраст на
+              цветах, близких к акцентным деталям самой эмблемы
+              (например зелёные эмблемы на зелёной аватарке). Подложка
+              фиксированная тёмная, а не подстраивающаяся под цвет
+              аватарки — так контраст гарантирован при любом из 10
+              цветов, ничего не считаем на лету. */}
+          <div className="absolute z-0 h-[64%] w-[64%] rounded-full bg-canvas/90 shadow-inner ring-1 ring-black/20" />
+          <img src={emblem!.src} alt="" className={`relative z-10 ${emblemSizeClass} object-contain`} />
+        </>
       ) : (
         initials
       )}
