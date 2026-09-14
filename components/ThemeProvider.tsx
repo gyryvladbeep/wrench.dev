@@ -30,36 +30,74 @@ export function applyAndSaveAccent(value: string, save = true) {
 }
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const { user } = useAuth();
-  const prevUser = useRef<string | null>(null);
+  const { user, loading } = useAuth();
+  // Tracks *whose* saved color is currently applied, not just "did we run
+  // once" — lets the effect below tell "still the same signed-in user" apart
+  // from "a different user" (switched accounts) or "genuinely logged out",
+  // and re-fetch exactly when it should.
+  const appliedForUserId = useRef<string | null>(null);
 
+  // Paint whatever's cached locally the instant the app mounts, so there's
+  // no flash of the wrong color while the auth session is still resolving
+  // (save=false — this is just replaying a previous save, not a new choice).
   useEffect(() => {
     const saved = localStorage.getItem("wrench_accent");
-    applyAndSaveAccent(saved ?? DEFAULT.value);
+    applyAndSaveAccent(saved ?? DEFAULT.value, false);
   }, []);
 
   useEffect(() => {
-    const wasLoggedIn = prevUser.current !== null;
-    const isLoggedIn  = user !== null;
+    // ═══════════════════════════════════════════════════════════════
+    // Почему ждём именно loading, а не реагируем сразу на user
+    // ═══════════════════════════════════════════════════════════════
+    // Та же гонка состояний, что уже один раз ловили и задокументировали
+    // в app/[locale]/profile/page.tsx: user в AuthProvider изначально
+    // равен null — и ДО того как сессия проверена, и ПОСЛЕ подтверждения
+    // "ты правда разлогинен" — это одно и то же значение null. Раньше
+    // этот эффект был завязан только на [user], поэтому если бы React
+    // успел прогнать его до того, как getSession()/onAuthStateChange
+    // отработали (особенно вероятно сразу после полного релоада страницы,
+    // который и происходит на возврате из OAuth-редиректа Google/GitHub),
+    // эффект просто не перезапускался бы заново, как только user
+    // становился настоящим значением, — акцент так и оставался бы
+    // дефолтным (жёлтым), несмотря на реально сохранённый в БД цвет.
+    // loading меняется ровно один раз: true → false, именно в момент,
+    // когда AuthProvider узнал точный ответ — гарантированная смена
+    // значения, на которую React обязательно перезапустит эффект.
+    if (loading) return;
 
-    if (wasLoggedIn && !isLoggedIn) {
-      applyAndSaveAccent(DEFAULT.value);
-      prevUser.current = null;
+    if (!user) {
+      if (appliedForUserId.current !== null) applyAndSaveAccent(DEFAULT.value);
+      appliedForUserId.current = null;
       return;
     }
 
-    if (isLoggedIn && user) {
-      prevUser.current = user.id;
-      const supabase = createClient();
-      supabase.from("profiles")
-        .select("avatar_color")
-        .eq("id", user.id)
-        .single()
-        .then(({ data }: { data: { avatar_color: string } | null }) => {
-          if (data?.avatar_color) applyAndSaveAccent(data.avatar_color);
-        });
-    }
-  }, [user]);
+    // Уже применили сохранённый цвет для этого же пользователя в этой
+    // сессии — не гонять запрос повторно на каждый лишний ре-рендер
+    // (например, из-за обновления токена, которое меняет ссылку на
+    // объект user, но не самого пользователя).
+    if (appliedForUserId.current === user.id) return;
+    appliedForUserId.current = user.id;
+
+    const supabase = createClient();
+    supabase.from("profiles")
+      .select("avatar_color")
+      .eq("id", user.id)
+      // .maybeSingle() вместо .single() — не считает отсутствие строки
+      // ошибкой (на случай, если строка профиля ещё не успела
+      // создаться к этому моменту), плюс ниже теперь реально проверяем
+      // error, а не молча его игнорируем, как было раньше — раньше сбой
+      // этого запроса был неотличим от "у пользователя просто нет
+      // сохранённого цвета", и акцент так и оставался жёлтым без единого
+      // следа в консоли, почему.
+      .maybeSingle()
+      .then(({ data, error }: { data: { avatar_color: string } | null; error: { message: string } | null }) => {
+        if (error) {
+          console.error("ThemeProvider: failed to load saved accent color", error);
+          return;
+        }
+        if (data?.avatar_color) applyAndSaveAccent(data.avatar_color);
+      });
+  }, [user, loading]);
 
   return <>{children}</>;
 }
