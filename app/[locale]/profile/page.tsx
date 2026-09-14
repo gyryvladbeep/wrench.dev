@@ -144,6 +144,13 @@ export default function ProfilePage() {
   const [aiUsed,   setAiUsed]   = useState(0);
   const [saving,   setSaving]   = useState(false);
   const [saved,    setSaved]    = useState(false);
+  // Раньше saveProfile() не проверял { error } от upsert() вообще —
+  // ошибка (например "column avatar_emblem does not exist", если не
+  // выполнена supabase/profile-emblem-migration.sql) тонула молча, а
+  // кнопка всё равно показывала "Сохранено". saveError делает провал
+  // видимым, а не гадаемым по тому, что данные откатились на следующей
+  // загрузке страницы.
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [tab,      setTab]      = useState<"overview"|"history"|"badges"|"favorites"|"settings">("overview");
 
   // Удаление аккаунта — состояние живёт здесь, не в JSX Settings-вкладки,
@@ -276,15 +283,40 @@ export default function ProfilePage() {
   async function saveProfile() {
     if (!user) return;
     setSaving(true);
+    setSaveError(null);
     const supabase = createClient();
-    await supabase.from("profiles").upsert({
+    // Раньше результат upsert() не читался вообще (просто await без
+    // деструктуризации { error }) — при сбое (чаще всего: в таблице ещё
+    // нет колонки под новое поле, потому что соответствующая миграция
+    // из supabase/*.sql не выполнена) upsert() ничего не менял в БД, но
+    // код всё равно шёл дальше и показывал "Сохранено", как будто всё
+    // записалось. Теперь ошибка проверяется и показывается — молчаливого
+    // "сохранения в никуда" больше нет.
+    const { error } = await supabase.from("profiles").upsert({
       id: user.id,
       ...profile,
       updated_at: new Date().toISOString(),
     }, { onConflict: "id" });
     setSaving(false);
+    if (error) {
+      console.error("saveProfile: upsert failed", error);
+      setSaveError(
+        isRu
+          ? "Не удалось сохранить профиль. Попробуй ещё раз или обнови страницу — если не поможет, часть настроек могла быть добавлена в БД без миграции."
+          : "Couldn't save the profile. Try again or refresh the page — if that doesn't help, a recent field may be missing its DB migration."
+      );
+      return;
+    }
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
+    // AvatarMenu в шапке (components/Header.tsx) держит свою отдельную
+    // копию display_name/avatar_color/avatar_emblem — тем же приёмом,
+    // что уже у WrenchScoreBadge и ThemeProvider (независимый fetch по
+    // user.id, без общего стора на весь сайт) — и не перемонтируется
+    // при переходах внутри одного layout, так что сам не узнает о
+    // только что сохранённых изменениях. Событие — самый простой способ
+    // сообщить ему об этом, не заводя глобальный стор ради одного места.
+    window.dispatchEvent(new CustomEvent("wrench:profile-saved"));
   }
 
   // Требует ввода фразы-подтверждения (кнопка "Удалить навсегда" ниже
@@ -810,6 +842,7 @@ export default function ProfilePage() {
               {saved && <CheckIcon size={14} />}
               {saving ? (isRu ? "Сохраняю..." : "Saving...") : saved ? (isRu ? "Сохранено" : "Saved") : (isRu ? "Сохранить профиль" : "Save profile")}
             </button>
+            {saveError && <p className="text-xs text-red-400">{saveError}</p>}
           </div>
 
           {/* Публичный профиль — отдельная карточка, а не продолжение
@@ -905,6 +938,7 @@ export default function ProfilePage() {
               {saved && <CheckIcon size={14} />}
               {saving ? (isRu ? "Сохраняю..." : "Saving...") : saved ? (isRu ? "Сохранено" : "Saved") : (isRu ? "Сохранить профиль" : "Save profile")}
             </button>
+            {saveError && <p className="text-xs text-red-400">{saveError}</p>}
           </div>
 
           {/* Danger zone */}

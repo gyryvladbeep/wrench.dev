@@ -5,10 +5,12 @@ import { useState, useEffect, useRef } from "react";
 import { localePath } from "@/lib/i18n/config";
 import { useDict } from "@/lib/i18n/dict-context";
 import { useAuth } from "@/lib/auth/auth-context";
+import { createClient } from "@/lib/supabase/client";
 import { LocaleSwitcher } from "@/components/LocaleSwitcher";
 import { SearchModal } from "@/components/SearchModal";
 import { WrenchScoreBadge } from "@/components/WrenchScoreBadge";
 import { CategoryIcon } from "@/components/CategoryIcon";
+import { AvatarGlyph } from "@/components/profile/AvatarGlyph";
 import { applyAndSaveAccent } from "@/components/ThemeProvider";
 import { categories } from "@/lib/tools-registry";
 import { localizeCategories } from "@/lib/i18n/localize";
@@ -172,12 +174,56 @@ function LearnDropdown({ locale }: { locale: Locale }) {
 // Workbench теперь и так есть в основной навигации, so иконку под него
 // вынесли отсюда — весь аккаунт свернулся в один аватар с выпадающим
 // меню, как в большинстве современных SaaS-продуктов.
+// Раньше кружок в шапке вообще не смотрел в таблицу profiles — он был
+// жёстко зашит на первую букву email (user.email[0]), тем же цветом
+// bg-accent/text-accent, что и everywhere. Из-за этого выбор цвета
+// аватарки/эмблемы в /profile → Settings был не виден в шапке никак:
+// фон кружка МЕНЯЛСЯ (bg-accent/15 берёт цвет из CSS-переменной
+// --accent, а её тут же на клике обновляет applyAndSaveAccent — см.
+// Settings), а сама буква — никогда, потому что она вообще не зависела
+// от profiles.display_name, не говоря уже об эмблеме. Теперь кружок —
+// тот же AvatarGlyph, что и everywhere в /profile, с настоящими
+// avatar_color/avatar_emblem/инициалом.
+interface HeaderProfile {
+  display_name:  string | null;
+  avatar_color:  string;
+  avatar_emblem: string | null;
+}
+
 function AvatarMenu() {
   const { locale, dict } = useDict();
   const { user, signOut } = useAuth();
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const [profile, setProfile] = useState<HeaderProfile | null>(null);
+
+  useEffect(() => {
+    if (!user) { setProfile(null); return; }
+    let cancelled = false;
+    function load() {
+      const supabase = createClient();
+      supabase.from("profiles")
+        .select("display_name, avatar_color, avatar_emblem")
+        .eq("id", user!.id)
+        // .maybeSingle(), не .single() — строка профиля может ещё не
+        // успеть создаться (тот же приём, что уже в ThemeProvider).
+        .maybeSingle()
+        .then(({ data, error }: { data: HeaderProfile | null; error: { message: string } | null }) => {
+          if (cancelled) return;
+          if (error) { console.error("AvatarMenu: failed to load profile", error); return; }
+          if (data) setProfile(data);
+        });
+    }
+    load();
+    // saveProfile() в /profile шлёт это событие после успешного
+    // сохранения (см. app/[locale]/profile/page.tsx) — Header живёт в
+    // корневом layout и не перемонтируется при переходах между
+    // страницами, поэтому без события кружок так и остался бы со
+    // старыми данными до следующей полной перезагрузки.
+    window.addEventListener("wrench:profile-saved", load);
+    return () => { cancelled = true; window.removeEventListener("wrench:profile-saved", load); };
+  }, [user]);
 
   useEffect(() => {
     if (!open) return;
@@ -223,9 +269,14 @@ function AvatarMenu() {
         onClick={() => setOpen((o) => !o)}
         title={user.email ?? ""}
         aria-label="Account menu"
-        className="flex h-7 w-7 items-center justify-center rounded-full bg-accent/15 text-xs font-semibold text-accent transition-colors hover:bg-accent/25"
+        className="block rounded-full transition-opacity hover:opacity-80"
       >
-        {(user.email ?? "?")[0].toUpperCase()}
+        <AvatarGlyph
+          color={profile?.avatar_color ?? "#f59e0b"}
+          emblemId={profile?.avatar_emblem ?? null}
+          initials={(profile?.display_name || user.email || "?")[0].toUpperCase()}
+          sizeClass="h-7 w-7 text-xs"
+        />
       </button>
       {open && (
         <div className="animate-scale-in absolute right-0 top-full z-50 mt-2 w-56 overflow-hidden rounded-xl border border-border bg-canvas p-1.5 shadow-2xl">
