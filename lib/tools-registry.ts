@@ -1003,6 +1003,27 @@ export const tools: Tool[] = [
       { question: "Is this checking my live server?", answer: "No — it only evaluates the response headers you paste against the request details you enter, entirely in your browser. It doesn't make any network request of its own." },
     ],
   },
+  {
+    slug: "relational-test-data-generator",
+    whyItMatters: { why: "Real features almost never involve one flat table — a user has orders, an author has books, a company has employees — and testing with unrelated fake rows misses the bugs that only show up with a real foreign key: an empty-state screen for a user with zero orders, a join that silently drops rows, a cascade delete that orphans children.", example: "You need to seed a staging database to test a \"customer order history\" page, including the empty state for a brand-new customer — generate linked users and orders here, with some users deliberately left with zero orders, instead of hand-writing SQL inserts with matching IDs." },
+    name: "Relational Test Data Generator",
+    shortDescription: "Generate linked parent/child test data with a real foreign key between them.",
+    longDescription: "Pick a relation (Users → Orders, Authors → Books, Companies → Employees), set how many parent rows and how many children per parent, and generate two linked tables with a real foreign key — including some parents with zero children, for testing empty states. Export as JSON (two keyed arrays) or as two separate CSV files.",
+    metaDescription: "Free relational test data generator. Generate linked parent and child test data with a real foreign key — users and orders, authors and books, companies and employees.",
+    category: "qa", isImplemented: true,
+    aliases: ["relational fake data", "linked test data generator", "foreign key test data", "seed test database"],
+    relatedSlugs: ["test-data-generator", "fake-test-data-generator"],
+    keywords: ["relational test data generator", "linked fake data", "foreign key test data", "seed database test data", "generate related test data"],
+    howToSteps: [
+      "Pick a relation — Users → Orders, Authors → Books, or Companies → Employees.",
+      "Set the number of parent rows and the min/max children per parent (min 0 leaves some parents with no children on purpose).",
+      "Generate, then copy the result as JSON (two keyed arrays with a matching foreign key) or as two separate CSV files.",
+    ],
+    faqs: [
+      { question: "Is the foreign key actually valid?", answer: "Yes — every child row's foreign key (e.g. user_id) is a real id that exists in the generated parent array, the same way a real database relation would look. Nothing is a dangling reference." },
+      { question: "Why would I want parents with zero children?", answer: "A user with no orders yet, an author with no published books — these \"empty\" cases are exactly the ones that break a UI (an unhandled empty list) or a query (an INNER JOIN that silently drops them) that only ever got tested against fully-populated rows. Set min children to 0 to make sure some appear." },
+    ],
+  },
 
   // ═══════════════════════════════ API ════════════════════════════════════════
 
