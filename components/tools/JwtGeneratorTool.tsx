@@ -41,7 +41,7 @@ export function JwtGeneratorTool({ dict }: { dict: Dictionary }) {
   const [result,  setResult]  = useState("");
   const [error,   setError]   = useState("");
   const [loading, setLoading] = useState(false);
-  const isRu = dict.common.copy === "Копировать";
+  const isRu = dict.common.copy === "Скопировать";
 
   async function generate() {
     setError(""); setResult(""); setLoading(true);

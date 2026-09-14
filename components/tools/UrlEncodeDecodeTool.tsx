@@ -10,7 +10,7 @@ export function UrlEncodeDecodeTool({ dict }: { dict: Dictionary }) {
   const [mode, setMode] = useState<"encode"|"decode">("encode");
   const [input, setInput] = useState("https://example.com/search?q=hello world&lang=en");
   const t    = dict.tools.urlEncode;
-  const isRu = dict.common.copy === "Копировать";
+  const isRu = dict.common.copy === "Скопировать";
 
   const result = useMemo(() => {
     if (!input) return { ok:true as const, value:"" };

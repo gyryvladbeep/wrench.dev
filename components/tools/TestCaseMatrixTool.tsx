@@ -135,7 +135,7 @@ const PRESETS = [
 ];
 
 export function TestCaseMatrixTool({ dict }: { dict: Dictionary }) {
-  const isRu = dict.common.copy === "Копировать";
+  const isRu = dict.common.copy === "Скопировать";
 
   const [params,   setParams]  = useState<Param[]>([
     { name: "role",   values: "admin, user, guest" },

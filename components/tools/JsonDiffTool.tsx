@@ -62,7 +62,7 @@ const RIGHT = `{
 }`;
 
 export function JsonDiffTool({ dict }: { dict: Dictionary }) {
-  const isRu = dict.common.copy === "Копировать";
+  const isRu = dict.common.copy === "Скопировать";
   const [left,  setLeft]  = useState(LEFT);
   const [right, setRight] = useState(RIGHT);
   const [showUnchanged, setShowUnchanged] = useState(false);

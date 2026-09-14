@@ -50,7 +50,7 @@ function runSimulation(rows: Row[], rolls: number): SimResult[] {
 }
 
 export function LootTableValidatorTool({ dict }: { dict: Dictionary }) {
-  const isRu = dict.common.copy === "Копировать";
+  const isRu = dict.common.copy === "Скопировать";
   const [rows, setRows] = useState<Row[]>(DEFAULT_ROWS);
   const [rollCount, setRollCount] = useState(10000);
   const [results, setResults] = useState<SimResult[] | null>(null);

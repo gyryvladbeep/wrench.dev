@@ -50,7 +50,7 @@ const CAT_COLORS: Record<string, string> = {
 export function HttpStatusCodesTool({ dict }: { dict: Dictionary }) {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
-  const isRu = dict.common.copy === "Копировать";
+  const isRu = dict.common.copy === "Скопировать";
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim();

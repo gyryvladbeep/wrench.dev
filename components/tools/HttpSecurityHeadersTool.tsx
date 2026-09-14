@@ -193,7 +193,7 @@ Access-Control-Allow-Origin: *
 Cache-Control: no-cache`;
 
 export function HttpSecurityHeadersTool({ dict }: { dict: Dictionary }) {
-  const isRu = dict.common.copy === "Копировать";
+  const isRu = dict.common.copy === "Скопировать";
   const [input,    setInput]    = useState(SAMPLE);
   const [filter,   setFilter]   = useState<"all"|"fail"|"pass">("all");
   const [expanded, setExpanded] = useState<Set<string>>(new Set());

@@ -10,7 +10,7 @@ function fmt(n: number, digits = 4): string {
 }
 
 export function FramerateIndependentMovementCalculatorTool({ dict }: { dict: Dictionary }) {
-  const isRu = dict.common.copy === "Копировать";
+  const isRu = dict.common.copy === "Скопировать";
 
   // ── Speed converter ────────────────────────────────────────────────────
   const [speedValue, setSpeedValue] = useState(2);

@@ -15,7 +15,7 @@ export function ChmodCalculatorTool({ dict }: { dict: Dictionary }) {
   const [owner, setOwner] = useState<PermSet>({ read:true,  write:true,  execute:false });
   const [group, setGroup] = useState<PermSet>({ read:true,  write:false, execute:false });
   const [other, setOther] = useState<PermSet>({ read:true,  write:false, execute:false });
-  const isRu = dict.common.copy === "Копировать";
+  const isRu = dict.common.copy === "Скопировать";
 
   const calc = (p: PermSet) => (p.read?4:0)+(p.write?2:0)+(p.execute?1:0);
 

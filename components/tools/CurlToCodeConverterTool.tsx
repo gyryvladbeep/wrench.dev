@@ -203,7 +203,7 @@ const GENERATORS: Record<Lang, (p: ParsedCurl) => string> = {
 const LANG_LABEL: Record<Lang, string> = { fetch: "JavaScript (fetch)", axios: "Node.js (axios)", python: "Python (requests)", powershell: "PowerShell" };
 
 export function CurlToCodeConverterTool({ dict }: { dict: Dictionary }) {
-  const isRu = dict.common.copy === "Копировать";
+  const isRu = dict.common.copy === "Скопировать";
   const [input, setInput] = useState(DEFAULT_CURL);
   const [lang, setLang] = useState<Lang>("fetch");
 

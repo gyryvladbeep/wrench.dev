@@ -24,7 +24,7 @@ function round(n: number): number {
 }
 
 export function ResolutionSafezoneCalculatorTool({ dict }: { dict: Dictionary }) {
-  const isRu = dict.common.copy === "Копировать";
+  const isRu = dict.common.copy === "Скопировать";
   const [refWidth, setRefWidth]   = useState(1920);
   const [marginPct, setMarginPct] = useState(5);
   const [presets, setPresets]     = useState<Preset[]>(DEFAULT_PRESETS);

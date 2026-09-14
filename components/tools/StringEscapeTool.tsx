@@ -51,7 +51,7 @@ export function StringEscapeTool({ dict }: { dict: Dictionary }) {
   const [input,  setInput]  = useState(SAMPLE.json);
   const [mode,   setMode]   = useState<Mode>("json");
   const [encode, setEncode] = useState(true);
-  const isRu = dict.common.copy === "Копировать";
+  const isRu = dict.common.copy === "Скопировать";
 
   const output = useMemo(() => {
     if (!input) return "";

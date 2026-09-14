@@ -74,7 +74,7 @@ const SAMPLE = `{
 export function JsonToTypescriptTool({ dict }: { dict: Dictionary }) {
   const [input,    setInput]    = useState(SAMPLE);
   const [rootName, setRootName] = useState("Root");
-  const isRu = dict.common.copy === "Копировать";
+  const isRu = dict.common.copy === "Скопировать";
 
   const result = useMemo(() => {
     if (!input.trim()) return { ok: true as const, value: "" };

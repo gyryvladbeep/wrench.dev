@@ -39,7 +39,7 @@ function toAsciiArt(text: string): string {
 
 export function AsciiArtTool({ dict }: { dict: Dictionary }) {
   const [input, setInput] = useState("WRENCH");
-  const isRu = dict.common.copy === "Копировать";
+  const isRu = dict.common.copy === "Скопировать";
   const output = useMemo(() => toAsciiArt(input.slice(0, 20)), [input]);
 
   return (

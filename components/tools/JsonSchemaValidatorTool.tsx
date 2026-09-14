@@ -101,7 +101,7 @@ function validateJsonSchema(data: unknown, schema: Record<string, unknown>, path
 export function JsonSchemaValidatorTool({ dict }: { dict: Dictionary }) {
   const [json,   setJson]   = useState(SAMPLE_JSON);
   const [schema, setSchema] = useState(SAMPLE_SCHEMA);
-  const isRu = dict.common.copy === "Копировать";
+  const isRu = dict.common.copy === "Скопировать";
 
   const result = useMemo(() => {
     try {
