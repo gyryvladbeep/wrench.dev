@@ -982,6 +982,27 @@ export const tools: Tool[] = [
       { question: "What if the two images are different sizes?", answer: "They're compared on a canvas sized to the larger image; the extra area in the smaller image counts as a difference, and a warning is shown so you know the dimensions didn't match." },
     ],
   },
+  {
+    slug: "cors-debugger",
+    whyItMatters: { why: "A CORS error in the browser console (\"No 'Access-Control-Allow-Origin' header\") tells you the request was blocked, but not which of the half-dozen CORS rules actually caused it — checking the real response headers against the actual request shows the specific mismatch instead of guessing and re-deploying blind.", example: "Your frontend on https://app.example.com gets a CORS error hitting the API, but the backend team swears the header is set — paste the actual response headers here with your origin and see that Access-Control-Allow-Origin is echoing a different origin, not yours." },
+    name: "CORS Debugger",
+    shortDescription: "Explain exactly why a cross-origin request was blocked or allowed.",
+    longDescription: "Enter the request's origin, method and headers, paste the response headers you received, and see exactly which CORS rule blocked the request — or confirmed it's allowed — with a plain-language explanation for each check, including preflight (OPTIONS) requests.",
+    metaDescription: "Free CORS debugger. Paste response headers and see exactly why a cross-origin request is blocked or allowed, explained in plain language.",
+    category: "qa", isImplemented: true,
+    aliases: ["cors checker", "cors tester", "cors error debugger", "access-control-allow-origin checker"],
+    relatedSlugs: ["header-inspector", "api-request-builder"],
+    keywords: ["cors debugger", "cors error", "access-control-allow-origin", "cors checker", "fix cors error", "cors preflight"],
+    howToSteps: [
+      "Set the request's origin, method and any custom headers — the tool works out whether the browser would need a preflight (OPTIONS) request first.",
+      "Paste the response headers you actually received (the real response, or the preflight OPTIONS response if one was needed).",
+      "Read the verdict and the specific rule that's blocking the request, or confirming it's allowed.",
+    ],
+    faqs: [
+      { question: "What's a CORS preflight request?", answer: "For methods other than GET/HEAD/POST, or requests with custom headers or a non-form Content-Type, the browser first sends an automatic OPTIONS request to check permissions before sending the real one. This tool detects when that applies and checks the preflight rules (Access-Control-Allow-Methods, Access-Control-Allow-Headers) instead of just the simple-request ones." },
+      { question: "Is this checking my live server?", answer: "No — it only evaluates the response headers you paste against the request details you enter, entirely in your browser. It doesn't make any network request of its own." },
+    ],
+  },
 
   // ═══════════════════════════════ API ════════════════════════════════════════
 

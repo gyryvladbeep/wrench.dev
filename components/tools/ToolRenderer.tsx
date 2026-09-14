@@ -92,6 +92,7 @@ import { ResolutionSafezoneCalculatorTool } from "./ResolutionSafezoneCalculator
 import { LiveLocatorTesterTool }    from "./LiveLocatorTesterTool";
 import { ScreenshotDiffCheckerTool } from "./ScreenshotDiffCheckerTool";
 import { CurlToCodeConverterTool }  from "./CurlToCodeConverterTool";
+import { CorsDebuggerTool }         from "./CorsDebuggerTool";
 
 /**
  * Single "use client" boundary for all interactive tool components.
@@ -166,6 +167,7 @@ export function ToolRenderer({
     case "resolution-safezone-calculator": return <ResolutionSafezoneCalculatorTool dict={dict} />;
     case "live-locator-tester":       return <LiveLocatorTesterTool dict={dict} />;
     case "screenshot-diff-checker":   return <ScreenshotDiffCheckerTool dict={dict} />;
+    case "cors-debugger":             return <CorsDebuggerTool dict={dict} />;
     // ── API ─────────────────────────────────────────────────────────────────
     case "curl-generator":            return <CurlGeneratorTool dict={dict} />;
     case "rest-request-builder":      return <RestRequestBuilderTool dict={dict} />;
