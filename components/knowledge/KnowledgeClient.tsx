@@ -1,7 +1,10 @@
 "use client";
 import { useMemo, useState } from "react";
-import { ROADMAPS, RESOURCES, KnowledgeRole, ResourceType } from "@/lib/knowledge/content";
-import { Locale } from "@/lib/i18n/config";
+import Link from "next/link";
+import { ROADMAPS, RESOURCES, ROLE_META, KnowledgeRole, KnowledgeTab, ResourceType } from "@/lib/knowledge/content";
+import { ARTICLES } from "@/lib/knowledge/articles";
+import { Locale, localePath } from "@/lib/i18n/config";
+import { BookIcon } from "@/components/icons/GameIcons";
 
 interface Props { locale: Locale; }
 
@@ -31,9 +34,23 @@ const PHASE_COLORS = [
 
 export function KnowledgeClient({ locale }: Props) {
   const isRu = locale === "ru";
-  const [tab,    setTab]    = useState<"roadmaps" | "resources">("roadmaps");
+  // Articles first — it's the actual content depth of the page now, not
+  // the short-bullet roadmaps or the outbound-link list that used to be
+  // the whole page (see lib/knowledge/articles.ts for why this file exists).
+  const [tab,    setTab]    = useState<KnowledgeTab>("articles");
   const [role,   setRole]   = useState<KnowledgeRole | "all">("all");
   const [search, setSearch] = useState("");
+
+  const filteredArticles = useMemo(() => {
+    const q = search.toLowerCase().trim();
+    return ARTICLES.filter(a => {
+      const matchRole = role === "all" || a.role === role || a.role === "all";
+      const title = isRu ? a.titleRu : a.title;
+      const summary = isRu ? a.summaryRu : a.summary;
+      const matchSearch = !q || title.toLowerCase().includes(q) || summary.toLowerCase().includes(q) || a.tags.some(t => t.includes(q));
+      return matchRole && matchSearch;
+    });
+  }, [role, search, isRu]);
 
   const filteredRoadmaps = useMemo(() =>
     ROADMAPS.filter(r => role === "all" || r.role === role), [role]);
@@ -54,18 +71,22 @@ export function KnowledgeClient({ locale }: Props) {
           {isRu ? "База знаний" : "Knowledge Base"}
         </span>
         <h1 className="mt-3 text-3xl font-bold text-text-primary">
-          {isRu ? "Ресурсы и дорожные карты" : "Resources & Roadmaps"}
+          {isRu ? "Статьи, ресурсы и дорожные карты" : "Articles, Resources & Roadmaps"}
         </h1>
         <p className="mt-2 text-sm text-text-secondary max-w-lg">
-          {isRu ? "Курированные ресурсы и roadmap-ы для QA, Frontend и Backend." : "Curated resources and roadmaps for QA, Frontend and Backend developers."}
+          {isRu
+            ? "Статьи на реальных примерах, курированные ресурсы и roadmap-ы для QA, Frontend и Backend."
+            : "Real-example articles, curated resources and roadmaps for QA, Frontend and Backend developers."}
         </p>
       </div>
 
-      <div className="mb-6 flex gap-1 rounded-lg border border-border bg-surface p-1 w-fit">
-        {(["roadmaps","resources"] as const).map(t => (
+      <div className="mb-6 flex flex-wrap gap-1 rounded-lg border border-border bg-surface p-1 w-fit">
+        {(["articles","roadmaps","resources"] as const).map(t => (
           <button key={t} onClick={() => setTab(t)}
             className={`rounded-md px-5 py-1.5 text-sm font-medium transition-colors ${tab === t ? "bg-canvas text-text-primary" : "text-text-muted hover:text-text-secondary"}`}>
-            {t === "roadmaps" ? (isRu ? "Roadmap-ы" : "Roadmaps") : (isRu ? `Ресурсы (${RESOURCES.length})` : `Resources (${RESOURCES.length})`)}
+            {t === "articles" ? (isRu ? `Статьи (${ARTICLES.length})` : `Articles (${ARTICLES.length})`)
+              : t === "roadmaps" ? (isRu ? "Roadmap-ы" : "Roadmaps")
+              : (isRu ? `Ресурсы (${RESOURCES.length})` : `Resources (${RESOURCES.length})`)}
           </button>
         ))}
       </div>
@@ -79,12 +100,48 @@ export function KnowledgeClient({ locale }: Props) {
             </button>
           ))}
         </div>
-        {tab === "resources" && (
+        {(tab === "resources" || tab === "articles") && (
           <input value={search} onChange={e => setSearch(e.target.value)}
-            placeholder={isRu ? "Поиск ресурсов…" : "Search resources…"}
+            placeholder={tab === "articles" ? (isRu ? "Поиск статей…" : "Search articles…") : (isRu ? "Поиск ресурсов…" : "Search resources…")}
             className="code-surface rounded-lg px-3 py-1.5 text-sm text-text-primary outline-none flex-1 min-w-[200px]" />
         )}
       </div>
+
+      {tab === "articles" && (
+        <div>
+          <p className="text-xs text-text-muted mb-4">{filteredArticles.length} {isRu ? "статей" : "articles"}</p>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            {filteredArticles.map(article => {
+              const meta = ROLE_META[article.role];
+              return (
+                <Link key={article.slug} href={localePath(locale, `/knowledge/${article.slug}`)}
+                  className="flex flex-col rounded-lg border border-border bg-surface p-4 hover:border-border-focus hover:bg-surface-hover transition-all group">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className={`rounded border px-1.5 py-px text-[10px] font-medium ${meta.color}`}>
+                      {isRu ? meta.labelRu : meta.label}
+                    </span>
+                    <span className="flex items-center gap-1 text-[10px] text-text-muted">
+                      <BookIcon size={10} />
+                      {article.readingMinutes} {isRu ? "мин" : "min"}
+                    </span>
+                  </div>
+                  <p className="text-sm font-medium text-text-primary group-hover:text-accent transition-colors">
+                    {isRu ? article.titleRu : article.title}
+                  </p>
+                  <p className="mt-1 text-xs text-text-muted leading-relaxed line-clamp-2">
+                    {isRu ? article.summaryRu : article.summary}
+                  </p>
+                </Link>
+              );
+            })}
+          </div>
+          {filteredArticles.length === 0 && (
+            <p className="rounded-lg border border-border bg-surface p-6 text-center text-sm text-text-muted">
+              {isRu ? "Ничего не найдено." : "Nothing found."}
+            </p>
+          )}
+        </div>
+      )}
 
       {tab === "roadmaps" && (
         <div className="space-y-8">

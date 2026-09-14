@@ -1,5 +1,6 @@
 import { Metadata } from "next";
 import { Tool } from "./types";
+import { Article } from "./knowledge/articles";
 import { Locale, localePath } from "./i18n/config";
 
 export const siteConfig = {
@@ -41,6 +42,56 @@ export function buildToolMetadata(tool: Tool, locale: Locale): Metadata {
 
 export function buildCategoryMetadata(locale: Locale, categorySlug: string, title: string, description: string): Metadata {
   return buildPageMetadata(locale, `/categories/${categorySlug}`, title, description);
+}
+
+export function buildArticleMetadata(article: Article, locale: Locale): Metadata {
+  const isRu  = locale === "ru";
+  const title = `${isRu ? article.titleRu : article.title} — ${siteConfig.name}`;
+  const desc  = isRu ? article.summaryRu : article.summary;
+  const path  = `/knowledge/${article.slug}`;
+  return {
+    title,
+    description: desc,
+    alternates:  buildAlternates(locale, path),
+    openGraph: {
+      title, description: desc,
+      url: `${siteConfig.url}${localePath(locale, path)}`,
+      siteName: siteConfig.name, type: "article",
+    },
+    twitter: { card: "summary", title, description: desc },
+    keywords: article.tags,
+  };
+}
+
+// Article schema (not FAQPage/SoftwareApplication like buildToolJsonLd —
+// an article isn't a tool or a Q&A list) plus the same BreadcrumbList
+// pattern used for tools, so a knowledge article gets the same real
+// search-result treatment a tool page already does.
+export function buildArticleJsonLd(article: Article, locale: Locale, homeLabel: string, knowledgeLabel: string) {
+  const isRu = locale === "ru";
+  const path = `/knowledge/${article.slug}`;
+  const url  = `${siteConfig.url}${localePath(locale, path)}`;
+  const knowledgeUrl = `${siteConfig.url}${localePath(locale, "/knowledge")}`;
+  const homeUrl = `${siteConfig.url}${localePath(locale, "/")}`;
+  const title = isRu ? article.titleRu : article.title;
+  return [
+    {
+      "@context": "https://schema.org", "@type": "Article",
+      headline: title,
+      description: isRu ? article.summaryRu : article.summary,
+      url,
+      keywords: article.tags.join(", "),
+      publisher: { "@type": "Organization", name: siteConfig.name, url: siteConfig.url },
+    },
+    {
+      "@context": "https://schema.org", "@type": "BreadcrumbList",
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: homeLabel, item: homeUrl },
+        { "@type": "ListItem", position: 2, name: knowledgeLabel, item: knowledgeUrl },
+        { "@type": "ListItem", position: 3, name: title, item: url },
+      ],
+    },
+  ];
 }
 
 export function buildToolJsonLd(tool: Tool, locale: Locale, categoryName: string, homeLabel: string) {

@@ -8,7 +8,7 @@ export async function generateMetadata({ params }: { params: { locale: string } 
   const isRu   = locale === "ru";
   return buildPageMetadata(locale, "/knowledge",
     isRu ? "База знаний — Wrench-Branch" : "Knowledge Base — Wrench-Branch",
-    isRu ? "Roadmap-ы и ресурсы для QA, Frontend и Backend разработчиков." : "Roadmaps and resources for QA, Frontend and Backend developers."
+    isRu ? "Статьи, roadmap-ы и ресурсы для QA, Frontend и Backend разработчиков." : "Articles, roadmaps and resources for QA, Frontend and Backend developers."
   );
 }
 

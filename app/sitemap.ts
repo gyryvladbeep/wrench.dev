@@ -1,5 +1,6 @@
 import { MetadataRoute } from "next";
 import { allTools, categories } from "@/lib/tools-registry";
+import { ARTICLES } from "@/lib/knowledge/articles";
 import { siteConfig } from "@/lib/seo";
 import { locales, localePath } from "@/lib/i18n/config";
 
@@ -16,6 +17,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   for (const locale of locales) {
     pages.push(url(localePath(locale, "/"), 1, "weekly"));
     pages.push(url(localePath(locale, "/tools"), 0.9, "weekly"));
+    pages.push(url(localePath(locale, "/knowledge"), 0.8, "weekly"));
     pages.push(url(localePath(locale, "/docs"), 0.5, "monthly"));
     pages.push(url(localePath(locale, "/privacy"), 0.3, "yearly"));
     pages.push(url(localePath(locale, "/terms"), 0.3, "yearly"));
@@ -29,6 +31,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
         t.isPopular ? 0.9 : t.isFeatured ? 0.8 : 0.6,
         "monthly"
       ));
+    }
+    for (const a of ARTICLES) {
+      pages.push(url(localePath(locale, `/knowledge/${a.slug}`), 0.7, "monthly"));
     }
   }
   return pages;

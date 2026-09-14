@@ -1,6 +1,17 @@
 export type KnowledgeRole = "qa" | "frontend" | "backend" | "all";
 export type ResourceType = "article" | "book" | "course" | "video" | "tool" | "roadmap";
 
+// Shared role badge styling — one source of truth for the color/label a
+// role gets everywhere it's shown as a badge (article cards, article
+// detail pages). Kept here rather than duplicated in each component,
+// since KnowledgeRole itself is defined here.
+export const ROLE_META: Record<KnowledgeRole, { label: string; labelRu: string; color: string }> = {
+  qa:       { label:"QA",       labelRu:"QA",       color:"text-green-400 border-green-500/30 bg-green-500/10" },
+  frontend: { label:"Frontend", labelRu:"Frontend", color:"text-blue-400 border-blue-500/30 bg-blue-500/10" },
+  backend:  { label:"Backend",  labelRu:"Backend",  color:"text-violet-400 border-violet-500/30 bg-violet-500/10" },
+  all:      { label:"General",  labelRu:"Общее",    color:"text-amber-400 border-amber-500/30 bg-amber-500/10" },
+};
+
 export interface Resource {
   title:       string;
   titleRu?:    string;
@@ -94,4 +105,4 @@ export const RESOURCES: Resource[] = [
   { title:"Roadmap.sh", url:"https://roadmap.sh", type:"roadmap", free:true, description:"Community-driven visual roadmaps for developers.", descriptionRu:"Визуальные дорожные карты для разработчиков.", tags:["all","roadmap"] },
 ];
 
-export type KnowledgeTab = "roadmaps" | "resources";
+export type KnowledgeTab = "articles" | "roadmaps" | "resources";
