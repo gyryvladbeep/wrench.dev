@@ -161,6 +161,7 @@ function LearnDropdown({ locale }: { locale: Locale }) {
     { key: "knowledge",  href: localePath(locale, "/knowledge"),  label: isRu ? "База знаний" : "Knowledge" },
     { key: "salary",     href: localePath(locale, "/salary"),     label: isRu ? "Зарплаты" : "Salaries" },
     { key: "mock-api",   href: localePath(locale, "/mock-api"),   label: isRu ? "Mock API" : "Mock API" },
+    { key: "webhook-inspector", href: localePath(locale, "/webhook-inspector"), label: isRu ? "Вебхуки" : "Webhooks" },
     // Каталог публичных профилей (app/[locale]/people) — сюда же, а не
     // отдельным пунктом верхнего уровня, по той же причине, что уже
     // объяснена в комментарии у самого nav ниже (5 пунктов верхнего

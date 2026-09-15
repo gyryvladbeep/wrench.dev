@@ -381,3 +381,19 @@ export function ExternalLinkIcon({ className = "", size = 14 }: IconProps) {
     </svg>
   );
 }
+
+// Лоток "входящих" с прорезью — заголовок Webhook Inspector: чужие
+// HTTP-запросы (вебхуки от Stripe/GitHub, callback от своего бэкенда)
+// "падают" на публичный URL и оседают в этом лотке, как письма в
+// почтовый ящик. Тот же силуэт, что у классической иконки inbox
+// (контур короба + V-образная прорезь на передней грани), но
+// перерисован под общую конвенцию файла — viewBox 0 0 16 16, одна
+// толщина обводки, без заливок.
+export function InboxIcon({ className = "", size = 20 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 16 16" fill="none" className={className} aria-hidden>
+      <path d="M4 3.5h8l2 4.5v4.5a1 1 0 01-1 1H3a1 1 0 01-1-1V8l2-4.5z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/>
+      <path d="M2 8h3.2l1.1 2h3.4l1.1-2H14" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" strokeLinecap="round"/>
+    </svg>
+  );
+}
