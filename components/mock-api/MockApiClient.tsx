@@ -244,6 +244,7 @@ function EndpointCard({
                 ? (isRu ? "ещё не вызывался" : "never called")
                 : (isRu ? `вызван ${route.hit_count} раз` : `called ${route.hit_count}x`)}
             </span>
+            <RouteLoadTestPanel url={`${baseUrl}${route.path}`} method={route.method} isRu={isRu} />
             <CopyButton value={`curl -X ${route.method} ${baseUrl}${route.path}`} label="curl" iconOnly />
             <button onClick={() => onDeleteRoute(route.id)} className="text-text-muted transition-colors hover:text-red-400" aria-label={isRu ? "Удалить маршрут" : "Delete route"}>
               <CloseIcon size={12} />
@@ -312,5 +313,143 @@ function EndpointCard({
         </button>
       </div>
     </div>
+  );
+}
+
+interface LoadTestResult {
+  succeeded: number;
+  failed: number;
+  minMs: number;
+  avgMs: number;
+  p95Ms: number;
+  maxMs: number;
+  reqPerSec: number;
+}
+
+// Намеренно бьёт только по собственному мок-маршруту пользователя (тот же
+// origin, тот же публичный URL, что уже показан выше как curl-пример) — это
+// не универсальный инструмент нагрузочного тестирования чужих серверов, а
+// быстрая проверка "что будет с моим кодом, если этот эндпоинт словит
+// параллельные запросы" на ресурсе, которым пользователь и так уже владеет.
+// Поэтому жёсткие потолки на число запросов и параллелизм ниже — не UX-подсказка,
+// а единственная защита от того, чтобы это превратилось в оружие против
+// собственного же Vercel-биллинга пользователя.
+const MAX_REQUESTS = 200;
+const MAX_CONCURRENCY = 20;
+
+function RouteLoadTestPanel({ url, method, isRu }: { url: string; method: string; isRu: boolean }) {
+  const [open, setOpen] = useState(false);
+  const [requests, setRequests] = useState(20);
+  const [concurrency, setConcurrency] = useState(5);
+  const [running, setRunning] = useState(false);
+  const [completed, setCompleted] = useState(0);
+  const [result, setResult] = useState<LoadTestResult | null>(null);
+
+  async function run() {
+    const total = Math.min(Math.max(1, requests), MAX_REQUESTS);
+    const conc = Math.min(Math.max(1, concurrency), MAX_CONCURRENCY);
+    setRunning(true);
+    setResult(null);
+    setCompleted(0);
+
+    let launched = 0;
+    let done = 0;
+    let failed = 0;
+    const latencies: number[] = [];
+    const startedAt = performance.now();
+
+    async function worker() {
+      while (launched < total) {
+        launched++;
+        const t0 = performance.now();
+        try {
+          // no-store — иначе повторные GET на один и тот же URL браузер может
+          // отдать из HTTP-кэша, и цифры латентности перестанут что-либо значить.
+          const res = await fetch(url, { method, cache: "no-store" });
+          await res.arrayBuffer();
+          latencies.push(performance.now() - t0);
+        } catch {
+          failed++;
+          latencies.push(performance.now() - t0);
+        }
+        done++;
+        setCompleted(done);
+      }
+    }
+
+    await Promise.all(Array.from({ length: conc }, () => worker()));
+
+    const durationSec = (performance.now() - startedAt) / 1000;
+    const sorted = [...latencies].sort((a, b) => a - b);
+    const p95Index = Math.min(sorted.length - 1, Math.ceil(sorted.length * 0.95) - 1);
+
+    setResult({
+      succeeded: total - failed,
+      failed,
+      minMs: sorted[0] ?? 0,
+      avgMs: sorted.reduce((s, v) => s + v, 0) / (sorted.length || 1),
+      p95Ms: sorted[p95Index] ?? 0,
+      maxMs: sorted[sorted.length - 1] ?? 0,
+      reqPerSec: durationSec > 0 ? total / durationSec : 0,
+    });
+    setRunning(false);
+  }
+
+  return (
+    <>
+      <button onClick={() => setOpen((o) => !o)}
+        className="text-xs text-text-muted transition-colors hover:text-text-primary">
+        {isRu ? "Нагрузочный тест" : "Load test"}
+      </button>
+
+      {open && (
+        <div className="basis-full space-y-3 rounded-lg border border-border bg-canvas p-3">
+          <div className="flex flex-wrap items-end gap-3">
+            <div>
+              <label className="input-label">{isRu ? "Запросов" : "Requests"}</label>
+              <input type="number" min={1} max={MAX_REQUESTS} value={requests}
+                onChange={(e) => setRequests(Math.min(MAX_REQUESTS, Math.max(1, Number(e.target.value))))}
+                className="code-surface w-24 rounded-lg px-2.5 py-1.5 text-xs text-text-primary outline-none" />
+            </div>
+            <div>
+              <label className="input-label">{isRu ? "Параллельно" : "Concurrency"}</label>
+              <input type="number" min={1} max={MAX_CONCURRENCY} value={concurrency}
+                onChange={(e) => setConcurrency(Math.min(MAX_CONCURRENCY, Math.max(1, Number(e.target.value))))}
+                className="code-surface w-24 rounded-lg px-2.5 py-1.5 text-xs text-text-primary outline-none" />
+            </div>
+            <button onClick={run} disabled={running}
+              className="rounded bg-accent px-3 py-1.5 text-xs font-semibold text-accent-fg transition-colors hover:bg-amber-400 disabled:opacity-50">
+              {running
+                ? (isRu ? `Выполняю... ${completed}/${Math.min(Math.max(1, requests), MAX_REQUESTS)}` : `Running... ${completed}/${Math.min(Math.max(1, requests), MAX_REQUESTS)}`)
+                : (isRu ? "Запустить" : "Run")}
+            </button>
+          </div>
+          <p className="text-[11px] text-text-muted">
+            {isRu
+              ? `Максимум ${MAX_REQUESTS} запросов и ${MAX_CONCURRENCY} параллельно — это твой собственный эндпоинт, но лимит защищает от случайной перегрузки твоего же аккаунта.`
+              : `Max ${MAX_REQUESTS} requests, ${MAX_CONCURRENCY} concurrent — this hits your own endpoint only, the limit just guards against accidentally hammering your own account.`}
+          </p>
+
+          {result && (
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+              {[
+                { label: isRu ? "Успешно" : "Succeeded", value: String(result.succeeded), className: "text-emerald-400" },
+                { label: isRu ? "Ошибки" : "Failed", value: String(result.failed), className: result.failed > 0 ? "text-red-400" : "text-text-primary" },
+                { label: isRu ? "Запросов/сек" : "Req/sec", value: result.reqPerSec.toFixed(1), className: "text-text-primary" },
+                { label: "Min", value: `${result.minMs.toFixed(0)} ms`, className: "text-text-primary" },
+                { label: "Avg", value: `${result.avgMs.toFixed(0)} ms`, className: "text-text-primary" },
+                { label: "p95", value: `${result.p95Ms.toFixed(0)} ms`, className: "text-text-primary" },
+                { label: "Max", value: `${result.maxMs.toFixed(0)} ms`, className: "text-text-primary" },
+              ].map((s) => (
+                <div key={s.label} className="rounded-lg border border-border bg-surface px-2.5 py-1.5">
+                  <div className={`font-mono text-xs ${s.className}`}>{s.value}</div>
+                  <div className="text-[10px] text-text-muted">{s.label}</div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </>
   );
 }
