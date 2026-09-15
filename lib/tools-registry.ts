@@ -1068,6 +1068,27 @@ export const tools: Tool[] = [
       { question: "What counts as \"failed\"?", answer: "Any request with an HTTP status of 400 or above, or a status of 0 (the browser never got a response at all — blocked, cancelled, or a network error)." },
     ],
   },
+  {
+    slug: "qa-test-plan-generator",
+    whyItMatters: { why: "Writing a test plan from a blank page means either skimping on coverage under deadline pressure or rebuilding the same mental checklist from scratch every project — a curated, checkable starting point catches the categories people forget (accessibility, boundary values, token expiry) without the up-front effort of assembling one.", example: "You're about to sign off a release and want a quick sanity pass beyond \"it works on my machine\" — generate a checklist for your project type, check off what you've actually verified, and the unchecked boxes are your real remaining risk, not a guess." },
+    name: "QA Test Plan Generator",
+    shortDescription: "Generate a checkable test plan checklist for a web app, API or mobile app.",
+    longDescription: "Pick a project type — web app, REST API, or mobile app — and get a curated, categorized test checklist (functional, security, accessibility, performance and more) with concrete, verifiable items instead of vague reminders. Toggle categories on or off, check items off as you verify them, and copy the whole thing as Markdown — checked state included — to paste into your own test plan doc or ticket.",
+    metaDescription: "Free QA test plan checklist generator. Generate a categorized, checkable test plan for a web app, API or mobile app and export it as Markdown.",
+    category: "qa", isImplemented: true,
+    aliases: ["test plan generator", "qa checklist generator", "test checklist template", "release checklist generator", "qa test plan template"],
+    relatedSlugs: ["boundary-value-generator", "test-case-matrix"],
+    keywords: ["qa test plan generator", "test checklist generator", "qa checklist template", "release testing checklist", "test plan template api mobile web"],
+    howToSteps: [
+      "Pick a project type — Web app, REST API, or Mobile app — each has its own relevant categories and items.",
+      "Toggle off any category that doesn't apply to what you're testing.",
+      "Check items off as you actually verify them, then copy the checklist as Markdown — checked state included — into your test plan doc, PR description, or ticket.",
+    ],
+    faqs: [
+      { question: "Does checking items off save anywhere?", answer: "Only in this browser tab, for this session — it's not tied to an account or saved to a server. Copy the Markdown (with checked state included) into your own test plan doc, ticket, or PR description to keep a permanent record." },
+      { question: "Is this a replacement for a real, project-specific test plan?", answer: "No — it's a solid, generic starting point covering the categories teams most often forget under deadline pressure (accessibility, boundary values, token expiry, idempotency). A real test plan still needs items specific to your actual features and business logic on top of this." },
+    ],
+  },
 
   // ═══════════════════════════════ API ════════════════════════════════════════
 
