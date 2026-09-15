@@ -1137,6 +1137,28 @@ export const tools: Tool[] = [
       { question: "Is my curl command sent anywhere?", answer: "No — parsing and code generation both happen entirely in your browser." },
     ],
   },
+  {
+    slug: "webhook-signature-verifier",
+    whyItMatters: { why: "A webhook signature is what stops anyone who finds your endpoint URL from posting fake events to it, but that only holds if your code actually verifies it correctly — and the single most common way to get it wrong (re-serializing the JSON instead of using the raw body) is invisible until you check it against a known-good example.", example: "Your GitHub webhook handler suddenly starts rejecting every delivery after a refactor — paste the secret, the raw payload GitHub sent, and the X-Hub-Signature-256 header value here to confirm whether the signature itself is wrong, or your handler's comparison logic is.", },
+    name: "Webhook Signature Verifier",
+    shortDescription: "Verify an HMAC webhook signature from GitHub, Stripe, Shopify or a generic provider.",
+    longDescription: "Paste the signing secret, the exact raw request body, and the signature header you received, and see whether the signature is actually valid — with built-in presets for GitHub (X-Hub-Signature-256), Stripe (Stripe-Signature, including its timestamp-prefixed signed string) and Shopify (X-Shopify-Hmac-Sha256), plus a generic HMAC mode for anything else. Everything runs locally via the Web Crypto API.",
+    metaDescription: "Free webhook signature verifier. Check GitHub, Stripe, Shopify or generic HMAC webhook signatures right in your browser — no data ever leaves your machine.",
+    category: "api", isImplemented: true,
+    aliases: ["webhook signature checker", "hmac signature verifier", "github webhook signature checker", "stripe signature verifier", "verify webhook signature"],
+    relatedSlugs: ["hash-generator", "jwt-generator", "cors-debugger"],
+    keywords: ["webhook signature verifier", "verify webhook signature", "hmac sha256 verifier", "github x-hub-signature-256", "stripe-signature verifier", "shopify hmac verifier"],
+    howToSteps: [
+      "Pick a provider preset — GitHub, Stripe, Shopify — or Generic HMAC for anything else; each sets the right algorithm, encoding and expected header format automatically.",
+      "Paste the signing secret and the exact raw request body (not a re-formatted copy — whitespace matters).",
+      "Paste the signature value you received and read the verdict, plus the computed signature for comparison.",
+    ],
+    faqs: [
+      { question: "Why does it say invalid even though the payload looks right?", answer: "By far the most common cause: the body was re-serialized (e.g. pasted from a pretty-printed JSON viewer, or re-stringified by code) instead of using the exact raw bytes the provider sent. A signature is computed over the literal request body — any whitespace difference produces a completely different signature even though the JSON is logically identical." },
+      { question: "Why does Stripe need a timestamp, not just the body?", answer: "Stripe signs the string \"<timestamp>.<body>\", not the body alone, specifically so a captured, valid request can't be replayed later — the timestamp is part of what's signed, so your own backend verification should also reject old timestamps, not just check the signature matches." },
+      { question: "Is my secret or payload sent anywhere?", answer: "No — the HMAC is computed entirely in your browser using the Web Crypto API. Nothing is uploaded, which matters here more than most tools since a webhook secret is a real production credential." },
+    ],
+  },
 
   // ═══════════════════════════════ GAMEDEV ════════════════════════════════════
 

@@ -97,6 +97,7 @@ import { RelationalTestDataGeneratorTool } from "./RelationalTestDataGeneratorTo
 import { A11yCheckerTool }          from "./A11yCheckerTool";
 import { HarAnalyzerTool }          from "./HarAnalyzerTool";
 import { QaTestPlanGeneratorTool }  from "./QaTestPlanGeneratorTool";
+import { WebhookSignatureVerifierTool } from "./WebhookSignatureVerifierTool";
 
 /**
  * Single "use client" boundary for all interactive tool components.
@@ -180,6 +181,7 @@ export function ToolRenderer({
     case "curl-generator":            return <CurlGeneratorTool dict={dict} />;
     case "rest-request-builder":      return <RestRequestBuilderTool dict={dict} />;
     case "curl-to-code-converter":    return <CurlToCodeConverterTool dict={dict} />;
+    case "webhook-signature-verifier": return <WebhookSignatureVerifierTool dict={dict} />;
     case "boundary-value-generator":  return <BoundaryValueTool dict={dict} />;
     case "test-data-generator":       return <TestDataGeneratorTool dict={dict} />;
     case "json-diff":                 return <JsonDiffTool dict={dict} />;
