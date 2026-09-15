@@ -7,6 +7,9 @@ import { Locale } from "./config";
  * фичи проще держать рядом с ней, чем править огромный общий словарь
  * (там любая опечатка в одном из трёх файлов ломает сборку сразу
  * везде, потому что TypeScript требует точного совпадения формы).
+ * Публичная галерея (/workbench/gallery) и клонирование — часть той же
+ * фичи (используют ту же публичную ссылку/is_public, что и шаринг),
+ * поэтому их строки живут в этом же файле, а не в третьем отдельном.
  */
 export interface WorkbenchUIStrings {
   pageTitle: string;
@@ -37,11 +40,37 @@ export interface WorkbenchUIStrings {
   sharePanelTitle: string;
   sharePublicLabel: string;
   sharePublicHint: string;
+  shareDescriptionLabel: string;
+  shareDescriptionPlaceholder: string;
   publicNotFoundTitle: string;
   publicNotFoundBody: string;
   publicBadge: string;
   publicCta: string;
   publicEmptyBody: string;
+  // Ссылка из /workbench в галерею.
+  galleryNavLink: string;
+  // Сама галерея (/workbench/gallery).
+  galleryPageTitle: string;
+  galleryPageSubtitle: string;
+  gallerySortPopular: string;
+  gallerySortNewest: string;
+  galleryEmpty: string;
+  galleryToolsCount: string;
+  galleryClonesCount: string;
+  galleryLoadMore: string;
+  galleryViewButton: string;
+  galleryByLabel: string;
+  galleryAnonymousOwner: string;
+  // Клонирование чужого публичного workbench себе — с карточки в
+  // галерее и с самой публичной страницы (/w/[id]).
+  cloneButton: string;
+  cloneButtonSignedOut: string;
+  cloneSuccessTitle: string;
+  cloneSuccessBody: string;
+  cloneSuccessCta: string;
+  cloneTruncatedNotice: string;
+  cloneLimitReached: string;
+  cloneError: string;
 }
 
 export const WORKBENCH_UI: Record<Locale, WorkbenchUIStrings> = {
@@ -72,12 +101,34 @@ export const WORKBENCH_UI: Record<Locale, WorkbenchUIStrings> = {
     shareButton: "Share",
     sharePanelTitle: "Share this workbench",
     sharePublicLabel: "Public link",
-    sharePublicHint: "Anyone with the link gets a read-only view of this board.",
+    sharePublicHint: "Anyone with the link gets a read-only view of this board — and it becomes visible in the public gallery.",
+    shareDescriptionLabel: "Description (optional)",
+    shareDescriptionPlaceholder: "What's this workbench for?",
     publicNotFoundTitle: "This workbench isn't available",
     publicNotFoundBody: "The link may be wrong, or the owner has turned off sharing.",
     publicBadge: "Read-only",
     publicCta: "Go to Wrench-Branch",
     publicEmptyBody: "This workbench doesn't have any tools pinned yet.",
+    galleryNavLink: "Browse public workbenches",
+    galleryPageTitle: "Public workbenches",
+    galleryPageSubtitle: "Workbenches other people have shared publicly — browse a setup and clone it into your own account to use as a starting point.",
+    gallerySortPopular: "Most cloned",
+    gallerySortNewest: "Newest",
+    galleryEmpty: "No public workbenches yet — be the first to share one from your Workbench page.",
+    galleryToolsCount: "{n} tools",
+    galleryClonesCount: "{n} clones",
+    galleryLoadMore: "Load more",
+    galleryViewButton: "View",
+    galleryByLabel: "by",
+    galleryAnonymousOwner: "a Wrench-Branch user",
+    cloneButton: "Clone to my Workbench",
+    cloneButtonSignedOut: "Sign in to clone",
+    cloneSuccessTitle: "Cloned!",
+    cloneSuccessBody: "It's now in your Workbench as a new workspace.",
+    cloneSuccessCta: "Open my Workbench",
+    cloneTruncatedNotice: "Only the first {max} tools were copied — that's the limit for your plan.",
+    cloneLimitReached: "You're at your workspace limit — delete one or upgrade to Pro to clone this.",
+    cloneError: "Couldn't clone this workbench — try again in a moment.",
   },
   ru: {
     pageTitle: "Мой рабочий стол",
@@ -106,12 +157,34 @@ export const WORKBENCH_UI: Record<Locale, WorkbenchUIStrings> = {
     shareButton: "Поделиться",
     sharePanelTitle: "Поделиться рабочим столом",
     sharePublicLabel: "Публичная ссылка",
-    sharePublicHint: "Любой, у кого есть ссылка, увидит этот холст в режиме просмотра.",
+    sharePublicHint: "Любой, у кого есть ссылка, увидит этот холст в режиме просмотра — а сам стол появится в публичной галерее.",
+    shareDescriptionLabel: "Описание (необязательно)",
+    shareDescriptionPlaceholder: "Для чего этот набор инструментов?",
     publicNotFoundTitle: "Этот рабочий стол недоступен",
     publicNotFoundBody: "Возможно, ссылка неверна, либо автор выключил доступ по ссылке.",
     publicBadge: "Только просмотр",
     publicCta: "Перейти на Wrench-Branch",
     publicEmptyBody: "На этом рабочем столе пока нет ни одного инструмента.",
+    galleryNavLink: "Смотреть публичные рабочие столы",
+    galleryPageTitle: "Публичные рабочие столы",
+    galleryPageSubtitle: "Рабочие столы, которыми поделились другие пользователи — посмотри готовый набор и склонируй его себе как отправную точку.",
+    gallerySortPopular: "Популярные",
+    gallerySortNewest: "Новые",
+    galleryEmpty: "Пока нет ни одного публичного рабочего стола — стань первым, поделившись своим со страницы Рабочий стол.",
+    galleryToolsCount: "{n} инструментов",
+    galleryClonesCount: "{n} клонов",
+    galleryLoadMore: "Показать ещё",
+    galleryViewButton: "Смотреть",
+    galleryByLabel: "автор:",
+    galleryAnonymousOwner: "пользователь Wrench-Branch",
+    cloneButton: "Клонировать себе",
+    cloneButtonSignedOut: "Войди, чтобы клонировать",
+    cloneSuccessTitle: "Склонировано!",
+    cloneSuccessBody: "Теперь это новое пространство на твоём рабочем столе.",
+    cloneSuccessCta: "Открыть мой рабочий стол",
+    cloneTruncatedNotice: "Скопированы только первые {max} инструментов — это лимит твоего тарифа.",
+    cloneLimitReached: "Достигнут лимит пространств — удали одно или перейди на Pro, чтобы клонировать этот стол.",
+    cloneError: "Не удалось склонировать этот рабочий стол — попробуй ещё раз через момент.",
   },
 };
 

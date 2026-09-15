@@ -36,7 +36,7 @@ export default function WorkbenchPage() {
   const {
     workbenches, loading: wbLoading, maxWorkbenches, maxToolsPerWorkbench,
     createWorkbench, renameWorkbench, deleteWorkbench, addTool, removeTool, moveTool, resizeTool, setPublic,
-    reorderWorkbenches,
+    setDescription, reorderWorkbenches,
   } = useWorkbenches(isPro);
 
   const t = WORKBENCH_UI[locale];
@@ -51,6 +51,13 @@ export default function WorkbenchPage() {
   // на document), что уже используется в AvatarMenu из Header.tsx.
   const [shareOpen, setShareOpen] = useState(false);
   const shareRef = useRef<HTMLDivElement>(null);
+  // Черновик описания — тот же паттерн, что nameDraft у переименования:
+  // локальное состояние, коммитится в базу по onBlur, а не на каждое
+  // нажатие клавиши. Синхронизируется от workbenches (а не от `active`
+  // напрямую — та переменная объявлена ниже по файлу), когда попап
+  // "Поделиться" открывается или когда переключили активный стол,
+  // не открывая попап заново.
+  const [descriptionDraft, setDescriptionDraft] = useState("");
 
   // Плавающая панель измеряет сама себя — карточки на холсте не должны
   // рождаться (и не должны застревать после драга) у неё под низом,
@@ -98,6 +105,12 @@ export default function WorkbenchPage() {
       document.removeEventListener("keydown", onKey);
     };
   }, [shareOpen]);
+
+  useEffect(() => {
+    if (!shareOpen) return;
+    const wb = workbenches.find((w) => w.id === activeId);
+    setDescriptionDraft(wb?.description ?? "");
+  }, [shareOpen, activeId, workbenches]);
 
   // Высота вьюпорта — холст должен занимать всю страницу под шапкой сразу,
   // а не только когда в нём уже полно карточек (см. WorkbenchCanvas'ин
@@ -168,6 +181,10 @@ export default function WorkbenchPage() {
     setRenamingId(null);
   }
 
+  function commitDescription(id: string) {
+    setDescription(id, descriptionDraft);
+  }
+
   // confirmDeleteId раньше переживал переключение вкладки — начал
   // удаление одного рабочего стола, передумал, кликнул на другую
   // вкладку, вернулся обратно к первой — и видел "Удалить это
@@ -208,7 +225,15 @@ export default function WorkbenchPage() {
         ref={panelRef}
         className="fixed left-4 top-[60px] z-30 max-w-[calc(100vw-2rem)] rounded-xl border border-border bg-surface/95 p-4 shadow-lg backdrop-blur-md"
       >
-        <h1 className="mb-3 text-base font-bold text-text-primary">{t.pageTitle}</h1>
+        <div className="mb-3 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+          <h1 className="text-base font-bold text-text-primary">{t.pageTitle}</h1>
+          <Link
+            href={localePath(locale, "/workbench/gallery")}
+            className="text-xs text-link hover:underline"
+          >
+            {t.galleryNavLink}
+          </Link>
+        </div>
 
         {/* Workspace tabs */}
         <div className="flex flex-wrap items-center gap-2">
@@ -366,6 +391,21 @@ export default function WorkbenchPage() {
                     <div className="mt-3 flex items-center gap-1.5 rounded-lg border border-border bg-canvas px-2.5 py-1.5">
                       <span className="min-w-0 flex-1 truncate font-mono text-xs text-text-secondary">{shareUrl}</span>
                       <CopyButton value={shareUrl} iconOnly />
+                    </div>
+                  )}
+
+                  {active.is_public && (
+                    <div className="mt-3">
+                      <label className="text-xs font-medium text-text-secondary">{t.shareDescriptionLabel}</label>
+                      <textarea
+                        value={descriptionDraft}
+                        onChange={(e) => setDescriptionDraft(e.target.value)}
+                        onBlur={() => commitDescription(active.id)}
+                        placeholder={t.shareDescriptionPlaceholder}
+                        rows={2}
+                        maxLength={280}
+                        className="code-surface mt-1 w-full resize-none rounded-lg px-2.5 py-1.5 text-xs text-text-primary outline-none placeholder:text-text-muted"
+                      />
                     </div>
                   )}
                 </div>

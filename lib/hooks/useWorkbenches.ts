@@ -7,6 +7,12 @@ import { ToolPosition, defaultToolPosition } from "@/lib/workbench-layout";
 export interface Workbench {
   id: string;
   name: string;
+  // Необязательная короткая подпись автора — зачем этот набор собран,
+  // для какой задачи. Показывается только на публичной ссылке и в
+  // галерее (см. supabase/workbench-gallery-migration.sql); null у
+  // всех workbench'ей, созданных до этой фичи, и это нормальное
+  // состояние, не пробел, который нужно чем-то заполнять.
+  description: string | null;
   tool_slugs: string[];
   position: number;
   // Позиция каждой карточки на свободном холсте, по slug'у инструмента.
@@ -14,9 +20,12 @@ export interface Workbench {
   // созданного до этой фичи) получает позицию на лету — см. использование
   // defaultToolPosition() в WorkbenchCanvas и в addTool() ниже.
   layout: Record<string, ToolPosition>;
-  // Публичная read-only ссылка на этот рабочий стол (см. app/[locale]/w/[id]).
+  // Публичная read-only ссылка на этот рабочий стол (см. app/[locale]/w/[id])
+  // и видимость в /workbench/gallery — один и тот же флаг управляет обоими.
   is_public: boolean;
 }
+
+const WORKBENCH_COLUMNS = "id, name, description, tool_slugs, position, layout, is_public";
 
 // ═══════════════════════════════════════════════════════
 // Лимиты free/Pro
@@ -46,7 +55,7 @@ export function useWorkbenches(isPro: boolean) {
     const supabase = createClient();
     const { data, error } = await supabase
       .from("workbenches")
-      .select("id, name, tool_slugs, position, layout, is_public")
+      .select(WORKBENCH_COLUMNS)
       .eq("user_id", user.id)
       .order("position", { ascending: true });
 
@@ -67,8 +76,8 @@ export function useWorkbenches(isPro: boolean) {
     if (list.length === 0) {
       const { data: created, error: createError } = await supabase
         .from("workbenches")
-        .insert({ user_id: user.id, name: "My Workbench", tool_slugs: [], position: 0, layout: {}, is_public: false })
-        .select("id, name, tool_slugs, position, layout, is_public")
+        .insert({ user_id: user.id, name: "My Workbench", description: null, tool_slugs: [], position: 0, layout: {}, is_public: false })
+        .select(WORKBENCH_COLUMNS)
         .single();
       if (createError) console.error("useWorkbenches: failed to create default workbench", createError);
       if (created) list = [created as Workbench];
@@ -85,13 +94,71 @@ export function useWorkbenches(isPro: boolean) {
     const supabase = createClient();
     const { data, error } = await supabase
       .from("workbenches")
-      .insert({ user_id: user.id, name, tool_slugs: [], position: workbenches.length, layout: {}, is_public: false })
-      .select("id, name, tool_slugs, position, layout, is_public")
+      .insert({ user_id: user.id, name, description: null, tool_slugs: [], position: workbenches.length, layout: {}, is_public: false })
+      .select(WORKBENCH_COLUMNS)
       .single();
     if (error || !data) { console.error("useWorkbenches: create failed", error); return null; }
     setWorkbenches((prev) => [...prev, data as Workbench]);
     return data as Workbench;
   }, [user, workbenches, maxWorkbenches]);
+
+  // Копия чужого публичного workbench (из /workbench/gallery или
+  // /w/[id]) в свой аккаунт — тот же insert, что и createWorkbench, но
+  // с данными источника вместо пустого набора. Число инструментов
+  // источника обрезается до maxToolsPerWorkbench клонировщика, если у
+  // источника их больше (например, Pro-автор с 16 инструментами, а
+  // клонирует Free-пользователь с потолком 6) — возвращаем truncated:
+  // true, чтобы вызывающий код мог явно предупредить об этом, вместо
+  // того чтобы insert молча упал на серверном ограничении или дал
+  // непредсказуемо усечённый результат.
+  //
+  // Инкремент clone_count у источника — через отдельную SECURITY DEFINER
+  // RPC (увеличивает чужую колонку в обход RLS, но только clone_count и
+  // только у публичной строки — см. миграцию), а не через .update()
+  // здесь: RLS workbenches_update разрешает менять только свои строки.
+  // Best-effort и намеренно не блокирует успешный клон — если инкремент
+  // не прошёл, у пользователя всё равно появился рабочий стол.
+  const cloneWorkbench = useCallback(async (
+    source: Pick<Workbench, "id" | "name" | "tool_slugs" | "layout">,
+    nameSuffix: string
+  ): Promise<{ workbench: Workbench | null; truncated: boolean }> => {
+    if (!user || workbenches.length >= maxWorkbenches) return { workbench: null, truncated: false };
+
+    const truncated = source.tool_slugs.length > maxToolsPerWorkbench;
+    const toolSlugs = truncated ? source.tool_slugs.slice(0, maxToolsPerWorkbench) : source.tool_slugs;
+    const layout = Object.fromEntries(
+      toolSlugs.map((slug, i) => [slug, source.layout[slug] ?? defaultToolPosition(i)])
+    );
+
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from("workbenches")
+      .insert({
+        user_id: user.id,
+        name: `${source.name}${nameSuffix}`,
+        description: null,
+        tool_slugs: toolSlugs,
+        position: workbenches.length,
+        layout,
+        is_public: false,
+      })
+      .select(WORKBENCH_COLUMNS)
+      .single();
+
+    if (error || !data) {
+      console.error("useWorkbenches: clone failed", error);
+      return { workbench: null, truncated: false };
+    }
+
+    setWorkbenches((prev) => [...prev, data as Workbench]);
+
+    supabase.rpc("increment_workbench_clone_count", { p_id: source.id })
+      .then(({ error: rpcError }: { error: unknown }) => {
+        if (rpcError) console.error("useWorkbenches: clone_count increment failed", rpcError);
+      });
+
+    return { workbench: data as Workbench, truncated };
+  }, [user, workbenches, maxWorkbenches, maxToolsPerWorkbench]);
 
   const renameWorkbench = useCallback((id: string, name: string) => {
     setWorkbenches((prev) => prev.map((w) => (w.id === id ? { ...w, name } : w)));
@@ -110,10 +177,11 @@ export function useWorkbenches(isPro: boolean) {
   // Общий помощник для частичного обновления одного workbench — и в
   // локальном состоянии, и в Supabase. Раньше здесь был setToolSlugs(),
   // заточенный только под tool_slugs; свободному холсту нужно менять ещё
-  // и layout, и is_public теми же двумя шагами (оптимистично в стейте,
-  // затем запрос в фоне), так что вместо трёх похожих функций — одна
-  // обобщённая на произвольный патч колонок.
-  const persist = useCallback((id: string, patch: Partial<Pick<Workbench, "tool_slugs" | "layout" | "is_public">>) => {
+  // и layout, is_public и теперь description теми же двумя шагами
+  // (оптимистично в стейте, затем запрос в фоне), так что вместо
+  // нескольких похожих функций — одна обобщённая на произвольный патч
+  // колонок.
+  const persist = useCallback((id: string, patch: Partial<Pick<Workbench, "tool_slugs" | "layout" | "is_public" | "description">>) => {
     setWorkbenches((prev) => prev.map((w) => (w.id === id ? { ...w, ...patch } : w)));
     const supabase = createClient();
     supabase.from("workbenches").update({ ...patch, updated_at: new Date().toISOString() }).eq("id", id)
@@ -159,6 +227,10 @@ export function useWorkbenches(isPro: boolean) {
     persist(id, { is_public: isPublic });
   }, [persist]);
 
+  const setDescription = useCallback((id: string, description: string) => {
+    persist(id, { description: description.trim() === "" ? null : description });
+  }, [persist]);
+
   // Изменение размера карточки на свободном холсте (ручка в правом
   // нижнем углу — см. WorkbenchCanvas). Мержим width/height в
   // существующую запись layout[slug], а не заменяем её целиком — иначе
@@ -196,7 +268,7 @@ export function useWorkbenches(isPro: boolean) {
 
   return {
     workbenches, loading, maxWorkbenches, maxToolsPerWorkbench,
-    createWorkbench, renameWorkbench, deleteWorkbench,
-    addTool, removeTool, moveTool, resizeTool, setPublic, reorderWorkbenches,
+    createWorkbench, cloneWorkbench, renameWorkbench, deleteWorkbench,
+    addTool, removeTool, moveTool, resizeTool, setPublic, setDescription, reorderWorkbenches,
   };
 }
