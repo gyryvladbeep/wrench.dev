@@ -1046,6 +1046,28 @@ export const tools: Tool[] = [
       { question: "Is my HTML uploaded anywhere?", answer: "No — everything, including the axe-core scan itself, runs in your browser. The HTML is rendered off-screen only long enough to check it, then removed." },
     ],
   },
+  {
+    slug: "har-analyzer",
+    whyItMatters: { why: "A .har export from DevTools has everything you need to explain a slow page load or a flaky network bug, but it's a giant, unreadable JSON blob until something turns it into a timeline and a sortable table — and re-opening DevTools on a report someone else sent you isn't always possible.", example: "A teammate exports a HAR while reproducing a bug ticket about a slow dashboard and sends you the file — drop it here instead of digging through raw JSON, and immediately see which single request is eating 2 of the page's 3 seconds." },
+    name: "HAR Analyzer",
+    shortDescription: "Turn a .har network export into a request waterfall and a sortable, filterable table.",
+    longDescription: "Paste or upload a .har file (the Network tab's \"Save all as HAR\") and get an instant summary — request count, total transferred size, total time span, slowest request, failed requests — plus a color-coded waterfall timeline and a table you can filter by status or URL and sort by time or size. Everything runs in your browser; the file is never uploaded.",
+    metaDescription: "Free HAR file analyzer. Paste or upload a .har export and get a request waterfall, summary stats, and a sortable, filterable table — right in your browser.",
+    category: "qa", isImplemented: true,
+    aliases: ["har file analyzer", "har viewer", "network log analyzer", "har waterfall", "devtools export analyzer"],
+    relatedSlugs: ["header-inspector", "cors-debugger"],
+    keywords: ["har analyzer", "har file viewer", "network waterfall analyzer", "analyze har file online", "devtools network export"],
+    howToSteps: [
+      "Export a HAR from your browser's DevTools — open the Network tab, reproduce the issue, right-click the request list and choose \"Save all as HAR\".",
+      "Upload the file or paste its JSON contents here, then click Analyze.",
+      "Read the summary stats, scan the waterfall for the request eating the most time, and filter or sort the table by status, URL or size to dig in further.",
+    ],
+    faqs: [
+      { question: "Is my HAR file uploaded anywhere?", answer: "No — parsing, the waterfall and the table are all built entirely in your browser from the JSON you paste or upload. Nothing is sent to a server, which also matters because a HAR export can contain sensitive data like cookies and auth headers." },
+      { question: "Why is a request I know happened missing, or the total size off?", answer: "The analysis reads only what the HAR itself recorded — a request blocked by an extension, cancelled before it got a response, or served from disk cache with no content.size sometimes shows up differently (0 size, or missing) than you'd expect from just watching the Network tab live." },
+      { question: "What counts as \"failed\"?", answer: "Any request with an HTTP status of 400 or above, or a status of 0 (the browser never got a response at all — blocked, cancelled, or a network error)." },
+    ],
+  },
 
   // ═══════════════════════════════ API ════════════════════════════════════════
 

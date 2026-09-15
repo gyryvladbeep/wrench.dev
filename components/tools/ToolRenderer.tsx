@@ -95,6 +95,7 @@ import { CurlToCodeConverterTool }  from "./CurlToCodeConverterTool";
 import { CorsDebuggerTool }         from "./CorsDebuggerTool";
 import { RelationalTestDataGeneratorTool } from "./RelationalTestDataGeneratorTool";
 import { A11yCheckerTool }          from "./A11yCheckerTool";
+import { HarAnalyzerTool }          from "./HarAnalyzerTool";
 
 /**
  * Single "use client" boundary for all interactive tool components.
@@ -172,6 +173,7 @@ export function ToolRenderer({
     case "cors-debugger":             return <CorsDebuggerTool dict={dict} />;
     case "relational-test-data-generator": return <RelationalTestDataGeneratorTool dict={dict} />;
     case "a11y-checker":               return <A11yCheckerTool dict={dict} />;
+    case "har-analyzer":               return <HarAnalyzerTool dict={dict} />;
     // ── API ─────────────────────────────────────────────────────────────────
     case "curl-generator":            return <CurlGeneratorTool dict={dict} />;
     case "rest-request-builder":      return <RestRequestBuilderTool dict={dict} />;
