@@ -397,3 +397,18 @@ export function InboxIcon({ className = "", size = 20 }: IconProps) {
     </svg>
   );
 }
+
+// Сложенная газета — заголовок Daily Digest: заголовочный блок
+// покрупнее (сама "шапка полосы") сверху и несколько строк текста
+// пожиже под ним, плюс маленький квадрат-"фото" слева, чтобы силуэт
+// читался как газетная полоса, а не просто документ (для этого уже
+// есть ClipboardIcon/BookIcon — нужен визуально другой контур).
+export function NewspaperIcon({ className = "", size = 20 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 16 16" fill="none" className={className} aria-hidden>
+      <rect x="1.5" y="2.5" width="13" height="11" rx="1" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/>
+      <path d="M3.5 4.7h4v3h-4v-3z" stroke="currentColor" strokeWidth="1.1" strokeLinejoin="round"/>
+      <path d="M9 5h3.5M9 6.7h3.5M3.5 9.3h9M3.5 11h9" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round"/>
+    </svg>
+  );
+}
