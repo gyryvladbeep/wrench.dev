@@ -43,6 +43,8 @@ export const tools: Tool[] = [
     aliases: ["json lint", "json check", "json syntax checker"],
     relatedSlugs: ["json-formatter", "json-minify"],
     keywords: ["json validator", "validate json online", "json syntax checker", "json lint"],
+    howToSteps: ["Paste your JSON into the input.", "Click Validate.", "Fix the syntax error it points to and validate again."],
+    faqs: [{ question: "How is this different from the JSON Formatter?", answer: "The JSON Formatter also pretty-prints and minifies; this tool focuses purely on fast validation." }],
   },
   {
     slug: "json-minify",
@@ -55,6 +57,8 @@ export const tools: Tool[] = [
     aliases: ["json compress", "json minifier", "json uglify"],
     relatedSlugs: ["json-formatter", "json-validator"],
     keywords: ["json minify", "json compress", "minify json online"],
+    howToSteps: ["Paste your JSON into the input.", "Click Minify.", "Copy the single-line result."],
+    faqs: [{ question: "Does minifying change the data?", answer: "No — only whitespace, newlines and indentation are removed. Keys, values and structure stay exactly the same." }],
   },
   {
     slug: "json-sort",
@@ -67,6 +71,8 @@ export const tools: Tool[] = [
     aliases: ["json alphabetize", "sort json keys"],
     relatedSlugs: ["json-formatter", "json-compare"],
     keywords: ["json sort", "sort json keys", "json alphabetize"],
+    howToSteps: ["Paste your JSON object.", "Toggle recursive sorting to also sort nested objects.", "Copy the result with keys in alphabetical order."],
+    faqs: [{ question: "Does this sort array elements too?", answer: "No — arrays keep their original order since element order is usually meaningful (like a list of steps). Only object keys are sorted." }],
   },
   {
     slug: "json-compare",
@@ -79,6 +85,8 @@ export const tools: Tool[] = [
     aliases: ["json diff", "json difference", "compare json"],
     relatedSlugs: ["json-formatter", "text-diff"],
     keywords: ["json compare", "json diff", "compare json objects"],
+    howToSteps: ["Paste the original JSON on the left.", "Paste the changed JSON on the right.", "Review the highlighted additions, removals and changes."],
+    faqs: [{ question: "Does key order matter for comparison?", answer: "No — two objects with the same keys and values in a different order are treated as equal; the comparison is structural, not textual." }],
   },
   {
     slug: "json-escape",
@@ -91,6 +99,8 @@ export const tools: Tool[] = [
     aliases: ["json unescape", "json encode string", "json string escape"],
     relatedSlugs: ["json-formatter", "html-encode-decode"],
     keywords: ["json escape", "json unescape", "escape json string"],
+    howToSteps: ["Paste the raw text or JSON string.", "Choose Escape or Unescape.", "Copy the converted result."],
+    faqs: [{ question: "When do I need to escape a JSON string?", answer: "Whenever a JSON value is embedded inside another string context — a shell command, a config file, a log line — where quotes and backslashes inside it would otherwise break the outer string." }],
   },
   {
     slug: "json-to-yaml",
@@ -103,6 +113,8 @@ export const tools: Tool[] = [
     aliases: ["yaml to json", "json yaml converter"],
     relatedSlugs: ["json-formatter", "xml-formatter"],
     keywords: ["json to yaml", "yaml to json", "json yaml converter"],
+    howToSteps: ["Paste JSON (or YAML) into the input.", "Pick the conversion direction.", "Copy the converted output."],
+    faqs: [{ question: "Does it round-trip cleanly?", answer: "Yes for standard JSON/YAML structures — objects, arrays, strings, numbers, booleans and null all convert both ways without data loss." }],
   },
   {
     slug: "xml-formatter",
@@ -115,6 +127,8 @@ export const tools: Tool[] = [
     aliases: ["xml beautify", "xml pretty print", "xml indent"],
     relatedSlugs: ["json-formatter", "html-formatter", "xml-validate"],
     keywords: ["xml formatter", "xml beautifier", "xml validator"],
+    howToSteps: ["Paste your XML.", "Choose the indent size.", "Copy the formatted result."],
+    faqs: [{ question: "Does this validate the XML?", answer: "Yes — if the XML is malformed (unclosed tags, mismatched nesting), the tool reports that instead of a formatted result." }],
   },
   {
     slug: "xml-validate",
@@ -149,6 +163,8 @@ export const tools: Tool[] = [
     aliases: ["sql beautify", "sql pretty print", "sql indent"],
     relatedSlugs: ["json-formatter", "rest-request-builder"],
     keywords: ["sql formatter", "sql beautifier", "format sql query"],
+    howToSteps: ["Paste your SQL query.", "Click Format.", "Copy the indented, readable result."],
+    faqs: [{ question: "Which SQL dialects does it support?", answer: "The formatter handles standard SQL syntax — SELECT, INSERT, UPDATE, DELETE, CREATE, JOINs and subqueries — across MySQL, PostgreSQL and SQLite-style queries." }],
   },
   {
     slug: "html-formatter",
@@ -161,6 +177,8 @@ export const tools: Tool[] = [
     aliases: ["html beautify", "html pretty print", "html indent"],
     relatedSlugs: ["xml-formatter", "css-selector-generator", "markdown-preview"],
     keywords: ["html formatter", "html beautifier", "format html"],
+    howToSteps: ["Paste your HTML markup.", "Click Format.", "Copy the cleanly indented result."],
+    faqs: [{ question: "Will it fix broken HTML?", answer: "It re-indents and cleans up structure, but it won't silently fix fundamentally broken markup like mismatched tags — check the result if your input was already invalid." }],
   },
 
   // ═══════════════════════════════ ENCODING ══════════════════════════════════
@@ -190,6 +208,8 @@ export const tools: Tool[] = [
     aliases: ["percent encode", "url encoding", "urlencode"],
     relatedSlugs: ["base64-encode-decode", "header-inspector"],
     keywords: ["url encode", "url decode", "percent encoding tool"],
+    howToSteps: ["Paste text or a URL.", "Choose Encode or Decode.", "Copy the converted result."],
+    faqs: [{ question: "What gets encoded?", answer: "Characters that aren't safe in a URL — spaces, &, ?, #, and non-ASCII characters — are percent-encoded (a space becomes %20)." }],
   },
   {
     slug: "html-encode-decode",
@@ -202,6 +222,8 @@ export const tools: Tool[] = [
     aliases: ["html entities", "html escape", "html unescape"],
     relatedSlugs: ["url-encode-decode", "json-escape"],
     keywords: ["html encode", "html decode", "html entities encoder"],
+    howToSteps: ["Paste text or HTML-encoded content.", "Choose Encode or Decode.", "Copy the result."],
+    faqs: [{ question: "Why would I need to encode HTML entities?", answer: "Whenever user-supplied text is inserted into an HTML page — encoding characters like < and & prevents them from being interpreted as markup, which is also a basic XSS defense." }],
   },
   {
     slug: "hex-encode-decode",
@@ -214,6 +236,8 @@ export const tools: Tool[] = [
     aliases: ["hex converter", "text to hex", "hex to text"],
     relatedSlugs: ["binary-converter", "base64-encode-decode"],
     keywords: ["hex encode", "hex decode", "text to hex converter"],
+    howToSteps: ["Paste text or a hex string.", "Choose Encode or Decode.", "Copy the result."],
+    faqs: [{ question: "What encoding is used for the text?", answer: "UTF-8 — each byte of the UTF-8 representation is converted to its two-character hex value." }],
   },
   {
     slug: "binary-converter",
@@ -226,6 +250,8 @@ export const tools: Tool[] = [
     aliases: ["text to binary", "binary to text", "binary translator"],
     relatedSlugs: ["hex-encode-decode", "base64-encode-decode"],
     keywords: ["binary converter", "text to binary", "binary to text"],
+    howToSteps: ["Paste text or a binary string.", "Choose Encode or Decode.", "Copy the result."],
+    faqs: [{ question: "Is each character exactly 8 bits?", answer: "For standard ASCII text, yes. Multi-byte UTF-8 characters (like emoji or non-Latin letters) use more than one 8-bit group." }],
   },
   {
     slug: "rot13",
@@ -238,6 +264,8 @@ export const tools: Tool[] = [
     aliases: ["rot13 decoder", "rot 13", "caesar cipher 13"],
     relatedSlugs: ["base64-encode-decode", "hex-encode-decode"],
     keywords: ["rot13", "rot13 encoder", "rot13 decoder", "caesar cipher"],
+    howToSteps: ["Paste your text.", "Click Apply ROT13.", "Copy the result — run it through again to get the original back."],
+    faqs: [{ question: "Is ROT13 actual encryption?", answer: "No — it's a simple letter-substitution cipher with no security value, historically used to hide spoilers or answers from casual reading, not to protect sensitive data." }],
   },
   {
     slug: "jwt-decoder",
@@ -267,6 +295,8 @@ export const tools: Tool[] = [
     aliases: ["diff checker", "text compare", "text comparison"],
     relatedSlugs: ["json-compare", "sort-lines"],
     keywords: ["text diff", "diff checker", "compare text online"],
+    howToSteps: ["Paste the original text on the left.", "Paste the changed text on the right.", "Review added, removed and changed lines highlighted inline."],
+    faqs: [{ question: "Does it ignore whitespace-only changes?", answer: "By default whitespace matters like any other character; toggle the whitespace-insensitive option if you only care about content changes." }],
   },
   {
     slug: "word-counter",
@@ -279,6 +309,8 @@ export const tools: Tool[] = [
     aliases: ["character counter", "word count", "text statistics"],
     relatedSlugs: ["case-converter", "sort-lines"],
     keywords: ["word counter", "character counter", "word count tool"],
+    howToSteps: ["Paste or type your text.", "Read the live counts as you type.", "Check word, character, sentence and paragraph counts plus estimated reading time."],
+    faqs: [{ question: "How is reading time calculated?", answer: "Using an average adult silent reading speed of roughly 200-250 words per minute, so treat it as a rough estimate rather than an exact figure." }],
   },
   {
     slug: "case-converter",
@@ -291,6 +323,8 @@ export const tools: Tool[] = [
     aliases: ["text case converter", "camelcase converter", "snake case converter"],
     relatedSlugs: ["slug-generator", "word-counter"],
     keywords: ["case converter", "camelcase converter", "snake case to camel case"],
+    howToSteps: ["Paste your text.", "Pick the target case (camelCase, snake_case, Title Case, etc.).", "Copy the converted result."],
+    faqs: [{ question: "Does it handle mixed input like 'user_ID-name'?", answer: "Yes — the tool splits on common word boundaries (underscores, hyphens, spaces, camelCase transitions) before reassembling in the target case." }],
   },
   {
     slug: "slug-generator",
@@ -303,6 +337,8 @@ export const tools: Tool[] = [
     aliases: ["url slug", "slug converter", "permalink generator"],
     relatedSlugs: ["case-converter", "url-encode-decode"],
     keywords: ["slug generator", "url slug generator", "text to slug"],
+    howToSteps: ["Type or paste your text.", "Read the generated slug update live.", "Copy the URL-safe result."],
+    faqs: [{ question: "How are accented or non-Latin characters handled?", answer: "They're transliterated to their closest ASCII equivalent where possible (é → e) and removed if there's no sensible equivalent, keeping the slug URL-safe." }],
   },
   {
     slug: "sort-lines",
@@ -315,6 +351,8 @@ export const tools: Tool[] = [
     aliases: ["line sorter", "alphabetize lines", "sort text lines"],
     relatedSlugs: ["remove-duplicates", "remove-empty-lines"],
     keywords: ["sort lines", "line sorter", "alphabetize text"],
+    howToSteps: ["Paste your lines of text.", "Choose alphabetical, numeric or by-length sorting, and direction.", "Copy the sorted result."],
+    faqs: [{ question: "Can I sort case-insensitively?", answer: "Yes, toggle the case-insensitive option so 'Apple' and 'apple' sort next to each other instead of by ASCII case order." }],
   },
   {
     slug: "remove-duplicates",
@@ -327,6 +365,8 @@ export const tools: Tool[] = [
     aliases: ["deduplicate lines", "unique lines", "remove duplicates"],
     relatedSlugs: ["sort-lines", "remove-empty-lines"],
     keywords: ["remove duplicate lines", "deduplicate text", "unique lines tool"],
+    howToSteps: ["Paste your text.", "Toggle case-insensitive matching if needed.", "Copy the result with only the first occurrence of each line kept."],
+    faqs: [{ question: "Does it preserve the original line order?", answer: "Yes — each kept line stays in its original position; only later duplicates are removed, not reordered to the top." }],
   },
   {
     slug: "remove-empty-lines",
@@ -339,6 +379,8 @@ export const tools: Tool[] = [
     aliases: ["strip blank lines", "clean text", "remove blank lines"],
     relatedSlugs: ["sort-lines", "remove-duplicates"],
     keywords: ["remove empty lines", "remove blank lines", "strip whitespace lines"],
+    howToSteps: ["Paste your text.", "Click Remove.", "Copy the cleaned result with blank lines stripped."],
+    faqs: [{ question: "Does it remove lines with only spaces or tabs?", answer: "Yes — a line counts as empty if it contains only whitespace, not just if it has zero characters." }],
   },
   {
     slug: "markdown-preview",
@@ -351,6 +393,8 @@ export const tools: Tool[] = [
     aliases: ["markdown editor", "markdown renderer", "markdown to html"],
     relatedSlugs: ["html-formatter", "word-counter"],
     keywords: ["markdown preview", "markdown editor", "markdown renderer online"],
+    howToSteps: ["Write or paste Markdown on the left.", "Watch the rendered HTML update live on the right.", "Copy the rendered output if needed."],
+    faqs: [{ question: "Which Markdown flavor does it support?", answer: "GitHub Flavored Markdown — including tables, task lists, strikethrough and fenced code blocks with syntax highlighting." }],
   },
 
   // ═══════════════════════════════ HASH ══════════════════════════════════════
@@ -366,6 +410,7 @@ export const tools: Tool[] = [
     aliases: ["md5 generator", "sha256 generator", "checksum calculator"],
     relatedSlugs: ["base64-encode-decode", "hex-encode-decode"],
     keywords: ["hash generator", "md5 generator", "sha256 generator", "sha512 hash"],
+    howToSteps: ["Paste or type your text.", "Read all four hashes (MD5, SHA-1, SHA-256, SHA-512) computed live.", "Copy the one you need."],
     faqs: [{ question: "Is my data sent to a server?", answer: "No. All hashing is done client-side using the Web Crypto API and a pure-JS MD5 implementation." }],
   },
 
@@ -382,6 +427,7 @@ export const tools: Tool[] = [
     aliases: ["guid generator", "uuid v4", "random uuid"],
     relatedSlugs: ["nanoid-generator", "random-password-generator"],
     keywords: ["uuid generator", "guid generator", "random uuid online"],
+    howToSteps: ["Choose how many UUIDs to generate.", "Set uppercase/hyphen formatting if needed.", "Copy the generated list."],
     faqs: [{ question: "Are these UUIDs cryptographically random?", answer: "Yes — they use the browser's crypto.randomUUID() API." }],
   },
   {
@@ -395,6 +441,8 @@ export const tools: Tool[] = [
     aliases: ["nano id", "short id generator", "unique id generator"],
     relatedSlugs: ["uuid-generator", "random-password-generator"],
     keywords: ["nanoid generator", "nano id", "short unique id"],
+    howToSteps: ["Set the desired length and character set.", "Click Generate.", "Copy the generated ID (or batch)."],
+    faqs: [{ question: "How does this compare to a UUID for collision risk?", answer: "For a typical 21-character NanoID the collision probability is comparable to a UUID v4 at much shorter length; shrinking the length or alphabet reduces that safety margin, so keep length reasonable for high-volume use." }],
   },
   {
     slug: "random-password-generator",
@@ -407,6 +455,8 @@ export const tools: Tool[] = [
     aliases: ["secure password generator", "strong password", "random password"],
     relatedSlugs: ["uuid-generator", "random-string-generator"],
     keywords: ["password generator", "random password", "strong password generator"],
+    howToSteps: ["Set the desired length.", "Toggle which character sets to include (lowercase, uppercase, digits, symbols).", "Copy the generated password."],
+    faqs: [{ question: "Is the password sent anywhere?", answer: "No — it's generated entirely in your browser using a cryptographically secure random source, never transmitted or logged." }],
   },
   {
     slug: "random-string-generator",
@@ -430,6 +480,8 @@ export const tools: Tool[] = [
     aliases: ["color picker", "color palette generator", "hex color generator"],
     relatedSlugs: ["uuid-generator"],
     keywords: ["random color generator", "color generator", "hex color picker"],
+    howToSteps: ["Click Generate for a new random color or palette.", "Lock any colors you want to keep.", "Copy the value in HEX, RGB or HSL."],
+    faqs: [{ question: "Can I generate more than one color at once?", answer: "Yes — generate a full palette and lock individual swatches you like while re-rolling the rest." }],
   },
   {
     slug: "fake-test-data-generator",
@@ -442,6 +494,8 @@ export const tools: Tool[] = [
     aliases: ["mock data generator", "test data generator", "fake user generator"],
     relatedSlugs: ["uuid-generator", "api-request-builder"],
     keywords: ["fake data generator", "test data generator", "mock data generator"],
+    howToSteps: ["Choose which fields you need (name, email, address, phone).", "Set how many records to generate.", "Copy or export the batch."],
+    faqs: [{ question: "Is this real personal data?", answer: "No — every value is synthetically generated and doesn't correspond to a real person, safe to use in test databases and demos." }],
   },
 
   // ═══════════════════════════════ DATE & TIME ════════════════════════════════
@@ -457,6 +511,7 @@ export const tools: Tool[] = [
     aliases: ["epoch converter", "unix time converter", "timestamp to date"],
     relatedSlugs: ["date-difference", "age-calculator"],
     keywords: ["unix timestamp converter", "epoch converter", "timestamp to date"],
+    howToSteps: ["Paste a Unix timestamp, or pick a date.", "Choose seconds or milliseconds.", "Read the converted value in your chosen timezone."],
     faqs: [{ question: "Seconds or milliseconds?", answer: "The tool auto-detects based on digit count (10 digits ≈ seconds, 13 digits ≈ milliseconds)." }],
   },
   {
@@ -470,6 +525,8 @@ export const tools: Tool[] = [
     aliases: ["days between dates", "date calculator", "date diff"],
     relatedSlugs: ["timestamp-converter", "age-calculator"],
     keywords: ["date difference calculator", "days between dates", "date diff tool"],
+    howToSteps: ["Pick the start date.", "Pick the end date.", "Read the difference in years, months, weeks, days, hours, minutes and seconds."],
+    faqs: [{ question: "Does it account for leap years?", answer: "Yes — the calculation is based on actual calendar dates, so leap years and varying month lengths are handled correctly, not averaged." }],
   },
   {
     slug: "age-calculator",
@@ -482,6 +539,8 @@ export const tools: Tool[] = [
     aliases: ["birthday calculator", "how old am i", "age finder"],
     relatedSlugs: ["date-difference", "timestamp-converter"],
     keywords: ["age calculator", "birthday calculator", "how old am i"],
+    howToSteps: ["Enter the date of birth.", "Optionally set a different 'as of' date.", "Read the exact age and the countdown to the next birthday."],
+    faqs: [{ question: "Does it handle someone born on February 29?", answer: "Yes — in non-leap years their birthday is treated as falling on the nearest sensible date (February 28) for the countdown, while the age calculation itself remains exact." }],
   },
   // ═══════════════════════════════ WEB ════════════════════════════════════════
 
@@ -496,6 +555,8 @@ export const tools: Tool[] = [
     aliases: ["qr generator", "qr code maker", "qrcode generator"],
     relatedSlugs: ["url-encode-decode", "header-inspector"],
     keywords: ["qr code generator", "qr generator", "create qr code"],
+    howToSteps: ["Type or paste the text, URL, email or phone number.", "Watch the QR code update live.", "Download it as PNG or SVG."],
+    faqs: [{ question: "Does the QR code expire or depend on this site?", answer: "No — the data is encoded directly into the QR code itself; once generated it works forever and doesn't call back to any server." }],
   },
   {
     slug: "header-inspector",
@@ -508,6 +569,8 @@ export const tools: Tool[] = [
     aliases: ["http headers", "response headers", "check headers"],
     relatedSlugs: ["curl-generator", "url-encode-decode"],
     keywords: ["http header checker", "response header inspector"],
+    howToSteps: ["Enter a public URL.", "Click Inspect.", "Review the returned response headers."],
+    faqs: [{ question: "Why can't it inspect a localhost or internal URL?", answer: "The request is made from your browser and is subject to the same CORS and network-access restrictions as any page fetch — it can only reach URLs your browser can actually reach and that allow the request." }],
   },
   {
     slug: "api-response-mocker",
@@ -520,6 +583,8 @@ export const tools: Tool[] = [
     aliases: ["mock api", "msw generator", "json-server generator", "mock server"],
     relatedSlugs: ["api-request-builder", "api-response-validator", "json-mutator"],
     keywords: ["api mocker", "mock api response", "msw generator", "json-server", "mock server generator"],
+    howToSteps: ["Paste an example JSON response.", "Pick a method, status code and URL.", "Choose a target (MSW, json-server, Express, Postman) and copy the generated snippet."],
+    faqs: [{ question: "Does this call a real API to get the example?", answer: "No — you provide the example response yourself (from docs, a teammate, or a real call you already made); the tool only formats it into the target framework's mock syntax." }],
   },
   {
     slug: "http-status-codes",
@@ -532,6 +597,8 @@ export const tools: Tool[] = [
     aliases: ["http codes", "status codes", "http error codes", "404", "500"],
     relatedSlugs: ["header-inspector", "rest-request-builder"],
     keywords: ["http status codes", "http error codes", "404 meaning", "500 error", "http codes list"],
+    howToSteps: ["Search or browse by category (1xx-5xx).", "Click a code to see its meaning.", "Read common causes and how to fix or handle it."],
+    faqs: [{ question: "Why does an API return 422 instead of 400?", answer: "400 signals the request itself is malformed (bad syntax); 422 means the request is syntactically valid but semantically wrong — like a well-formed JSON body that fails a business validation rule." }],
   },
   {
     slug: "password-strength",
@@ -544,6 +611,8 @@ export const tools: Tool[] = [
     aliases: ["password checker", "password meter", "password tester"],
     relatedSlugs: ["random-password-generator", "hash-generator"],
     keywords: ["password strength checker", "password strength meter", "password entropy", "how strong is my password"],
+    howToSteps: ["Type or paste the password to check.", "Read the entropy, estimated crack time and rule checklist.", "Adjust the password until it passes the suggestions."],
+    faqs: [{ question: "Is the password sent anywhere?", answer: "No — the entire analysis runs locally in your browser; the password is never transmitted, logged or stored." }],
   },
 
   // ═══════════════════════════════ DATA / EXISTING ════════════════════════════
@@ -572,6 +641,8 @@ export const tools: Tool[] = [
     aliases: ["regular expression tester", "regex checker", "regex debugger"],
     relatedSlugs: ["xpath-generator", "css-selector-generator"],
     keywords: ["regex tester", "regular expression tester", "regex checker online"],
+    howToSteps: ["Write your regex pattern.", "Paste a test string.", "See all matches highlighted, with capture group details."],
+    faqs: [{ question: "Does it support all regex flavors?", answer: "Matching uses JavaScript's regex engine — patterns are compatible with most flavors for common cases, but flavor-specific features (like PCRE-only syntax) may behave slightly differently than in other languages." }],
   },
   {
     slug: "xpath-generator",
@@ -584,6 +655,8 @@ export const tools: Tool[] = [
     aliases: ["xpath finder", "selenium xpath", "xpath builder"],
     relatedSlugs: ["css-selector-generator", "api-request-builder"],
     keywords: ["xpath generator", "xpath finder", "selenium xpath tool"],
+    howToSteps: ["Paste an HTML snippet.", "Click on (or select) the element you want to target.", "Copy the generated XPath selector."],
+    faqs: [{ question: "Does it generate the shortest possible XPath, or the most robust one?", answer: "It favors robustness — using meaningful attributes like id, data-testid or class over fragile positional paths — since a selector that survives layout changes matters more for test automation than one that's shortest." }],
   },
   {
     slug: "css-selector-generator",
@@ -596,6 +669,8 @@ export const tools: Tool[] = [
     aliases: ["css selector finder", "css path", "playwright selector"],
     relatedSlugs: ["xpath-generator", "html-formatter"],
     keywords: ["css selector generator", "css selector finder"],
+    howToSteps: ["Paste an HTML snippet.", "Select the element you want to target.", "Copy the generated CSS selector."],
+    faqs: [{ question: "Does it prefer IDs and classes over structural selectors?", answer: "Yes — id and stable class or data attributes are preferred over nth-child or tag-position selectors, since those break easily when markup shifts." }],
   },
   {
     slug: "json-mutator",
@@ -608,6 +683,8 @@ export const tools: Tool[] = [
     aliases: ["api negative testing", "payload mutator", "fuzz testing"],
     relatedSlugs: ["api-request-builder", "boundary-value-generator", "test-case-generator"],
     keywords: ["json mutator", "api negative testing", "payload fuzzing"],
+    howToSteps: ["Paste your JSON request body.", "Select the field to mutate.", "Copy any of the generated mutated variants — wrong types, boundary values, injection payloads."],
+    faqs: [{ question: "What kinds of mutations does it generate?", answer: "Type mismatches (a string where a number is expected), boundary and out-of-range values, null/missing fields, and common injection payloads — the classic categories used for negative API testing." }],
   },
   {
     slug: "test-case-matrix",
@@ -620,6 +697,8 @@ export const tools: Tool[] = [
     aliases: ["pairwise testing", "combinatorial testing", "test matrix"],
     relatedSlugs: ["json-mutator", "boundary-value-generator", "test-case-generator"],
     keywords: ["pairwise testing tool", "test case matrix", "combinatorial testing"],
+    howToSteps: ["Enter each parameter and its possible values.", "Choose pairwise or full combinatorial coverage.", "Export the matrix as a table, CSV, Gherkin or JSON."],
+    faqs: [{ question: "What's the difference between pairwise and full combinatorial?", answer: "Full combinatorial covers every possible combination of every parameter, which grows explosively; pairwise covers every pair of values at least once, catching most real interaction bugs with far fewer test cases." }],
   },
   {
     slug: "api-response-validator",
@@ -632,6 +711,8 @@ export const tools: Tool[] = [
     aliases: ["json schema validator", "api response checker", "response validation"],
     relatedSlugs: ["json-mutator", "json-validator", "api-request-builder"],
     keywords: ["api response validator", "json schema validation", "api testing tool"],
+    howToSteps: ["Paste the expected JSON Schema.", "Paste the actual API response.", "Review missing fields, wrong types, null values and extra data."],
+    faqs: [{ question: "Is this the same as the JSON Schema Validator?", answer: "They share the same validation engine — this tool is framed specifically around comparing a live API response against its documented contract, while JSON Schema Validator is the general-purpose version." }],
   },
   {
     slug: "test-case-generator",
@@ -691,6 +772,8 @@ export const tools: Tool[] = [
     metaDescription: "Free boundary value analysis tool. Generate BVA test cases instantly for any input range.",
     category: "qa", isImplemented: true, isPopular: true,
     keywords: ["boundary value analysis", "bva testing", "test design"],
+    howToSteps: ["Enter the minimum and maximum of the valid range.", "Click Generate.", "Copy all 7 boundary test cases: below min, min, min+1, nominal, max-1, max, above max."],
+    faqs: [{ question: "Why generate 7 specific values instead of just testing the middle?", answer: "Boundary value analysis exists because bugs cluster at the edges of valid ranges (off-by-one errors especially) far more often than in the safe middle — testing only a nominal value misses exactly the cases most likely to break." }],
   },
   {
     slug: "pairwise-testing",
@@ -714,6 +797,7 @@ export const tools: Tool[] = [
     relatedSlugs: ["json-validator", "json-formatter"],
     keywords: ["json schema validator", "json schema", "json validation", "draft-07"],
     howToSteps: ["Paste your JSON data on the left.", "Paste your JSON Schema on the right.", "Validation results appear instantly below."],
+    faqs: [{ question: "Which JSON Schema draft is supported?", answer: "Draft-07 features — types, required fields, string formats, numeric ranges (minimum/maximum), enums and nested object/array validation." }, { question: "Is my data sent anywhere?", answer: "No, validation runs entirely in your browser." }],
   },
   {
     slug: "yaml-formatter",
@@ -726,6 +810,8 @@ export const tools: Tool[] = [
     aliases: ["yaml validator", "yaml to json", "yaml beautifier"],
     relatedSlugs: ["json-formatter", "json-to-yaml"],
     keywords: ["yaml formatter", "yaml validator", "yaml to json", "yaml beautifier online"],
+    howToSteps: ["Paste your YAML.", "Click Format, or switch to Convert to JSON.", "Copy the formatted or converted result."],
+    faqs: [{ question: "Does it catch indentation errors?", answer: "Yes — YAML's structure depends entirely on indentation, so the validator flags inconsistent indentation instead of silently guessing what you meant." }],
   },
   {
     slug: "url-parser",
@@ -738,6 +824,8 @@ export const tools: Tool[] = [
     aliases: ["url analyzer", "url breakdown", "url components"],
     relatedSlugs: ["url-encode-decode", "header-inspector"],
     keywords: ["url parser", "url analyzer", "url breakdown", "parse url online"],
+    howToSteps: ["Paste any URL.", "Read the breakdown of protocol, host, path, query parameters and fragment.", "Copy the specific part you need."],
+    faqs: [{ question: "Does it decode percent-encoded query parameters?", answer: "Yes — query parameter values are shown decoded in the table view, so you can read them without manually percent-decoding first." }],
   },
   {
     slug: "cron-expression",
@@ -750,6 +838,8 @@ export const tools: Tool[] = [
     aliases: ["cron builder", "cron generator", "cron schedule", "crontab"],
     relatedSlugs: ["timestamp-converter", "date-difference"],
     keywords: ["cron expression", "cron builder", "cron generator", "crontab online", "cron schedule builder"],
+    howToSteps: ["Build a schedule using the visual presets, or type a cron expression directly.", "Read the plain-language explanation of what it means.", "Check the next 5 run times to confirm it matches your intent."],
+    faqs: [{ question: "Which cron format does it use?", answer: "The standard 5-field Unix cron format (minute, hour, day of month, month, day of week) used by crontab, most CI schedulers and job queues." }],
   },
   {
     slug: "string-escape",
@@ -762,6 +852,8 @@ export const tools: Tool[] = [
     aliases: ["escape string", "html escape", "json escape", "url escape"],
     relatedSlugs: ["html-encode-decode", "url-encode-decode", "json-escape"],
     keywords: ["string escape", "html escape", "json escape", "url encode decode", "escape unescape online"],
+    howToSteps: ["Paste your text.", "Pick the target context — JSON, HTML, URL, Regex, SQL or CSV.", "Copy the escaped (or unescaped) result."],
+    faqs: [{ question: "Why does the same text need different escaping for different contexts?", answer: "Each context has its own special characters — quotes for JSON and SQL, angle brackets for HTML, regex metacharacters for patterns — so escaping done for one context doesn't protect against another." }],
   },
   {
     slug: "chmod-calculator",
@@ -774,6 +866,8 @@ export const tools: Tool[] = [
     aliases: ["linux permissions", "file permissions", "chmod", "octal permissions"],
     relatedSlugs: ["uuid-generator"],
     keywords: ["chmod calculator", "linux permissions", "file permissions calculator", "chmod 755", "chmod 644"],
+    howToSteps: ["Check read/write/execute for owner, group and others.", "Read the octal number and symbolic notation update live.", "Copy the value you need for chmod."],
+    faqs: [{ question: "What does the octal number actually mean?", answer: "Each digit is a sum of read (4), write (2) and execute (1) for owner, group and others respectively — 755 means owner has all three (7), group and others have read+execute (5)." }],
   },
   {
     slug: "regex-generator",
@@ -786,6 +880,8 @@ export const tools: Tool[] = [
     aliases: ["regex builder", "regular expression generator", "regex ai"],
     relatedSlugs: ["regex-tester", "test-case-generator"],
     keywords: ["regex generator", "regular expression generator", "regex ai", "regex builder online"],
+    howToSteps: ["Describe the pattern you want to match in plain language.", "Pick a target language flavor (JavaScript, Python, PCRE, Java, Go).", "Test the generated regex live against your own strings."],
+    faqs: [{ question: "Does the generated regex account for edge cases?", answer: "It's a strong starting point based on your description, but always test it against your real edge cases using the built-in live tester before relying on it in production code." }],
   },
   {
     slug: "json-to-typescript",
@@ -798,6 +894,8 @@ export const tools: Tool[] = [
     aliases: ["json to ts", "typescript interface generator", "json types"],
     relatedSlugs: ["json-formatter", "json-validator"],
     keywords: ["json to typescript", "typescript interface generator", "json types generator"],
+    howToSteps: ["Paste a sample JSON object.", "Click Generate.", "Copy the generated TypeScript interfaces."],
+    faqs: [{ question: "How are optional fields detected?", answer: "They aren't guessed from one sample alone — every field from your JSON is generated as required. Mark fields optional by hand if you know they're sometimes missing." }],
   },
   {
     slug: "color-converter",
@@ -810,6 +908,8 @@ export const tools: Tool[] = [
     aliases: ["hex to rgb", "rgb to hex", "color format converter"],
     relatedSlugs: ["random-color-generator"],
     keywords: ["color converter", "hex to rgb", "rgb to hex", "hsl converter", "color format"],
+    howToSteps: ["Enter a color in any format (HEX, RGB, HSL...).", "See it previewed and converted to all other formats live.", "Copy the value you need."],
+    faqs: [{ question: "Does it support CSS named colors?", answer: "Yes — type a name like 'tomato' and it converts to HEX, RGB, HSL and other formats just like any other input." }],
   },
   {
     slug: "number-base-converter",
@@ -822,6 +922,8 @@ export const tools: Tool[] = [
     aliases: ["binary to decimal", "hex to decimal", "base converter"],
     relatedSlugs: ["binary-converter", "hex-encode-decode"],
     keywords: ["number base converter", "binary to decimal", "hex to decimal", "base conversion"],
+    howToSteps: ["Type a number in any base.", "Pick which base you entered it in.", "Read the equivalent value in binary, octal, decimal and hex."],
+    faqs: [{ question: "Does it handle negative numbers?", answer: "It converts non-negative integers across bases; for negative or signed-bit representations, convert the magnitude and apply the sign separately." }],
   },
   {
     slug: "html-to-markdown",
@@ -834,6 +936,8 @@ export const tools: Tool[] = [
     aliases: ["html to md", "convert html to markdown"],
     relatedSlugs: ["markdown-preview", "html-formatter"],
     keywords: ["html to markdown", "html to md converter", "convert html markdown"],
+    howToSteps: ["Paste your HTML.", "Click Convert.", "Copy the clean Markdown result."],
+    faqs: [{ question: "What HTML elements does it handle?", answer: "Headings, lists, links, bold/italic text, code blocks and tables convert directly; deeply custom or script-heavy markup may need manual cleanup afterward." }],
   },
   {
     slug: "markdown-to-html",
@@ -846,6 +950,8 @@ export const tools: Tool[] = [
     aliases: ["md to html", "markdown converter"],
     relatedSlugs: ["markdown-preview", "html-formatter", "html-to-markdown"],
     keywords: ["markdown to html", "md to html", "markdown converter online"],
+    howToSteps: ["Paste your Markdown.", "Toggle live preview to check the rendering.", "Copy the generated HTML."],
+    faqs: [{ question: "Is the output ready to paste into an email or CMS?", answer: "Yes for the HTML markup itself — you may still want to add your own CSS, since the converter outputs semantic HTML without inline styling." }],
   },
   {
     slug: "json-diff",
@@ -858,6 +964,8 @@ export const tools: Tool[] = [
     aliases: ["json compare", "json comparison", "diff json"],
     relatedSlugs: ["json-formatter", "json-compare", "json-validator"],
     keywords: ["json diff", "json compare", "compare json objects", "json difference"],
+    howToSteps: ["Paste the first JSON object.", "Paste the second JSON object.", "Review the flat list of added, removed and changed fields."],
+    faqs: [{ question: "How is this different from JSON Compare?", answer: "They cover the same need — this one shows a flat list of field-level changes, while JSON Compare highlights differences inline within the formatted structure. Use whichever view is easier to scan for your case." }],
   },
   {
     slug: "lorem-ipsum-generator",
@@ -870,6 +978,8 @@ export const tools: Tool[] = [
     aliases: ["placeholder text", "dummy text", "lorem generator"],
     relatedSlugs: ["random-password-generator", "uuid-generator"],
     keywords: ["lorem ipsum generator", "placeholder text generator", "dummy text generator"],
+    howToSteps: ["Choose words, sentences or paragraphs.", "Set the amount you need.", "Copy the generated placeholder text."],
+    faqs: [{ question: "Is the Russian variant real Latin text?", answer: "The classic mode uses the traditional Latin passage; the Russian variant is a separate randomized placeholder text meant to preview layouts with Cyrillic text length and character shapes." }],
   },
   {
     slug: "test-data-generator",
@@ -882,6 +992,8 @@ export const tools: Tool[] = [
     aliases: ["fake data", "mock data", "dummy data generator"],
     relatedSlugs: ["fake-test-data-generator", "uuid-generator"],
     keywords: ["test data generator", "fake data generator", "mock data", "dummy user generator"],
+    howToSteps: ["Choose which fields you need (name, email, phone, role, etc.).", "Set how many rows to generate.", "Export the result as JSON or CSV."],
+    faqs: [{ question: "How is this different from the Fake Data Generator?", answer: "They overlap — this one is oriented toward structured, exportable rows (JSON/CSV) with field selection for populating a dataset, while Fake Data Generator is a quicker single-batch version." }],
   },
   {
     slug: "api-request-builder",
@@ -894,6 +1006,8 @@ export const tools: Tool[] = [
     aliases: ["http client", "rest client", "api tester"],
     relatedSlugs: ["curl-generator", "rest-request-builder"],
     keywords: ["api request builder", "http client online", "rest api tester", "api testing tool"],
+    howToSteps: ["Set the method and URL.", "Add headers, query params and a request body as needed.", "Send the request and inspect the response status, headers and body."],
+    faqs: [{ question: "Does this work for authenticated APIs?", answer: "Yes — add an Authorization header (Bearer token, API key, Basic auth) like any other header before sending." }],
   },
   {
     slug: "text-to-ascii",
@@ -906,6 +1020,8 @@ export const tools: Tool[] = [
     aliases: ["ascii art", "text to ascii", "figlet"],
     relatedSlugs: ["lorem-ipsum-generator", "slug-generator"],
     keywords: ["ascii art generator", "text to ascii", "figlet online", "ascii banner"],
+    howToSteps: ["Type your text.", "Pick a font style.", "Copy the generated ASCII art."],
+    faqs: [{ question: "Does it work with lowercase and numbers?", answer: "Support depends on the chosen font style — most cover uppercase letters and digits; check the preview to confirm a style renders the characters you need." }],
   },
   {
     slug: "jwt-generator",
@@ -918,6 +1034,8 @@ export const tools: Tool[] = [
     aliases: ["create jwt", "sign jwt", "jwt creator"],
     relatedSlugs: ["jwt-decoder", "base64-encode-decode"],
     keywords: ["jwt generator", "create jwt token", "sign jwt online", "jwt builder"],
+    howToSteps: ["Enter the payload claims as JSON.", "Set an expiration and choose an algorithm (HS256/384/512).", "Enter a signing secret and copy the generated token."],
+    faqs: [{ question: "Is this safe to use for real authentication secrets?", answer: "No — this is a development and testing tool. Never enter a production signing secret; generate tokens with test-only secrets against local or staging environments." }],
   },
   {
     slug: "contrast-checker",
@@ -1103,6 +1221,8 @@ export const tools: Tool[] = [
     aliases: ["curl builder", "curl command builder"],
     relatedSlugs: ["api-request-builder", "header-inspector"],
     keywords: ["curl generator", "curl command builder"],
+    howToSteps: ["Set the method, URL, headers and body visually.", "Watch the curl command build live.", "Copy the ready-to-run command."],
+    faqs: [{ question: "Does it escape special characters in the command?", answer: "Yes — headers and body values are quoted and escaped for a POSIX shell, so pasting the result directly into a terminal works without manual adjustment." }],
   },
   {
     slug: "rest-request-builder",
@@ -1115,6 +1235,8 @@ export const tools: Tool[] = [
     aliases: ["rest client", "api client", "http tester"],
     relatedSlugs: ["api-request-builder", "curl-generator"],
     keywords: ["rest client online", "rest request builder", "api tester"],
+    howToSteps: ["Set the method and URL.", "Add headers and a request body.", "Send and inspect the response."],
+    faqs: [{ question: "How is this different from the API Request Builder?", answer: "They overlap — this one is a lighter-weight client for quick one-off requests, while API Request Builder is the fuller-featured tool for more involved request composition." }],
   },
   {
     slug: "curl-to-code-converter",
