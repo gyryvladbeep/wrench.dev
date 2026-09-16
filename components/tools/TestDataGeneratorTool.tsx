@@ -54,7 +54,7 @@ const PRESETS: { label: string; labelRu: string; fields: string[] }[] = [
 const ALL_FIELDS = ["id","uuid","first_name","last_name","name","email","phone","age","city","country","status","role","score","created_at","is_active","balance"];
 
 export function TestDataGeneratorTool({ dict }: { dict: Dictionary }) {
-  const isRu = dict.common.copy === "Скопировать";
+  const isRu = dict.isRu;
   const [count,  setCount]  = useState(5);
   const [fields, setFields] = useState(["id","name","email","role","status"]);
   const [format, setFormat] = useState<"json" | "csv">("json");

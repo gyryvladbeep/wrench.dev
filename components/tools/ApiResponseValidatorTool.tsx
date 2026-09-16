@@ -107,7 +107,7 @@ const TYPE_LABELS: Record<string, [string, string]> = {
 };
 
 export function ApiResponseValidatorTool({ dict }: { dict: Dictionary }) {
-  const isRu = dict.common.copy === "Скопировать";
+  const isRu = dict.isRu;
   const [schema,   setSchema]   = useState(PRESETS[0].schema);
   const [response, setResponse] = useState(PRESETS[0].response);
   const [filter,   setFilter]   = useState<"all"|"error"|"warning"|"info">("all");

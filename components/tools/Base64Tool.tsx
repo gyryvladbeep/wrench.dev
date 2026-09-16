@@ -11,7 +11,7 @@ export function Base64Tool({ dict }: { dict: Dictionary }) {
   const [mode, setMode] = useState<"encode"|"decode">("encode");
   const [input, setInput] = useState("Hello, Wrench-Branch!");
   const t    = dict.tools.base64;
-  const isRu = dict.common.copy === "Скопировать";
+  const isRu = dict.isRu;
 
   const result = useMemo(() => {
     if (!input) return { ok:true as const, value:"" };

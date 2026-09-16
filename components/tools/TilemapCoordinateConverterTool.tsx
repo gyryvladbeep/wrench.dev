@@ -22,7 +22,7 @@ function fmt(n: number): string {
 }
 
 export function TilemapCoordinateConverterTool({ dict }: { dict: Dictionary }) {
-  const isRu = dict.common.copy === "Скопировать";
+  const isRu = dict.isRu;
   const [tileWidth, setTileWidth]   = useState(64);
   const [tileHeight, setTileHeight] = useState(32);
   const [mode, setMode] = useState<Mode>("isometric");

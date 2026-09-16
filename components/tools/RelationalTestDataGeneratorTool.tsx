@@ -92,7 +92,7 @@ function toCsv(rows: Row[], fields: string[]): string {
 }
 
 export function RelationalTestDataGeneratorTool({ dict }: { dict: Dictionary }) {
-  const isRu = dict.common.copy === "Скопировать";
+  const isRu = dict.isRu;
   const [presetKey, setPresetKey] = useState(PRESETS[0].key);
   const [parentCount, setParentCount] = useState(4);
   const [minChildren, setMinChildren] = useState(0);

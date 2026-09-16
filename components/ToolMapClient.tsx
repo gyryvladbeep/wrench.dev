@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { allTools } from "@/lib/tools-registry";
 import { Locale, localePath } from "@/lib/i18n/config";
+import { localizeTool } from "@/lib/i18n/localize";
 import { CategoryIcon } from "@/components/CategoryIcon";
 import { CloseIcon } from "@/components/icons/GameIcons";
 
@@ -34,11 +35,11 @@ interface Node {
 
 interface Edge { source: string; target: string; }
 
-function initNodes(width: number, height: number): Node[] {
+function initNodes(width: number, height: number, locale: Locale): Node[] {
   const tools = allTools.filter(t => t.isImplemented);
   return tools.map(t => ({
     id:       t.slug,
-    name:     t.name,
+    name:     localizeTool(t, locale).name,
     category: t.category,
     slug:     t.slug,
     x:        width  * 0.1 + Math.random() * width  * 0.8,
@@ -89,8 +90,9 @@ export function ToolMapClient({ locale }: { locale: Locale }) {
     const w = canvas.parentElement!.clientWidth;
     const h = canvas.parentElement!.clientHeight;
     setDims({ w, h });
-    nodesRef.current = initNodes(w, h);
+    nodesRef.current = initNodes(w, h, locale);
     edgesRef.current = initEdges();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Force simulation
@@ -271,7 +273,8 @@ export function ToolMapClient({ locale }: { locale: Locale }) {
     offsetRef.current = { x: 0, y: 0, scale: 1 };
   }
 
-  const selectedTool = selected ? allTools.find(t => t.slug === selected.id) : null;
+  const rawSelectedTool = selected ? allTools.find(t => t.slug === selected.id) : null;
+  const selectedTool = rawSelectedTool ? localizeTool(rawSelectedTool, locale) : null;
 
   return (
     <div className="relative w-full h-full bg-canvas">

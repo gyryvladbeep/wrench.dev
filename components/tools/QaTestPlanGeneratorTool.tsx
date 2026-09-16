@@ -208,7 +208,7 @@ const PROJECT_TYPES: { key: ProjectType; en: string; ru: string }[] = [
 ];
 
 export function QaTestPlanGeneratorTool({ dict }: { dict: Dictionary }) {
-  const isRu = dict.common.copy === "Скопировать";
+  const isRu = dict.isRu;
   const [projectType, setProjectType] = useState<ProjectType>("web");
   const [enabledCategories, setEnabledCategories] = useState<Set<string>>(
     () => new Set(CHECKLISTS.web.map((c) => c.id))

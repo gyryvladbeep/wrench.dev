@@ -66,7 +66,7 @@ function analyzePassword(pwd: string, isRu: boolean): Analysis {
 export function PasswordStrengthTool({ dict }: { dict: Dictionary }) {
   const [pwd, setPwd]     = useState("");
   const [show, setShow]   = useState(false);
-  const isRu = dict.common.copy === "Скопировать";
+  const isRu = dict.isRu;
   const analysis = useMemo(() => pwd ? analyzePassword(pwd, isRu) : null, [pwd, isRu]);
 
   return (

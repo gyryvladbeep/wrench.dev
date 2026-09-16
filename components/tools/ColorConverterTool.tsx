@@ -51,7 +51,7 @@ const PRESETS = [
 ];
 
 export function ColorConverterTool({ dict }: { dict: Dictionary }) {
-  const isRu = dict.common.copy === "Скопировать";
+  const isRu = dict.isRu;
   const [hex, setHex] = useState("#F59E0B");
 
   const rgb = useMemo(() => hexToRgb(hex), [hex]);

@@ -134,7 +134,7 @@ const SAMPLE = `{
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function JsonMutatorTool({ dict }: { dict: Dictionary }) {
-  const isRu = dict.common.copy === "Скопировать";
+  const isRu = dict.isRu;
 
   const [input,        setInput]        = useState(SAMPLE);
   const [selectedPath, setSelectedPath] = useState<string | null>(null);

@@ -44,7 +44,7 @@ const PRESETS: { labelEn: string; labelRu: string; fg: string; bg: string }[] = 
 ];
 
 export function ContrastCheckerTool({ dict }: { dict: Dictionary }) {
-  const isRu = dict.common.copy === "Скопировать";
+  const isRu = dict.isRu;
   const [fg, setFg] = useState("#111827");
   const [bg, setBg] = useState("#FFFFFF");
 

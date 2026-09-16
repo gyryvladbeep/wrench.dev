@@ -8,7 +8,7 @@ const SAMPLE = "https://api.example.com:8080/v1/users?role=admin&active=true&pag
 
 export function UrlParserTool({ dict }: { dict: Dictionary }) {
   const [input, setInput] = useState(SAMPLE);
-  const isRu = dict.common.copy === "Скопировать";
+  const isRu = dict.isRu;
 
   const parsed = useMemo(() => {
     if (!input.trim()) return null;

@@ -2,6 +2,14 @@
  *  catches missing or mistyped translations at build time — if ru.ts is
  *  missing a key, `next build` fails instead of silently falling back. */
 export interface Dictionary {
+  /** True for the ru dictionary, false for en. A single, reliable source of
+   *  truth for "is this the Russian locale" inside any component that only
+   *  receives `dict` (not `locale`) as a prop — components used to infer
+   *  this by comparing a specific translated string (e.g.
+   *  `dict.common.copy === "Скопировать"`), which silently broke the
+   *  moment that string's translation changed and had no other RU strings
+   *  nearby to catch the mismatch. See HashGeneratorTool.tsx's history. */
+  isRu: boolean;
   site: {
     tagline: string;
     description: string;

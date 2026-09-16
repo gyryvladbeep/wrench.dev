@@ -11,6 +11,7 @@ import { BADGES, BADGE_COLOR, checkAchievements } from "@/lib/achievements";
 import { useFavorites } from "@/lib/hooks/useFavorites";
 import { useWorkbenches } from "@/lib/hooks/useWorkbenches";
 import { allTools } from "@/lib/tools-registry";
+import { localizeTool } from "@/lib/i18n/localize";
 import { WrenchScorePanel } from "@/components/WrenchScorePanel";
 import { calcWrenchScore, getLevel } from "@/lib/wrench-score";
 import { THEME_COLORS, applyAndSaveAccent } from "@/components/ThemeProvider";
@@ -655,8 +656,9 @@ export default function ProfilePage() {
               <p className="text-xs text-text-muted">{favorites.length} {isRu ? "инструментов" : "tools"}</p>
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 {favorites.map((slug) => {
-                  const tool = allTools.find(t => t.slug === slug);
-                  if (!tool) return null;
+                  const rawTool = allTools.find(t => t.slug === slug);
+                  if (!rawTool) return null;
+                  const tool = localizeTool(rawTool, locale);
                   return (
                     <div key={slug} className="flex items-center gap-3 rounded-lg border border-border bg-surface p-3 hover:border-border-focus hover:bg-surface-hover transition-all card-shine group">
                       <Link href={localePath(locale, `/tools/${slug}`)} className="flex-1 min-w-0">

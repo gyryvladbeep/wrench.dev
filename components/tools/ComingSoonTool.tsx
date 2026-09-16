@@ -9,7 +9,7 @@ export function ComingSoonTool({ tool, dict }: { tool: Tool; dict: Dictionary })
   const [email, setEmail] = useState("");
   const [done, setDone]   = useState(false);
   const t = dict.comingSoon;
-  const isRu = dict.common.copy === "Скопировать";
+  const isRu = dict.isRu;
 
   return (
     <div className="rounded-[12px] border border-border bg-surface overflow-hidden">

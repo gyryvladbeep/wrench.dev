@@ -60,7 +60,7 @@ function sanitize(doc: Document) {
 }
 
 export function A11yCheckerTool({ dict }: { dict: Dictionary }) {
-  const isRu = dict.common.copy === "Скопировать";
+  const isRu = dict.isRu;
   const [input, setInput] = useState(SAMPLE_HTML);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);

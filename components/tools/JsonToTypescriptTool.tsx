@@ -74,7 +74,7 @@ const SAMPLE = `{
 export function JsonToTypescriptTool({ dict }: { dict: Dictionary }) {
   const [input,    setInput]    = useState(SAMPLE);
   const [rootName, setRootName] = useState("Root");
-  const isRu = dict.common.copy === "Скопировать";
+  const isRu = dict.isRu;
 
   const result = useMemo(() => {
     if (!input.trim()) return { ok: true as const, value: "" };
@@ -82,7 +82,7 @@ export function JsonToTypescriptTool({ dict }: { dict: Dictionary }) {
       const parsed = JSON.parse(input);
       return { ok: true as const, value: buildInterfaces(parsed, rootName || "Root") };
     } catch (e) {
-      return { ok: false as const, message: e instanceof Error ? e.message : "Invalid JSON" };
+      return { ok: false as const, message: e instanceof Error ? e.message : (isRu ? "Невалидный JSON" : "Invalid JSON") };
     }
   }, [input, rootName]);
 

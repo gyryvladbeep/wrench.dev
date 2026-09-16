@@ -16,7 +16,7 @@ export function BoundaryValueTool({ dict }: { dict: Dictionary }) {
   const [min,      setMin]      = useState("1");
   const [max,      setMax]      = useState("100");
   const [dataType, setDataType] = useState<"integer" | "float" | "string">("integer");
-  const isRu = dict.common.copy === "Скопировать";
+  const isRu = dict.isRu;
 
   const results = useMemo((): BVResult[] => {
     const mn = parseFloat(min);

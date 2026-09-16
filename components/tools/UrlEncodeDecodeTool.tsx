@@ -10,7 +10,7 @@ export function UrlEncodeDecodeTool({ dict }: { dict: Dictionary }) {
   const [mode, setMode] = useState<"encode"|"decode">("encode");
   const [input, setInput] = useState("https://example.com/search?q=hello world&lang=en");
   const t    = dict.tools.urlEncode;
-  const isRu = dict.common.copy === "Скопировать";
+  const isRu = dict.isRu;
 
   const result = useMemo(() => {
     if (!input) return { ok:true as const, value:"" };
@@ -31,12 +31,12 @@ export function UrlEncodeDecodeTool({ dict }: { dict: Dictionary }) {
     >
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div>
-          <label className="input-label">{mode==="encode"?(isRu?"Исходный URL":"Plain URL"):"Encoded URL"}</label>
+          <label className="input-label">{mode==="encode"?(isRu?"Исходный URL":"Plain URL"):(isRu?"Закодированный URL":"Encoded URL")}</label>
           <textarea value={input} onChange={(e)=>setInput(e.target.value)} spellCheck={false} rows={6}
             className="code-surface w-full rounded-[10px] p-3 font-mono text-sm text-text-primary outline-none"/>
         </div>
         <div>
-          <label className="input-label">{mode==="encode"?"Encoded":(isRu?"Декодированный URL":"Decoded URL")}</label>
+          <label className="input-label">{mode==="encode"?(isRu?"Закодированный URL":"Encoded URL"):(isRu?"Декодированный URL":"Decoded URL")}</label>
           {!result.ok
             ? <div className="code-surface min-h-[8rem] rounded-[10px] p-3 text-sm text-red-400">{result.message}</div>
             : result.value===""

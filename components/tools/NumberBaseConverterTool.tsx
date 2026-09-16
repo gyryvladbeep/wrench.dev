@@ -11,7 +11,7 @@ const BASES = [
 ];
 
 export function NumberBaseConverterTool({ dict }: { dict: Dictionary }) {
-  const isRu = dict.common.copy === "Скопировать";
+  const isRu = dict.isRu;
   const [input,    setInput]    = useState("255");
   const [fromBase, setFromBase] = useState(10);
 

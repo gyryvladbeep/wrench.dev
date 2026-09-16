@@ -129,7 +129,7 @@ function parseExpectation(provider: Provider, payload: string, sigInput: string)
 }
 
 export function WebhookSignatureVerifierTool({ dict }: { dict: Dictionary }) {
-  const isRu = dict.common.copy === "Скопировать";
+  const isRu = dict.isRu;
 
   const [provider, setProvider] = useState<Provider>("generic");
   const [secret, setSecret] = useState("");

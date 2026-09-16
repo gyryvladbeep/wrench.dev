@@ -57,7 +57,7 @@ function parseHeaders(raw: string): Record<string, string> {
 }
 
 export function CorsDebuggerTool({ dict }: { dict: Dictionary }) {
-  const isRu = dict.common.copy === "Скопировать";
+  const isRu = dict.isRu;
 
   const [origin, setOrigin] = useState(SAMPLE_ORIGIN);
   const [method, setMethod] = useState<(typeof METHODS)[number]>("GET");

@@ -79,7 +79,7 @@ const FORMATS: { id: MockFormat; label: string; description: string }[] = [
 ];
 
 export function ApiResponseMockerTool({ dict }: { dict: Dictionary }) {
-  const isRu = dict.common.copy === "Скопировать";
+  const isRu = dict.isRu;
 
   const [url,    setUrl]    = useState("/api/users/:id");
   const [method, setMethod] = useState("GET");

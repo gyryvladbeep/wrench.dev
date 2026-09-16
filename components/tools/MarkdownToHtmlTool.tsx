@@ -93,7 +93,7 @@ function mdToHtml(md: string): string {
 }
 
 export function MarkdownToHtmlTool({ dict }: { dict: Dictionary }) {
-  const isRu = dict.common.copy === "Скопировать";
+  const isRu = dict.isRu;
   const [input,   setInput]   = useState(SAMPLE);
   const [preview, setPreview] = useState(false);
 

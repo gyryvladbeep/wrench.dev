@@ -1,6 +1,7 @@
 import { Dictionary } from "../dictionary-types";
 
 export const ru: Dictionary = {
+  isRu: true,
   site: {
     tagline: "Незаменимые инструменты для разработчиков, QA-инженеров и DevOps",
     description:

@@ -45,7 +45,7 @@ function diffImages(a: ImageData, b: ImageData, threshold: number): { diffCount:
 }
 
 export function ScreenshotDiffCheckerTool({ dict }: { dict: Dictionary }) {
-  const isRu = dict.common.copy === "Скопировать";
+  const isRu = dict.isRu;
   const [fileA, setFileA] = useState<File | null>(null);
   const [fileB, setFileB] = useState<File | null>(null);
   const [previewA, setPreviewA] = useState("");

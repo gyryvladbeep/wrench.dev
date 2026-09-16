@@ -116,7 +116,7 @@ function nextRuns(cron: string, count = 5): Date[] {
 
 export function CronExpressionTool({ dict }: { dict: Dictionary }) {
   const [cron, setCron] = useState("0 9 * * 1-5");
-  const isRu = dict.common.copy === "Скопировать";
+  const isRu = dict.isRu;
 
   const parts  = cron.trim().split(/\s+/);
   const valid  = parts.length === 5 && parts.every((p) => /^[\d\*\/\-,]+$/.test(p));

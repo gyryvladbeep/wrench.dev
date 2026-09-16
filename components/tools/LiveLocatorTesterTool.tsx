@@ -47,7 +47,7 @@ function runXPath(doc: Document, expr: string): Element[] {
 }
 
 export function LiveLocatorTesterTool({ dict }: { dict: Dictionary }) {
-  const isRu = dict.common.copy === "Скопировать";
+  const isRu = dict.isRu;
   const [html, setHtml] = useState(DEFAULT_HTML);
   const [mode, setMode] = useState<Mode>("css");
   const [selector, setSelector] = useState(".btn-primary");

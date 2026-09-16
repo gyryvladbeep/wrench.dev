@@ -114,7 +114,7 @@ features:
 export function YamlFormatterTool({ dict }: { dict: Dictionary }) {
   const [input, setInput]   = useState(SAMPLE);
   const [mode,  setMode]    = useState<"format" | "json">("format");
-  const isRu = dict.common.copy === "Скопировать";
+  const isRu = dict.isRu;
 
   const result = useMemo(() => {
     if (!input.trim()) return { ok: true as const, value: "" };

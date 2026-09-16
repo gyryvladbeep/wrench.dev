@@ -96,7 +96,7 @@ type SortKey = "order" | "time" | "size";
 type StatusFilter = "all" | "2xx" | "3xx" | "4xx" | "5xx" | "failed";
 
 export function HarAnalyzerTool({ dict }: { dict: Dictionary }) {
-  const isRu = dict.common.copy === "Скопировать";
+  const isRu = dict.isRu;
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [input, setInput] = useState("");
   const [fileName, setFileName] = useState("");

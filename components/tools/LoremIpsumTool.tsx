@@ -24,7 +24,7 @@ function genParagraph(ru: boolean) {
 }
 
 export function LoremIpsumTool({ dict }: { dict: Dictionary }) {
-  const isRu = dict.common.copy === "Скопировать";
+  const isRu = dict.isRu;
   const [type,   setType]   = useState<"words"|"sentences"|"paragraphs">("paragraphs");
   const [count,  setCount]  = useState(3);
   const [lang,   setLang]   = useState<"en"|"ru">("en");
