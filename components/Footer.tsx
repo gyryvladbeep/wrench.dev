@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Locale, localePath } from "@/lib/i18n/config";
 import { Dictionary } from "@/lib/i18n/dictionary-types";
+import { allTools } from "@/lib/tools-registry";
 
 const LOGO = () => (
   <svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden>
@@ -14,6 +15,15 @@ interface FooterProps { dict: Dictionary; locale: Locale; }
 export function Footer({ dict, locale }: FooterProps) {
   const isRu = locale === "ru";
 
+  // Вместо захардкоженного числа — тот же расчёт, что уже на главной
+  // (app/[locale]/page.tsx → totalCount): считаем implemented-инструменты
+  // из самого реестра, а не переписываем цифру руками при каждом новом
+  // инструменте. Число задач (челленджей) живёт только в Supabase, не в
+  // статическом реестре, который доступен на этой странице без похода в
+  // базу — оно и дальше здесь захардкожено, обновляется вручную при
+  // добавлении новых сидов в supabase/challenges-seed*.sql.
+  const totalTools = allTools.filter((t) => t.isImplemented).length;
+
   const LINKS = {
     [isRu ? "Инструменты" : "Tools"]: [
       { label: isRu ? "Все инструменты" : "All Tools",    href: "/tools" },
@@ -24,9 +34,15 @@ export function Footer({ dict, locale }: FooterProps) {
     ],
     [isRu ? "Платформа" : "Platform"]: [
       { label: isRu ? "Челленджи"       : "Challenges",   href: "/challenges" },
+      { label: isRu ? "Рабочий стол"    : "Workbench",    href: "/workbench" },
       { label: isRu ? "Интервью"        : "Interview",    href: "/interview" },
+      { label: isRu ? "Тренажёр"        : "Trainer",      href: "/trainer" },
       { label: "Playground",                               href: "/playground" },
       { label: isRu ? "База знаний"     : "Knowledge",    href: "/knowledge" },
+      { label: isRu ? "Зарплаты"        : "Salaries",     href: "/salary" },
+      { label: "Mock API",                                 href: "/mock-api" },
+      { label: isRu ? "Вебхуки"         : "Webhooks",     href: "/webhook-inspector" },
+      { label: isRu ? "Дайджест"        : "Digest",       href: "/digest" },
     ],
     [isRu ? "Компания" : "Company"]: [
       { label: isRu ? "Pro план"        : "Pro Plan",     href: "/pro" },
@@ -55,8 +71,8 @@ export function Footer({ dict, locale }: FooterProps) {
             {/* Stats */}
             <div className="mt-4 flex gap-4">
               {[
-                { value: "70+", label: isRu ? "инструментов" : "tools" },
-                { value: "56",  label: isRu ? "задач" : "challenges" },
+                { value: `${totalTools}+`, label: isRu ? "инструментов" : "tools" },
+                { value: "61+", label: isRu ? "задач" : "challenges" },
               ].map(s => (
                 <div key={s.label}>
                   <p className="text-sm font-bold text-accent">{s.value}</p>

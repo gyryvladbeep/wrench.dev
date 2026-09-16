@@ -29,7 +29,7 @@ export function HashGeneratorTool({ dict }: { dict: Dictionary }) {
   const [input, setInput] = useState("Hello, Wrench!");
   const [hashes, setHashes] = useState<Record<string,string>>({});
   const [loading, setLoading] = useState(false);
-  const isRu = dict.common.copy==="Копировать";
+  const isRu = dict.common.copy==="Скопировать";
 
   useEffect(()=>{
     if(!input){setHashes({});return;}
