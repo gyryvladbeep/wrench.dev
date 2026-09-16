@@ -19,6 +19,21 @@ export async function POST(req: NextRequest) {
   const ip = req.headers.get("x-forwarded-for") ?? "unknown";
   if (!checkRate(ip)) return new Response(JSON.stringify({ error: "Rate limit exceeded. Please wait a minute." }), { status: 429 });
 
+  // Server-side AI limit check (works across all Vercel instances) — this
+  // was missing here even though the Free plan is documented as 3
+  // AI generations/day (see PLANS.free in lib/stripe.ts) and the sibling
+  // test-case-generator route already enforces it. Without this, any
+  // unauthenticated caller could generate unlimited Anthropic completions,
+  // limited only by a spoofable per-IP, per-instance in-memory counter —
+  // a real billing/cost-abuse exposure.
+  const limit = await checkAiLimit();
+  if (!limit.allowed) {
+    return new Response(
+      JSON.stringify({ error: "Daily AI limit reached. Upgrade to Pro for unlimited access.", remaining: 0 }),
+      { status: 429 }
+    );
+  }
+
   const { title, steps, expected, actual, environment, severity, format, language } = await req.json();
   if (!steps?.trim()) return new Response(JSON.stringify({ error: "Steps to reproduce are required." }), { status: 400 });
 

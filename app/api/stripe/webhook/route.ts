@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getStripe } from "@/lib/stripe";
-import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { getSupabaseAdmin } from "@/lib/supabase/admin";
 
 export const runtime = "nodejs";
 
@@ -37,7 +37,18 @@ export async function POST(req: NextRequest) {
     processedEvents.delete(first);
   }
 
-  const supabase = createServerSupabaseClient();
+  // This request comes straight from Stripe's servers — there is no
+  // Supabase auth session/cookie attached to it at all, and even for a
+  // request that did carry one, the `subscriptions` table's RLS only
+  // defines a SELECT policy (supabase/challenges-schema.sql), no
+  // INSERT/UPDATE. All the writes below need the service-role admin
+  // client to bypass RLS; the anon-key client used here previously meant
+  // every one of these writes was silently rejected (each call below does
+  // check `error` and logs it, but the response still returns
+  // `{ received: true }`, so a paying customer's plan never actually
+  // flipped to "pro" in the database — Stripe would see a successful
+  // webhook and never retry).
+  const supabase = getSupabaseAdmin();
 
   try {
     switch (event.type) {

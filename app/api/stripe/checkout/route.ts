@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getStripe, PLANS } from "@/lib/stripe";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { getSupabaseAdmin } from "@/lib/supabase/admin";
 
 export async function POST(req: NextRequest) {
   const supabase = createServerSupabaseClient();
@@ -32,14 +33,25 @@ export async function POST(req: NextRequest) {
       });
       customerId = customer.id;
 
-      // Save customer ID
-      await supabase.from("subscriptions").upsert({
+      // Save customer ID. Written through the service-role admin client,
+      // not the request-scoped anon-key client above: the `subscriptions`
+      // table (supabase/challenges-schema.sql) has RLS enabled with only a
+      // SELECT policy ("subscriptions_select") — no INSERT/UPDATE policy
+      // exists for it at all. An upsert through the anon-key client (even
+      // for the caller's own row, under their own session) is silently
+      // rejected by RLS's default-deny, so this write never actually
+      // persisted; account/delete/route.ts already establishes the pattern
+      // of using the admin client for this kind of privileged server-side
+      // write.
+      const admin = getSupabaseAdmin();
+      const { error: upsertErr } = await admin.from("subscriptions").upsert({
         user_id: user.id,
         stripe_customer_id: customerId,
         plan: "free",
         status: "active",
         updated_at: new Date().toISOString(),
       }, { onConflict: "user_id" });
+      if (upsertErr) console.error("Stripe checkout: failed to save customer id", upsertErr);
     }
 
     const session = await stripe.checkout.sessions.create({
