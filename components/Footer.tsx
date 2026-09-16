@@ -27,6 +27,8 @@ export function Footer({ dict, locale }: FooterProps) {
   const LINKS = {
     [isRu ? "Инструменты" : "Tools"]: [
       { label: isRu ? "Все инструменты" : "All Tools",    href: "/tools" },
+      { label: isRu ? "Карта инструментов" : "Tool Map",  href: "/map" },
+      { label: isRu ? "Документация"    : "Docs",         href: "/docs" },
       { label: isRu ? "Форматирование"  : "Formatting",   href: "/categories/formatting" },
       { label: isRu ? "Кодирование"     : "Encoding",     href: "/categories/encoding" },
       { label: isRu ? "QA"              : "QA",            href: "/categories/qa" },

@@ -7,7 +7,9 @@ import { LoginForm } from "@/components/auth/LoginForm";
 export async function generateMetadata({ params }: { params: { locale: string } }): Promise<Metadata> {
   const locale = isLocale(params.locale) ? params.locale : defaultLocale;
   const t = getDictionary(locale).auth;
-  return { title: t.signIn };
+  // Транзакционная страница — не должна попадать в индекс (та же причина,
+  // по которой /auth/* целиком сознательно пропущен в sitemap.ts).
+  return { title: t.signIn, robots: { index: false, follow: false } };
 }
 
 export default function LoginPage({ params }: { params: { locale: string } }) {

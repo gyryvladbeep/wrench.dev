@@ -22,6 +22,30 @@ export default function sitemap(): MetadataRoute.Sitemap {
     pages.push(url(localePath(locale, "/privacy"), 0.3, "yearly"));
     pages.push(url(localePath(locale, "/terms"), 0.3, "yearly"));
     pages.push(url(localePath(locale, "/contact"), 0.3, "yearly"));
+
+    // These standalone features had page.tsx routes and real internal links
+    // (header, footer) but were never added here, so the sitemap has been
+    // quietly missing about a third of the site's public pages. /workbench
+    // itself is deliberately left out — it renders nothing and redirects to
+    // /auth/login for a signed-out visitor (same as /profile), so it isn't
+    // a page worth asking a crawler to index; /workbench/gallery is the
+    // public, unauthenticated part of that feature and belongs here instead.
+    pages.push(url(localePath(locale, "/challenges"), 0.8, "daily"));
+    for (const role of ["qa", "frontend", "backend"] as const) {
+      pages.push(url(localePath(locale, `/challenges/${role}`), 0.7, "daily"));
+    }
+    pages.push(url(localePath(locale, "/workbench/gallery"), 0.6, "weekly"));
+    pages.push(url(localePath(locale, "/trainer"), 0.7, "weekly"));
+    pages.push(url(localePath(locale, "/interview"), 0.7, "weekly"));
+    pages.push(url(localePath(locale, "/playground"), 0.6, "weekly"));
+    pages.push(url(localePath(locale, "/salary"), 0.7, "weekly"));
+    pages.push(url(localePath(locale, "/mock-api"), 0.6, "monthly"));
+    pages.push(url(localePath(locale, "/webhook-inspector"), 0.6, "monthly"));
+    pages.push(url(localePath(locale, "/digest"), 0.5, "daily"));
+    pages.push(url(localePath(locale, "/people"), 0.6, "weekly"));
+    pages.push(url(localePath(locale, "/pro"), 0.6, "monthly"));
+    pages.push(url(localePath(locale, "/map"), 0.5, "monthly"));
+
     for (const c of categories) {
       pages.push(url(localePath(locale, `/categories/${c.slug}`), 0.8, "weekly"));
     }

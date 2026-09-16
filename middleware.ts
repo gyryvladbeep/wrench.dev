@@ -91,7 +91,14 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
+  // sitemap.xml и robots.txt (app/sitemap.ts, app/robots.ts) раньше сюда
+  // не были добавлены в исключения — middleware видел "/sitemap.xml" как
+  // обычный путь без локали и переписывал его в несуществующий
+  // "/en/sitemap.xml", так что оба файла отдавали 404 и на деле никогда
+  // не были доступны поисковикам. Это единственная правка в этом файле —
+  // список matcher ниже, ни строчки в самой функции middleware() (вся
+  // Supabase-логика auth-cookie не затронута).
   matcher: [
-    "/((?!_next/static|_next/image|favicon\\.ico|favicon\\.svg|api/|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon\\.ico|favicon\\.svg|sitemap\\.xml|robots\\.txt|api/|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };

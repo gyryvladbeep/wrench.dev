@@ -11,12 +11,20 @@ import { WorkbenchGalleryView } from "@/components/workbench/WorkbenchGalleryVie
 export async function generateMetadata({ params }: { params: { locale: string } }): Promise<Metadata> {
   const locale = isLocale(params.locale) ? params.locale : defaultLocale;
   const isRu   = locale === "ru";
-  return buildPageMetadata(locale, "/workbench/gallery",
-    isRu ? "Публичные рабочие столы — Wrench-Branch" : "Public workbenches — Wrench-Branch",
-    isRu
-      ? "Рабочие столы, которыми поделились другие пользователи Wrench-Branch — готовые наборы инструментов, которые можно склонировать себе."
-      : "Workbenches other Wrench-Branch users have shared publicly — ready-made tool setups you can clone into your own account."
-  );
+  // Заголовок без "— Wrench-Branch" — см. комментарий в
+  // app/[locale]/workbench/layout.tsx про дублирование названия сайта.
+  return {
+    ...buildPageMetadata(locale, "/workbench/gallery",
+      isRu ? "Публичные рабочие столы" : "Public workbenches",
+      isRu
+        ? "Рабочие столы, которыми поделились другие пользователи Wrench-Branch — готовые наборы инструментов, которые можно склонировать себе."
+        : "Workbenches other Wrench-Branch users have shared publicly — ready-made tool setups you can clone into your own account."
+    ),
+    // Родительский app/[locale]/workbench/layout.tsx помечает /workbench
+    // целиком noindex (сама страница требует сессию) — эта страница
+    // публичная и явно перекрывает унаследованный robots обратно на index.
+    robots: { index: true, follow: true },
+  };
 }
 
 export default function WorkbenchGalleryPage({ params }: { params: { locale: string } }) {

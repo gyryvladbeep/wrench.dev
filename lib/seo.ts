@@ -15,6 +15,11 @@ function buildAlternates(locale: Locale, path: string) {
     languages: {
       en: `${siteConfig.url}${localePath("en", path)}`,
       ru: `${siteConfig.url}${localePath("ru", path)}`,
+      // Tells Google which version to show a visitor whose browser/country
+      // doesn't match either explicit language — without it, search engines
+      // have to guess. English is the site's actual default (localePath("en", ...)
+      // is also the un-prefixed root path), so it's the correct x-default.
+      "x-default": `${siteConfig.url}${localePath("en", path)}`,
     },
   };
 }

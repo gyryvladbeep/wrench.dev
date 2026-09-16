@@ -6,7 +6,9 @@ import { ForgotPasswordForm } from "@/components/auth/ForgotPasswordForm";
 
 export async function generateMetadata({ params }: { params: { locale: string } }): Promise<Metadata> {
   const locale = isLocale(params.locale) ? params.locale : defaultLocale;
-  return { title: getDictionary(locale).auth.resetPassword };
+  // Транзакционная страница — не должна попадать в индекс (та же причина,
+  // по которой /auth/* целиком сознательно пропущен в sitemap.ts).
+  return { title: getDictionary(locale).auth.resetPassword, robots: { index: false, follow: false } };
 }
 
 export default function ForgotPasswordPage({ params }: { params: { locale: string } }) {

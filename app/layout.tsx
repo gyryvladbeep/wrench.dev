@@ -57,7 +57,18 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html suppressHydrationWarning className={`dark ${heading.variable} ${body.variable}`}>
+    // lang="en" — этот layout стоит НАД [locale] и физически не может
+    // знать реальную локаль запроса (params.locale сюда не доходит): дать
+    // ему точный lang можно только прочитав заголовок из middleware через
+    // headers(), а это в Next.js официально "Dynamic API" — как только он
+    // используется в корневом layout, ВЕСЬ сайт перестаёт статически
+    // генерироваться и рендерится заново на каждый запрос (все страницы
+    // инструментов, категорий, базы знаний теряют статическую отдачу).
+    // Сознательный компромисс: en — дефолтная локаль сайта (та же, что
+    // x-default в lib/seo.ts), а для ru-страниц <LangSetter> ниже по
+    // дереву донастраивает атрибут сразу после гидратации — за счёт
+    // suppressHydrationWarning ниже это не вызывает предупреждений React.
+    <html lang="en" suppressHydrationWarning className={`dark ${heading.variable} ${body.variable}`}>
       <body className="min-h-screen bg-canvas font-sans text-text-primary antialiased">
         {/*
           Космический фон — декоративный слой позади всего сайта (см.
