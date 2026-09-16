@@ -46,14 +46,18 @@ test.describe("Шапка сайта — навигация", () => {
     await expect(header.proLink).toBeVisible();
   });
 
-  test("Workbench помечен бейджем 'New'; для гостя ведёт на логин (страница требует аккаунт)", async ({ page }) => {
+  test("Workbench помечен бейджем 'New'; для гостя открывает превью на месте, без редиректа на логин", async ({ page }) => {
     await expect(header.workbenchLink).toContainText("New");
     await header.workbenchLink.click();
-    // /workbench защищён авторизацией (см. auth-guard в app/[locale]/workbench/page.tsx) —
-    // гостя редиректит на логин, а не открывает страницу напрямую. Сам
-    // сценарий "залогиненный пользователь реально попадает на /workbench"
-    // покрыт в workbench.spec.ts, где уже есть настоящая сессия.
-    await expect(page).toHaveURL(/\/auth\/login/);
+    // /workbench раньше редиректил гостя на /auth/login (страница требовала
+    // аккаунт даже без единого байта чувствительных данных) — теперь гость
+    // остаётся на /workbench и видит WorkbenchGuestPreview: локальный
+    // demo-холст с уже добавленными инструментами и CTA "Sign up to save",
+    // без единого обращения к Supabase. Сам сценарий "залогиненный
+    // пользователь реально попадает на свой сохраняемый /workbench" покрыт
+    // в workbench.spec.ts, где уже есть настоящая сессия.
+    await expect(page).toHaveURL(/\/workbench$/);
+    await expect(page.getByText(/Sign up to save/i)).toBeVisible();
   });
 
   test("дропдаун 'Categories' открывается и содержит ссылки на все 11 категорий", async () => {
