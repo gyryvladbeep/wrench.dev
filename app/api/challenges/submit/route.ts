@@ -94,12 +94,28 @@ export async function POST(req: NextRequest) {
 
   const supabase = createServerSupabaseClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
 
   const { data: challenge, error: cErr } = await supabase
     .from("challenges").select("id,correct_answer,answer_type,points,explanation,explanation_ru")
     .eq("id", challenge_id).eq("is_active", true).single();
   if (cErr || !challenge) return NextResponse.json({ error: "Challenge not found" }, { status: 404 });
+
+  // Guest path: the challenges page promises "you can try a challenge
+  // without an account" (only saving progress/streak requires signing in).
+  // We honor that literally — an anonymous visitor gets a real, honest
+  // is_correct check against the challenge, we just never write attempts
+  // or streaks for a user_id that doesn't exist. Previously a guest submit
+  // returned 401 and the client rendered that as a red "Not quite…" result
+  // regardless of whether the answer was actually right — this replaces
+  // that with a truthful check plus a guest flag the client can use to
+  // prompt sign-up instead of lying about correctness.
+  if (!user) {
+    const is_correct = checkAnswer(answer, challenge.correct_answer, challenge.answer_type);
+    return NextResponse.json({
+      is_correct, guest: true, points_earned: 0, attempts_count: 1,
+      explanation: challenge.explanation, explanation_ru: challenge.explanation_ru,
+    });
+  }
 
   const { data: existing } = await supabase.from("challenge_attempts")
     .select("id,is_correct,attempts_count").eq("user_id", user.id).eq("challenge_id", challenge_id).single();

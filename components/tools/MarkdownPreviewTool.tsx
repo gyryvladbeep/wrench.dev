@@ -1,6 +1,7 @@
 "use client";
 import { useMemo, useState } from "react";
 import { marked } from "marked";
+import DOMPurify from "isomorphic-dompurify";
 import { CopyButton } from "@/components/CopyButton";
 import { Dictionary } from "@/lib/i18n/dictionary-types";
 
@@ -32,7 +33,13 @@ export function MarkdownPreviewTool({ dict }: { dict: Dictionary }) {
   const [input, setInput] = useState(SAMPLE);
   const [view, setView] = useState<"split" | "preview" | "source">("split");
 
+  // "Copy HTML" gives the user the literal marked() output — that's the
+  // whole point of the tool, and it's copied out, not executed here.
+  // The in-page preview below is a different story: it runs whatever
+  // ends up in dangerouslySetInnerHTML inside this site's own origin, so
+  // that one render path gets sanitized separately.
   const html = useMemo(() => marked(input) as string, [input]);
+  const previewHtml = useMemo(() => DOMPurify.sanitize(html), [html]);
 
   return (
     <div>
@@ -67,7 +74,7 @@ export function MarkdownPreviewTool({ dict }: { dict: Dictionary }) {
                 "--tw-prose-code": "#f0a23a",
                 "--tw-prose-pre-bg": "#0e0e13",
               } as React.CSSProperties}
-              dangerouslySetInnerHTML={{ __html: html }}
+              dangerouslySetInnerHTML={{ __html: previewHtml }}
             />
           </div>
         )}

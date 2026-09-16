@@ -23,6 +23,7 @@
     "axe-core": "^4.13.0",
     "badge-maker": "^6.0.0",
     "clsx": "^2.1.0",
+    "isomorphic-dompurify": "^4.2.0",
     "js-yaml": "^5.2.0",
     "marked": "^18.0.5",
     "next": "^14.2.0",

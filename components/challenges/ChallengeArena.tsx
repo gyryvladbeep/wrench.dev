@@ -1,8 +1,9 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { Challenge, ChallengeRole, DIFFICULTY_META, ROLE_META, TYPE_META } from "@/lib/challenges/types";
-import { Locale } from "@/lib/i18n/config";
+import { Locale, localePath } from "@/lib/i18n/config";
 import { useToast } from "@/components/ui/Toast";
 import { useAuth } from "@/lib/auth/auth-context";
 import { Button } from "@/components/ui/button";
@@ -17,6 +18,7 @@ interface Result {
   attempts_count:number;
   explanation:   string;
   explanation_ru:string;
+  guest?:        boolean;
 }
 
 export function ChallengeArena({ role, locale }: Props) {
@@ -142,10 +144,24 @@ export function ChallengeArena({ role, locale }: Props) {
         return;
       }
 
+      // A non-2xx response without already_solved is a real error (rate
+      // limit, missing fields, challenge not found, server error) — it has
+      // no is_correct field at all, so it must never fall through to
+      // setResult(), which would render as a false "Not quite…" regardless
+      // of what the user actually answered.
+      if (!res.ok) {
+        toastError(isRu ? "Ошибка при отправке" : "Submission failed");
+        return;
+      }
+
       setResult(data);
       if (data.is_correct) {
-        success(`+${data.points_earned} ${isRu ? "очков" : "points"}!`);
-        setSolvedIds(prev => new Set([...prev, challenge.id]));
+        if (data.guest) {
+          success(isRu ? "Правильно! Зарегистрируйся, чтобы сохранить прогресс." : "Correct! Sign up to save your progress.");
+        } else {
+          success(`+${data.points_earned} ${isRu ? "очков" : "points"}!`);
+          setSolvedIds(prev => new Set([...prev, challenge.id]));
+        }
       }
     } catch {
       toastError(isRu ? "Ошибка при отправке" : "Submission failed");
@@ -280,11 +296,30 @@ export function ChallengeArena({ role, locale }: Props) {
               <p className={`text-base font-semibold ${result.is_correct ? "text-success" : "text-error"}`}>
                 {result.is_correct ? (isRu ? "Правильно!" : "Correct!") : (isRu ? "Не совсем…" : "Not quite…")}
               </p>
-              {result.is_correct && (
+              {result.is_correct && !result.guest && (
                 <p className="text-sm text-text-muted">+{result.points_earned} {isRu ? "очков" : "pts"} · {formatTime(timeSeconds)}</p>
+              )}
+              {result.is_correct && result.guest && (
+                <p className="text-sm text-text-muted">{formatTime(timeSeconds)}</p>
               )}
             </div>
           </div>
+
+          {result.guest && (
+            <div className="mb-4 rounded-md border border-border bg-surface/50 px-3 py-2.5 text-xs text-text-muted">
+              {result.is_correct
+                ? (isRu
+                    ? "Ответ верный, но прогресс не сохранён — ты не вошёл в аккаунт. "
+                    : "Correct — but this isn't saved because you're not signed in. ")
+                : (isRu
+                    ? "Ты пробуешь без аккаунта — попытка не сохраняется. "
+                    : "You're trying this without an account — attempts aren't saved. ")}
+              <Link href={localePath(locale, "/auth/signup")} className="text-accent hover:underline">
+                {isRu ? "Зарегистрируйся" : "Sign up"}
+              </Link>
+              {isRu ? ", чтобы сохранять очки и стрик." : " to keep your points and streak."}
+            </div>
+          )}
 
           {explanation && (
             <div>

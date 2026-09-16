@@ -1,5 +1,6 @@
 "use client";
 import { useMemo, useState } from "react";
+import DOMPurify from "isomorphic-dompurify";
 import { CopyButton } from "@/components/CopyButton";
 import { Dictionary } from "@/lib/i18n/dictionary-types";
 import { ToolShell } from "./ToolShell";
@@ -96,7 +97,13 @@ export function MarkdownToHtmlTool({ dict }: { dict: Dictionary }) {
   const [input,   setInput]   = useState(SAMPLE);
   const [preview, setPreview] = useState(false);
 
+  // Same split as the Markdown Preview tool: the raw conversion output
+  // (html) is what "Copy HTML" and the read-only source view show — it's
+  // copied out, not executed here, so it stays exactly what the converter
+  // produced. The in-page preview renders it inside this origin though,
+  // so that one path goes through DOMPurify first.
   const html = useMemo(() => input ? mdToHtml(input) : "", [input]);
+  const previewHtml = useMemo(() => DOMPurify.sanitize(html), [html]);
 
   return (
     <ToolShell onClear={() => setInput("")}
@@ -120,7 +127,7 @@ export function MarkdownToHtmlTool({ dict }: { dict: Dictionary }) {
             <div className="code-surface min-h-[20rem] rounded-lg flex items-center justify-center"><EmptyToolInput /></div>
           ) : preview ? (
             <div className="code-surface min-h-[20rem] rounded-lg p-4 overflow-auto prose text-text-primary"
-              dangerouslySetInnerHTML={{ __html: html }} />
+              dangerouslySetInnerHTML={{ __html: previewHtml }} />
           ) : (
             <textarea readOnly value={html} rows={20} spellCheck={false}
               className="code-surface w-full rounded-lg p-3 font-mono text-xs text-text-primary outline-none" />
