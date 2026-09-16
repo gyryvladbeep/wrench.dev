@@ -5,6 +5,7 @@ import { getDictionary } from "@/lib/i18n/get-dictionary";
 import { allTools, getPopularTools, aiTools } from "@/lib/tools-registry";
 import { localizeTools, localizeAiTools } from "@/lib/i18n/localize";
 import { buildPageMetadata, siteConfig } from "@/lib/seo";
+import { createPublicSupabaseClient } from "@/lib/supabase/public";
 import { HeroLiveDemo } from "@/components/HeroLiveDemo";
 import { ToolCard } from "@/components/ToolCard";
 import { RecentlyUsedSection } from "@/components/RecentlyUsedSection";
@@ -16,7 +17,40 @@ export async function generateMetadata({ params }: { params: { locale: string } 
   return buildPageMetadata(locale, "/", `${siteConfig.name} — ${siteConfig.tagline}`, dict.site.description);
 }
 
-export default function HomePage({ params }: { params: { locale: string } }) {
+// Соц-proof на главной обновляется раз в час (ISR), не при каждом
+// запросе — это агрегированная публичная статистика, а не что-то
+// персональное, часовой лаг ей ничем не вредит. createPublicSupabaseClient()
+// (lib/supabase/public.ts) намеренно НЕ читает cookies() — иначе эта
+// страница, как и любая другая, использующая cookies()/headers(), стала
+// бы рендериться заново на каждый запрос, и revalidate ниже перестал бы
+// что-либо значить (см. комментарий в самом lib/supabase/public.ts).
+export const revalidate = 3600;
+
+// Показываем цифры только выше порога — на ранней стадии проекта
+// маленькое число ("3 пользователя решили 5 задач") работает против
+// доверия, а не на него; ничего не показываем, а не показываем
+// правдивый, но слабый сигнал. Пороги подобраны на глаз, не привязаны
+// ни к какой специфике продукта — если реальный рост будет быстрее
+// или медленнее ожиданий, их достаточно просто подвинуть в одном месте.
+const SOCIAL_PROOF_USERS_THRESHOLD     = 25;
+const SOCIAL_PROOF_CHALLENGES_THRESHOLD = 100;
+
+async function getPlatformStats(): Promise<{ totalUsers: number; totalSolved: number } | null> {
+  try {
+    const supabase = createPublicSupabaseClient();
+    if (!supabase) return null;
+    const { data, error } = await supabase.rpc("get_platform_stats").single();
+    if (error || !data) return null;
+    const row = data as { total_users: number; total_challenges_solved: number };
+    return { totalUsers: row.total_users, totalSolved: row.total_challenges_solved };
+  } catch {
+    // Любая сетевая/конфигурационная ошибка — соц-proof просто не
+    // показывается, не должна ронять всю главную страницу сайта.
+    return null;
+  }
+}
+
+export default async function HomePage({ params }: { params: { locale: string } }) {
   const locale = isLocale(params.locale) ? params.locale : defaultLocale;
   const dict   = getDictionary(locale);
   const isRu   = locale === "ru";
@@ -24,6 +58,10 @@ export default function HomePage({ params }: { params: { locale: string } }) {
   const popularTools  = localizeTools(getPopularTools(), locale);
   const localizedAI   = localizeAiTools(aiTools, locale);
   const totalCount    = allTools.filter((t) => t.isImplemented).length;
+
+  const stats       = await getPlatformStats();
+  const showUsers    = (stats?.totalUsers ?? 0) >= SOCIAL_PROOF_USERS_THRESHOLD;
+  const showSolved   = (stats?.totalSolved ?? 0) >= SOCIAL_PROOF_CHALLENGES_THRESHOLD;
 
   return (
     <div>
@@ -58,6 +96,22 @@ export default function HomePage({ params }: { params: { locale: string } }) {
             <span className="text-xs text-text-muted">{isRu ? "работает в браузере" : "runs in your browser"}</span>
             <span className="text-xs text-text-muted">·</span>
             <span className="text-xs text-text-muted">{isRu ? "без регистрации" : "no account needed"}</span>
+            {showUsers && (
+              <>
+                <span className="text-xs text-text-muted">·</span>
+                <span className="text-xs text-text-muted">
+                  {stats!.totalUsers}+ {isRu ? "инженеров" : "engineers"}
+                </span>
+              </>
+            )}
+            {showSolved && (
+              <>
+                <span className="text-xs text-text-muted">·</span>
+                <span className="text-xs text-text-muted">
+                  {stats!.totalSolved}+ {isRu ? "задач решено" : "challenges solved"}
+                </span>
+              </>
+            )}
           </div>
 
           <h1 className="mt-4 text-3xl font-semibold tracking-tight text-text-primary md:text-4xl">

@@ -4,11 +4,34 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { Challenge, ChallengeRole, DIFFICULTY_META, ROLE_META, TYPE_META } from "@/lib/challenges/types";
 import { Locale, localePath } from "@/lib/i18n/config";
+import { siteConfig } from "@/lib/seo";
 import { useToast } from "@/components/ui/Toast";
 import { useAuth } from "@/lib/auth/auth-context";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { CheckIcon, CloseIcon } from "@/components/icons/GameIcons";
+
+// Чисто клиентские intent-ссылки (X/LinkedIn) — без бэкенда и без API
+// соцсетей, тот же принцип, что и у остальных фич этого раунда. LinkedIn
+// share-offsite не принимает готовый текст через URL (только сам url,
+// дальше он сам подтягивает OG-теги той страницы) — это ограничение
+// самого LinkedIn, а не наше, поэтому текст передаём только в X.
+function shareLinks(isRu: boolean, locale: Locale, role: ChallengeRole, title: string, points: number) {
+  const shareUrl = `${siteConfig.url}${localePath(locale, `/challenges/${role}`)}`;
+  const text = isRu
+    ? `Только что решил задачу «${title}» на Wrench-Branch (+${points} очков). Попробуй сам:`
+    : `Just solved "${title}" on Wrench-Branch (+${points} pts). Try it yourself:`;
+  return [
+    {
+      label: isRu ? "X" : "X",
+      href: `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(shareUrl)}`,
+    },
+    {
+      label: "LinkedIn",
+      href: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`,
+    },
+  ];
+}
 
 interface Props { role: ChallengeRole; locale: Locale; }
 
@@ -328,7 +351,7 @@ export function ChallengeArena({ role, locale }: Props) {
             </div>
           )}
 
-          <div className="mt-4 flex gap-3 flex-wrap">
+          <div className="mt-4 flex gap-3 flex-wrap items-center">
             {!result.is_correct && (
               <Button variant="secondary" size="sm" onClick={() => setResult(null)}>
                 {isRu ? "Попробовать снова" : "Try again"}
@@ -337,6 +360,22 @@ export function ChallengeArena({ role, locale }: Props) {
             <Button variant="secondary" size="sm" onClick={loadNextChallenge}>
               {isRu ? "Следующая задача →" : "Next challenge →"}
             </Button>
+
+            {/* Шеринг результата — бесплатный канал роста без бэкенда:
+                чисто клиентские intent-ссылки, ничего не пишем в базу.
+                Только для решённых задач вошедшего пользователя — у гостя
+                результат не сохранён, делиться нечем (см. CTA выше). */}
+            {result.is_correct && !result.guest && (
+              <div className="ml-auto flex items-center gap-2">
+                <span className="text-xs text-text-muted">{isRu ? "Поделиться:" : "Share:"}</span>
+                {shareLinks(isRu, locale, role, title, result.points_earned).map((s) => (
+                  <a key={s.label} href={s.href} target="_blank" rel="noopener noreferrer"
+                    className="rounded border border-border px-2.5 py-1 text-xs text-text-muted transition-colors hover:border-border-focus hover:text-text-secondary">
+                    {s.label}
+                  </a>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}

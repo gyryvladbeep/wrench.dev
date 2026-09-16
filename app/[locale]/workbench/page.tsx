@@ -1,7 +1,6 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth/auth-context";
 import { useDict } from "@/lib/i18n/dict-context";
 import { localePath } from "@/lib/i18n/config";
@@ -14,6 +13,7 @@ import { WorkbenchCanvas } from "@/components/workbench/WorkbenchCanvas";
 import { WORKBENCH_UI, formatWorkbenchString } from "@/lib/i18n/workbench-content";
 import { GameIcon } from "@/components/icons/GameIcons";
 import { CopyButton } from "@/components/CopyButton";
+import { WorkbenchGuestPreview } from "@/components/workbench/WorkbenchGuestPreview";
 
 // Высота шапки сайта (см. Header.tsx: "h-12" + border-b) — используется
 // ниже, чтобы холст занимал ровно весь вьюпорт под шапкой, а не
@@ -28,9 +28,8 @@ const CANVAS_FALLBACK_HEIGHT = 480;
 const INITIAL_PANEL_ESTIMATE = { width: 540, height: 230 };
 
 export default function WorkbenchPage() {
-  const { user, loading, isSigningOut } = useAuth();
+  const { user, loading } = useAuth();
   const { dict, locale } = useDict();
-  const router = useRouter();
   const isRu = locale === "ru";
   const { isPro } = useSubscription();
   const {
@@ -133,17 +132,6 @@ export default function WorkbenchPage() {
   const [draggedWorkspaceId, setDraggedWorkspaceId] = useState<string | null>(null);
   const [overWorkspaceId, setOverWorkspaceId]       = useState<string | null>(null);
 
-  // Тот же приём, что и в /profile: ждём именно loading из useAuth(),
-  // а не свой локальный "hydrated" флаг. См. подробный разбор гонки
-  // состояний в комментарии app/[locale]/profile/page.tsx — та же
-  // логика защищает и эту страницу.
-  useEffect(() => {
-    if (loading) return;
-    if (!user) {
-      if (!isSigningOut()) router.push(localePath(locale, "/auth/login"));
-    }
-  }, [user, loading, router, locale, isSigningOut]);
-
   // Держим activeId синхронизированным со списком workbench'ей — если
   // текущий выбранный удалили (или список только что загрузился),
   // переключаемся на первый доступный.
@@ -164,7 +152,16 @@ export default function WorkbenchPage() {
       .map((tool) => localizeTool(tool, locale));
   }, [active, locale]);
 
-  if (!user || wbLoading) return null;
+  // Гость (loading уже прошло, user так и не появился) раньше уходил на
+  // /auth/login редиректом из эффекта выше — теперь вместо этого видит
+  // WorkbenchGuestPreview: тот же холст, но с локальным demo-состоянием,
+  // без единого обращения к Supabase (см. её же комментарий вверху
+  // файла). loading — это именно состояние авторизации (useAuth), а не
+  // wbLoading (загрузка самих рабочих столов) — та проверка ниже
+  // относится только к уже вошедшему пользователю.
+  if (loading) return null;
+  if (!user) return <WorkbenchGuestPreview locale={locale} dict={dict} />;
+  if (wbLoading) return null;
 
   const canCreateWorkspace = workbenches.length < maxWorkbenches;
   // window недоступен при первом серверном рендере "use client"-страницы —

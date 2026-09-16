@@ -4,6 +4,7 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { OnboardingBanner } from "@/components/OnboardingBanner";
+import { StreakRiskBanner } from "@/components/StreakRiskBanner";
 import { locales, isLocale, defaultLocale, Locale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/get-dictionary";
 import { AuthProvider } from "@/lib/auth/auth-context";
@@ -72,6 +73,7 @@ export default function LocaleLayout({
             <LangSetter lang={locale} />
             <Header />
             <OnboardingBanner />
+            <StreakRiskBanner />
             <main>{children}</main>
             <EasterEgg />
             <Footer dict={dict} locale={locale} />

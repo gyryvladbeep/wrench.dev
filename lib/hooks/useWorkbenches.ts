@@ -40,6 +40,12 @@ export const FREE_MAX_WORKBENCHES = 1;
 export const FREE_MAX_TOOLS = 6;
 export const PRO_MAX_WORKBENCHES = 5;
 export const PRO_MAX_TOOLS = 16;
+// Гостевой /workbench (WorkbenchGuestPreview.tsx) — локальный demo-холст
+// без аккаунта и без Supabase, не использует этот хук вообще. Лимит
+// сознательно ниже FREE_MAX_TOOLS — это витрина фичи, а не полноценный
+// бесплатный тариф без регистрации; после signup пользователь сразу
+// получает более щедрый FREE_MAX_TOOLS на настоящем, сохраняемом столе.
+export const GUEST_MAX_TOOLS = 4;
 
 export function useWorkbenches(isPro: boolean) {
   const { user } = useAuth();

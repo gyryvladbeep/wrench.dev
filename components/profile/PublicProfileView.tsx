@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { useAuth } from "@/lib/auth/auth-context";
 import { localePath, Locale } from "@/lib/i18n/config";
 import { ROLE_TAGS } from "@/lib/profile-roles";
 import { getBannerGradient } from "@/lib/profile-banners";
@@ -62,6 +63,7 @@ type ViewState =
 
 export function PublicProfileView({ locale, username }: PublicProfileViewProps) {
   const isRu = locale === "ru";
+  const { user } = useAuth();
   const [state, setState] = useState<ViewState>({ kind: "loading" });
 
   useEffect(() => {
@@ -209,6 +211,25 @@ export function PublicProfileView({ locale, username }: PublicProfileViewProps) 
           </div>
         </div>
       </div>
+
+      {/* CTA для гостя — раньше зашедшему по ссылке (например, из
+          README/LinkedIn) было некуда идти дальше: он видел чужой
+          профиль и ничего, что вело бы обратно на сайт. Показываем
+          только незалогиненным — у вошедшего пользователя уже есть
+          свой аккаунт, ему это предложение не нужно. */}
+      {!user && (
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-accent/30 bg-accent/10 px-4 py-3">
+          <p className="text-sm text-text-secondary">
+            {isRu
+              ? "Понравился профиль? Построй свой на Wrench-Branch."
+              : "Like what you see? Build your own profile on Wrench-Branch."}
+          </p>
+          <Link href={localePath(locale, "/auth/signup")}
+            className="shrink-0 rounded bg-accent px-4 py-2 text-xs font-medium text-accent-fg transition-colors hover:bg-amber-400">
+            {isRu ? "Зарегистрироваться" : "Sign up"}
+          </Link>
+        </div>
+      )}
 
       <div className="mt-6 space-y-6">
         {/* Wrench Score — тот же компонент, что и на приватной странице,
