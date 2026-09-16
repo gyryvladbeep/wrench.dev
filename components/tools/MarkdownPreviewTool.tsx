@@ -1,7 +1,7 @@
 "use client";
 import { useMemo, useState } from "react";
 import { marked } from "marked";
-import DOMPurify from "isomorphic-dompurify";
+import DOMPurify from "dompurify";
 import { CopyButton } from "@/components/CopyButton";
 import { Dictionary } from "@/lib/i18n/dictionary-types";
 
@@ -38,8 +38,23 @@ export function MarkdownPreviewTool({ dict }: { dict: Dictionary }) {
   // The in-page preview below is a different story: it runs whatever
   // ends up in dangerouslySetInnerHTML inside this site's own origin, so
   // that one render path gets sanitized separately.
+  //
+  // Plain `dompurify` (not isomorphic-dompurify) on purpose: this is a
+  // client-only interactive tool, so real (potentially malicious) input
+  // only ever exists after hydration, in the browser, where `window`
+  // is real and DOMPurify works natively. The one render that happens
+  // on the server (SSR of the initial page) only ever sees the
+  // hardcoded SAMPLE text above, which is safe by construction — so
+  // there's nothing worth sanitizing server-side, and the `typeof
+  // window` guard below just skips straight to it instead of pulling
+  // in a jsdom-backed sanitizer (isomorphic-dompurify) that dragged
+  // jsdom's optional `canvas` native dependency into the client bundle
+  // and broke the production build.
   const html = useMemo(() => marked(input) as string, [input]);
-  const previewHtml = useMemo(() => DOMPurify.sanitize(html), [html]);
+  const previewHtml = useMemo(
+    () => (typeof window === "undefined" ? html : DOMPurify.sanitize(html)),
+    [html]
+  );
 
   return (
     <div>

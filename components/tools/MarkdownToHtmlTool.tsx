@@ -1,6 +1,6 @@
 "use client";
 import { useMemo, useState } from "react";
-import DOMPurify from "isomorphic-dompurify";
+import DOMPurify from "dompurify";
 import { CopyButton } from "@/components/CopyButton";
 import { Dictionary } from "@/lib/i18n/dictionary-types";
 import { ToolShell } from "./ToolShell";
@@ -102,8 +102,17 @@ export function MarkdownToHtmlTool({ dict }: { dict: Dictionary }) {
   // copied out, not executed here, so it stays exactly what the converter
   // produced. The in-page preview renders it inside this origin though,
   // so that one path goes through DOMPurify first.
+  //
+  // Plain `dompurify` (see MarkdownPreviewTool.tsx for the full reasoning):
+  // real user input only ever exists client-side here, SSR only ever
+  // renders the safe hardcoded SAMPLE, and isomorphic-dompurify's jsdom
+  // dependency (optional `canvas` native module) was what broke the
+  // production build.
   const html = useMemo(() => input ? mdToHtml(input) : "", [input]);
-  const previewHtml = useMemo(() => DOMPurify.sanitize(html), [html]);
+  const previewHtml = useMemo(
+    () => (typeof window === "undefined" ? html : DOMPurify.sanitize(html)),
+    [html]
+  );
 
   return (
     <ToolShell onClear={() => setInput("")}
