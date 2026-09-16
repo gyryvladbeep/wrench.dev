@@ -1,8 +1,10 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { Dictionary } from "@/lib/i18n/dictionary-types";
 import { Locale } from "@/lib/i18n/config";
 import { Tool } from "@/lib/types";
+import { Skeleton } from "@/components/ui/Skeleton";
 
 // ── Existing tools ─────────────────────────────────────────────────────────
 import { JsonFormatterTool }        from "./JsonFormatterTool";
@@ -30,11 +32,8 @@ import { JsonSortTool }             from "./JsonSortTool";
 import { JsonCompareTool }          from "./JsonCompareTool";
 import { JsonEscapeTool }           from "./JsonEscapeTool";
 import { JsonMinifyTool }           from "./JsonMinifyTool";
-import { JsonToYamlTool }           from "./JsonToYamlTool";
 import { HashGeneratorTool }        from "./HashGeneratorTool";
 import { TextDiffTool }             from "./TextDiffTool";
-import { MarkdownPreviewTool }      from "./MarkdownPreviewTool";
-import { QrCodeGeneratorTool }      from "./QrCodeGeneratorTool";
 import { HtmlEncodeDecodeTool }      from "./HtmlEncodeDecodeTool";
 import {
   HexEncodeDecodeTool,
@@ -98,6 +97,27 @@ import { A11yCheckerTool }          from "./A11yCheckerTool";
 import { HarAnalyzerTool }          from "./HarAnalyzerTool";
 import { QaTestPlanGeneratorTool }  from "./QaTestPlanGeneratorTool";
 import { WebhookSignatureVerifierTool } from "./WebhookSignatureVerifierTool";
+
+// ── Тяжёлые тулы — через next/dynamic ────────────────────────────────────────
+// Эти три тянут за собой самые крупные из используемых на сайте библиотек
+// (marked, js-yaml, qrcode). При статическом импорте (как у остальных ~90
+// тулов выше) их код попадает в общий бандл ToolRenderer и грузится на
+// КАЖДОЙ странице тула, даже если открыт, например, json-formatter — то есть
+// не имеющий отношения к YAML/Markdown/QR посетитель всё равно качает их код.
+// dynamic() выносит каждый в отдельный chunk, который запрашивается только
+// когда реально открыт этот конкретный тул.
+const JsonToYamlTool = dynamic(
+  () => import("./JsonToYamlTool").then((m) => m.JsonToYamlTool),
+  { loading: () => <Skeleton className="h-64 w-full" /> }
+);
+const MarkdownPreviewTool = dynamic(
+  () => import("./MarkdownPreviewTool").then((m) => m.MarkdownPreviewTool),
+  { loading: () => <Skeleton className="h-64 w-full" /> }
+);
+const QrCodeGeneratorTool = dynamic(
+  () => import("./QrCodeGeneratorTool").then((m) => m.QrCodeGeneratorTool),
+  { loading: () => <Skeleton className="h-64 w-full" /> }
+);
 
 /**
  * Single "use client" boundary for all interactive tool components.

@@ -25,6 +25,12 @@ export function AiUsageBadge({ toolSlug }: { toolSlug: string }) {
       supabase.from("ai_usage").select("count").eq("user_id", user.id).eq("used_at", today).single(),
       supabase.from("subscriptions").select("plan, status").eq("user_id", user.id).single(),
     ]).then(([usage, sub]) => {
+      // Тот же принцип, что и в WrenchScoreBadge.tsx: сбой раньше просто
+      // не давал бейджу появиться, неотличимо от "лимит ещё не тронут" —
+      // логируем, чтобы сбой был виден в проде, но оставляем оптимистичный
+      // дефолт (used=0) — это UI-подсказка, не источник правды о лимите,
+      // сам лимит проверяется на сервере при реальном запросе к AI.
+      if (usage.error || sub.error) console.error("AiUsageBadge: failed to load", usage.error || sub.error);
       setUsed(usage.data?.count ?? 0);
       setIsPro(sub.data?.plan === "pro" && sub.data?.status === "active");
       setLoaded(true);

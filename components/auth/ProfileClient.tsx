@@ -7,6 +7,7 @@ import { useAuth } from "@/lib/auth/auth-context";
 import { Dictionary } from "@/lib/i18n/dictionary-types";
 import { Locale, localePath } from "@/lib/i18n/config";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/components/ui/Toast";
 
 interface UsageRow {
   tool_slug: string;
@@ -18,12 +19,15 @@ export function ProfileClient({ dict, locale }: { dict: Dictionary; locale: Loca
   const { user, signOut, loading } = useAuth();
   const router = useRouter();
   const supabase = createClient();
+  const { error: toastError } = useToast();
   const t = dict.auth;
+  const isRu = locale === "ru";
 
   const [displayName, setDisplayName] = useState("");
   const [saving, setSaving] = useState(false);
   const [savedMsg, setSavedMsg] = useState(false);
   const [usage, setUsage] = useState<UsageRow[]>([]);
+  const [usageLoadError, setUsageLoadError] = useState(false);
   const [memberSince, setMemberSince] = useState("");
 
   // Redirect unauthenticated users
@@ -44,23 +48,32 @@ export function ProfileClient({ dict, locale }: { dict: Dictionary; locale: Loca
       )
     );
 
-    // Load profile display name
+    // Load profile display name. Ошибка здесь не показывается пользователю —
+    // поле просто остаётся с плейсхолдером (user.email), не сломанным ничем
+    // видимым — но раньше сбой не оставлял вообще никакого следа, поэтому
+    // console.error ниже: чтобы сбой было видно в проде, а не приходилось
+    // гадать, это баг или пользователь действительно не задавал имя.
     supabase
       .from("profiles")
       .select("display_name")
       .eq("id", user.id)
       .single()
-      .then(({ data }: { data: { display_name?: string } | null }) => {
+      .then(({ data, error }: { data: { display_name?: string } | null; error: unknown }) => {
+        if (error) { console.error("ProfileClient: failed to load display name", error); return; }
         if (data?.display_name) setDisplayName(data.display_name);
       });
 
-    // Load usage stats grouped by tool
+    // Load usage stats grouped by tool — тут сбой уже видим пользователю
+    // (usageLoadError ниже, в рендере), а не только в консоли: раньше
+    // список тулов просто оставался пустым, неотличимо от "ничем не
+    // пользовался".
     supabase
       .from("tool_usage_events")
       .select("tool_slug, created_at")
       .eq("user_id", user.id)
       .order("created_at", { ascending: false })
-      .then(({ data }: { data: { tool_slug: string; created_at: string }[] | null }) => {
+      .then(({ data, error }: { data: { tool_slug: string; created_at: string }[] | null; error: unknown }) => {
+        if (error) { console.error("ProfileClient: failed to load usage stats", error); setUsageLoadError(true); return; }
         if (!data) return;
         const map = new Map<string, { uses: number; last_used: string }>();
         for (const row of data) {
@@ -83,11 +96,20 @@ export function ProfileClient({ dict, locale }: { dict: Dictionary; locale: Loca
     e.preventDefault();
     if (!user) return;
     setSaving(true);
-    await supabase
+    const { error } = await supabase
       .from("profiles")
       .update({ display_name: displayName, updated_at: new Date().toISOString() })
       .eq("id", user.id);
     setSaving(false);
+    // Раньше ошибка апдейта игнорировалась и кнопка всё равно показывала
+    // "Saved" — ложноположительный результат хуже отсутствия обратной
+    // связи: пользователь уходит уверенным, что имя сохранилось, хотя
+    // на сервере ничего не изменилось.
+    if (error) {
+      console.error("ProfileClient: failed to save display name", error);
+      toastError(isRu ? "Не удалось сохранить" : "Failed to save");
+      return;
+    }
     setSavedMsg(true);
     setTimeout(() => setSavedMsg(false), 2000);
   }
@@ -153,7 +175,11 @@ export function ProfileClient({ dict, locale }: { dict: Dictionary; locale: Loca
       {/* Usage stats */}
       <div className="mt-8">
         <h2 className="text-lg font-medium text-text-primary">{t.toolUsageHeading}</h2>
-        {usage.length === 0 ? (
+        {usageLoadError ? (
+          <p className="mt-3 text-sm text-error">
+            {isRu ? "Не удалось загрузить статистику использования." : "Couldn't load usage stats."}
+          </p>
+        ) : usage.length === 0 ? (
           <p className="mt-3 text-sm text-text-muted">{t.noUsageYet}</p>
         ) : (
           <div className="mt-3 space-y-2">

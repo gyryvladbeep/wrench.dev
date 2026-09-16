@@ -16,7 +16,14 @@ export function WrenchScoreBadge() {
       supabase.from("user_streaks").select("total_points,total_solved,current_streak,longest_streak").eq("user_id", user.id).single(),
       supabase.from("tool_history").select("id", { count:"exact", head:true }).eq("user_id", user.id),
       supabase.from("achievements").select("id", { count:"exact", head:true }).eq("user_id", user.id),
-    ]).then(([{ data: streak }, { count: tools }, { count: badges }]) => {
+    ]).then(([{ data: streak, error: streakErr }, { count: tools, error: toolsErr }, { count: badges, error: badgesErr }]) => {
+      // Раньше при сбое сети/базы бейдж просто не появлялся — неотличимо
+      // от "у пользователя правда нет очков", и в проде такой сбой не
+      // отличить от нормального состояния без единой строчки в логах.
+      // console.error, а не видимое сообщение об ошибке — бейдж в шапке
+      // декоративный, не критичная для работы сайта информация.
+      const err = streakErr || toolsErr || badgesErr;
+      if (err) console.error("WrenchScoreBadge: failed to load", err);
       if (!streak) return;
       setScore(calcWrenchScore({
         total_points:   streak.total_points   ?? 0,

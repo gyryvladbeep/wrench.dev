@@ -171,9 +171,17 @@ export function InterviewPrepClient({ locale }: Props) {
                 </div>
               </div>
 
-              {/* Card */}
+              {/* Card — role="button"/tabIndex/onKeyDown: без них карточка
+                  кликалась только мышью, с клавиатуры перевернуть её было
+                  невозможно вообще. */}
               <div onClick={() => setFlipped(f => !f)}
-                className="cursor-pointer rounded-xl border border-border bg-surface p-8 min-h-[220px] flex flex-col items-center justify-center text-center transition-all hover:border-border-focus">
+                role="button" tabIndex={0}
+                aria-pressed={flipped}
+                aria-label={isRu ? "Перевернуть карточку" : "Flip card"}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setFlipped(f => !f); }
+                }}
+                className="cursor-pointer rounded-xl border border-border bg-surface p-8 min-h-[220px] flex flex-col items-center justify-center text-center transition-all hover:border-border-focus focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent">
                 {!flipped ? (
                   <div className="space-y-4">
                     <p className="text-lg font-medium text-text-primary leading-relaxed">
@@ -229,7 +237,18 @@ export function InterviewPrepClient({ locale }: Props) {
             return (
               <div key={item.id}
                 className={`rounded-lg border transition-colors ${isKnown ? "border-green-500/20 bg-green-500/5 opacity-60" : "border-border bg-surface hover:border-border-focus"}`}>
-                <div className="flex items-start gap-3 p-4 cursor-pointer" onClick={() => toggleExpand(item.id)}>
+                {/* role="button"/tabIndex/onKeyDown — та же причина, что и у
+                    карточки в режиме флэш-карт выше: без них разворачивание
+                    ответа было недоступно с клавиатуры. Кнопка "отметить
+                    известным" внутри — свой независимый control со
+                    stopPropagation, это не меняется. */}
+                <div className="flex items-start gap-3 p-4 cursor-pointer"
+                  onClick={() => toggleExpand(item.id)}
+                  role="button" tabIndex={0}
+                  aria-expanded={isOpen}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleExpand(item.id); }
+                  }}>
                   <div className="flex-1 min-w-0">
                     <div className="flex flex-wrap items-center gap-2 mb-1">
                       <span className={`rounded border px-1.5 py-px text-[10px] font-medium ${DIFFICULTY_LABELS[item.difficulty].colorClass}`}>
