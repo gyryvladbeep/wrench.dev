@@ -28,7 +28,11 @@ export class ApiRequestBuilderPage {
     this.statusValue = page.locator("span", { hasText: "Status:" }).locator("span.font-medium");
     this.timeValue = page.getByText(/Time: \d+ms/);
     this.responseBody = page.locator("textarea[readonly]");
-    this.requestPreviewToggle = page.locator("summary");
+    // Точный текст, а не просто page.locator("summary") — с тех пор как у
+    // этого тула появились faqs, на странице есть второй <summary> (в
+    // FAQ-аккордеоне из ToolLayout.tsx), и нестрогий локатор стал падать
+    // с strict mode violation (resolved to 2 elements).
+    this.requestPreviewToggle = page.getByText("Request preview", { exact: true });
     this.requestPreview = page.locator("details pre");
   }
 
