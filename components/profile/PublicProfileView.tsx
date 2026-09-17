@@ -29,6 +29,11 @@ interface PublicProfile {
   pinned_challenge_ids:  string[];
   tech_stack:            string[];
   location:              string | null;
+  // Достижения как статус — supabase/achievements-status-migration.sql.
+  // Публично видна ТОЛЬКО эта одна колонка (под уже существующей
+  // profiles_select_public), а не весь список заработанных бейджей —
+  // см. подробное объяснение в самой миграции.
+  equipped_badge_id:     string | null;
 }
 
 interface Stats {
@@ -84,7 +89,7 @@ export function PublicProfileView({ locale, username }: PublicProfileViewProps) 
     // проверки доступа, не дублируем её в JS.
     supabase
       .from("profiles")
-      .select("id, username, display_name, bio, avatar_color, avatar_emblem, role_tag, banner_gradient, tagline, github_url, linkedin_url, website_url, pinned_challenge_ids, tech_stack, location")
+      .select("id, username, display_name, bio, avatar_color, avatar_emblem, role_tag, banner_gradient, tagline, github_url, linkedin_url, website_url, pinned_challenge_ids, tech_stack, location, equipped_badge_id")
       .eq("username", username)
       .single()
       .then(async ({ data: profile, error }: { data: PublicProfile | null; error: unknown }) => {
@@ -159,6 +164,15 @@ export function PublicProfileView({ locale, username }: PublicProfileViewProps) 
   // Отложено, а не забыто.
   const badges = stats ? checkAchievements({ ...stats, isPro: false }) : [];
 
+  // Статус-бейдж (equipped_badge_id) — единственное, что публично видно
+  // из "когда-либо заработанного" набора владельца (не только из этого
+  // урезанного live-пересчёта выше): он мог быть заработан через
+  // избранное/рабочие столы/историю инструментов — данные, которые
+  // здесь, на чужом публичном профиле, недоступны и не пересчитываются.
+  // Достаточно того, что id один раз прошёл проверку FK на БД-уровне
+  // (profiles_equipped_badge_fk) при экипировке — см. миграцию.
+  const equippedBadge = profile.equipped_badge_id ? BADGES.find((b) => b.id === profile.equipped_badge_id) : null;
+
   const links = [
     { url: profile.github_url,   label: "GitHub" },
     { url: profile.linkedin_url, label: "LinkedIn" },
@@ -213,6 +227,13 @@ export function PublicProfileView({ locale, username }: PublicProfileViewProps) 
             )}
 
             <div className="mt-3 flex flex-wrap items-center gap-2">
+              {equippedBadge && (
+                <span title={isRu ? equippedBadge.descriptionRu : equippedBadge.description}
+                  className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium ${BADGE_COLOR[equippedBadge.color] ?? BADGE_COLOR.amber}`}>
+                  <GameIcon id={equippedBadge.icon} size={12} />
+                  {isRu ? equippedBadge.labelRu : equippedBadge.label}
+                </span>
+              )}
               {role && (
                 <span className="rounded border border-border px-2 py-0.5 text-xs text-text-muted">
                   {isRu ? role.labelRu : role.label}

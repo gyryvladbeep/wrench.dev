@@ -2,6 +2,7 @@
 import { AvatarGlyph } from "@/components/profile/AvatarGlyph";
 import { GameIcon } from "@/components/icons/GameIcons";
 import { ExternalLinkIcon } from "@/components/icons/GameIcons";
+import { BADGES, BADGE_COLOR } from "@/lib/achievements";
 import type { WrenchLevel } from "@/lib/wrench-score";
 import type { BannerGradient } from "@/lib/profile-banners";
 
@@ -22,6 +23,11 @@ interface ProfileHeroProps {
   // на бесплатный фон по умолчанию (свечение в цвет уровня, см. ниже).
   bannerGradient:    BannerGradient | null;
   publicProfileUrl:  string;
+  // Достижения как статус — id из lib/achievements.ts BADGES или null,
+  // выбирается на вкладке Badges/Settings (см. equipBadge() в
+  // app/[locale]/profile/page.tsx). Показывается здесь как подтверждение
+  // того же самого чипа, что увидят другие на публичном профиле.
+  equippedBadgeId:   string | null;
   isRu:              boolean;
   onSignOut:         () => void;
 }
@@ -36,8 +42,9 @@ interface ProfileHeroProps {
 // менять тут ничего не придётся, только откуда приходит `bannerGradient`.
 export function ProfileHero({
   displayName, username, email, tagline, bio, avatarColor, avatarEmblem, initials,
-  roleLabel, isPro, level, score, bannerGradient, publicProfileUrl, isRu, onSignOut,
+  roleLabel, isPro, level, score, bannerGradient, publicProfileUrl, equippedBadgeId, isRu, onSignOut,
 }: ProfileHeroProps) {
+  const equippedBadge = equippedBadgeId ? BADGES.find((b) => b.id === equippedBadgeId) : null;
   return (
     <div className="relative isolate mb-6 overflow-hidden rounded-2xl border border-border">
       {/* ═══ Фон — см. комментарий у типа выше ═══
@@ -118,6 +125,13 @@ export function ProfileHero({
               {isRu ? level.labelRu : level.label}
               <span className="opacity-70">· {score}</span>
             </span>
+            {equippedBadge && (
+              <span title={isRu ? equippedBadge.descriptionRu : equippedBadge.description}
+                className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium ${BADGE_COLOR[equippedBadge.color] ?? BADGE_COLOR.amber}`}>
+                <GameIcon id={equippedBadge.icon} size={12} />
+                {isRu ? equippedBadge.labelRu : equippedBadge.label}
+              </span>
+            )}
             {roleLabel && (
               <span className="rounded border border-border px-2 py-0.5 text-xs text-text-muted">{roleLabel}</span>
             )}

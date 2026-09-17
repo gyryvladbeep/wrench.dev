@@ -1,5 +1,5 @@
 "use client";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth/auth-context";
@@ -52,6 +52,11 @@ interface Profile {
   // location — свободный текст, тот же принцип, что и у tagline.
   tech_stack:           string[];
   location:             string | null;
+  // Достижения как статус — supabase/achievements-status-migration.sql.
+  // id из lib/achievements.ts BADGES, или null — см. эквип-пикер в
+  // Settings ниже. На БД-уровне ограничен FK на achievements(user_id,
+  // badge_id): выставить сюда можно только реально заработанный бейдж.
+  equipped_badge_id:    string | null;
 }
 
 // Решённая задача, доступная для закрепления на публичном профиле (см.
@@ -138,12 +143,18 @@ export default function ProfilePage() {
     username: "", display_name: "", bio: "", avatar_color: "#f59e0b", avatar_emblem: null, role_tag: "developer",
     is_public: true, banner_gradient: null, tagline: null,
     github_url: null, linkedin_url: null, website_url: null, pinned_challenge_ids: [],
-    tech_stack: [], location: null,
+    tech_stack: [], location: null, equipped_badge_id: null,
   });
   const [stats,    setStats]    = useState<Stats | null>(null);
   const [history,  setHistory]  = useState<ToolHistory[]>([]);
   const [activity, setActivity] = useState<Record<string, number>>({});
   const [badges,   setBadges]   = useState<string[]>([]);
+  // Id бейджей, когда-либо реально ЗАПИСАННЫХ в achievements (не то же
+  // самое, что badges выше — badges это объединение этого списка с
+  // живым пересчётом checkAchievements(), см. эффект ниже). Нужен
+  // отдельно, чтобы отличать "уже точно есть в БД" от "видим впервые в
+  // этой загрузке" — не переупсертить одно и то же на каждый ре-рендер.
+  const [persistedBadgeIds, setPersistedBadgeIds] = useState<string[]>([]);
   // Решённые задачи текущего пользователя — источник для пикера
   // "закрепить на публичном профиле" в Settings. Не все решённые задачи
   // сразу видны там же на странице — их может быть сотни; выбор ниже
@@ -179,7 +190,7 @@ export default function ProfilePage() {
     const supabase = createClient();
     const today    = new Date().toISOString().slice(0, 10);
 
-    const [{ data: prof }, { data: streak }, { data: hist }, { data: usage }, { data: attempts }] = await Promise.all([
+    const [{ data: prof }, { data: streak }, { data: hist }, { data: usage }, { data: attempts }, { data: earnedRows }] = await Promise.all([
       supabase.from("profiles").select("*").eq("id", user.id).single(),
       supabase.from("user_streaks").select("*").eq("user_id", user.id).single(),
       supabase.from("tool_history").select("tool_slug, used_at").eq("user_id", user.id).order("used_at", { ascending: false }).limit(50),
@@ -192,19 +203,15 @@ export default function ProfilePage() {
       supabase.from("challenge_attempts")
         .select("completed_at, challenges(id, title, title_ru, role, difficulty, points)")
         .eq("user_id", user.id).eq("is_correct", true),
+      // Бейджи, когда-либо реально записанные в achievements — см.
+      // supabase/achievements-status-migration.sql и комментарий у
+      // useEffect(computeBadges) ниже про объединение с живым пересчётом.
+      supabase.from("achievements").select("badge_id").eq("user_id", user.id),
     ]);
 
     if (prof) setProfile(prof as Profile);
-    if (streak) {
-      setStats(streak as Stats);
-      const earned = checkAchievements({
-        total_solved:    streak.total_solved,
-        total_points:    streak.total_points,
-        current_streak:  streak.current_streak,
-        isPro,
-      });
-      setBadges(earned);
-    }
+    if (streak) setStats(streak as Stats);
+    if (earnedRows) setPersistedBadgeIds((earnedRows as { badge_id: string }[]).map((r) => r.badge_id));
     if (hist) setHistory(hist as ToolHistory[]);
     if (usage) setAiUsed((usage as { count: number }).count ?? 0);
 
@@ -274,6 +281,74 @@ export default function ProfilePage() {
     load();
   }, [user, loading, router, locale, load, isSigningOut]);
 
+  // ═══════════════════════════════════════════════════════════════
+  // Достижения как статус: живой пересчёт + то, что уже когда-либо
+  // записано в achievements (persistedBadgeIds, см. load() выше) —
+  // объединение, а не замена, чтобы заработанный однажды бейдж не
+  // пропадал при сбросе current_streak и т.п. (см. подробный комментарий
+  // над checkAchievements() в lib/achievements.ts про исходную причину
+  // этой правки). Отдельный эффект, а не часть load(): favorites и
+  // workbenchList приходят из своих хуков (useFavorites/useWorkbenches)
+  // и догружаются независимо, иногда позже, чем отрабатывает load().
+  const upsertedRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    if (!user || !stats) return;
+
+    const toolCounts = new Map<string, number>();
+    history.forEach((h) => toolCounts.set(h.tool_slug, (toolCounts.get(h.tool_slug) ?? 0) + 1));
+    const maxSingleToolUses = toolCounts.size ? Math.max(...toolCounts.values()) : 0;
+
+    // used_at — timestamptz из tool_history, JS Date парсит его в UTC-
+    // эквивалент сам; часы/день недели берём через getUTC*, чтобы не
+    // зависеть от таймзоны браузера того, кто сейчас смотрит страницу
+    // (см. описания insomniac/weekend_warrior в lib/achievements.ts —
+    // они намеренно сформулированы как "UTC", а не "твоей ночью").
+    const usedNightHours = history.some((h) => new Date(h.used_at).getUTCHours() < 5);
+    const usedWeekend    = history.some((h) => [0, 6].includes(new Date(h.used_at).getUTCDay()));
+
+    const qaSolved       = solvedChallenges.filter((c) => c.role === "qa").length;
+    const frontendSolved = solvedChallenges.filter((c) => c.role === "frontend").length;
+    const backendSolved  = solvedChallenges.filter((c) => c.role === "backend").length;
+    const hardSolved     = solvedChallenges.filter((c) => c.difficulty === "hard").length;
+    const workbenchToolsCount = workbenchList.reduce((sum, w) => sum + w.tool_slugs.length, 0);
+
+    const earned = checkAchievements({
+      total_solved:   stats.total_solved,
+      total_points:   stats.total_points,
+      current_streak: stats.current_streak,
+      longest_streak: stats.longest_streak,
+      qa_solved: qaSolved, frontend_solved: frontendSolved, backend_solved: backendSolved, hard_solved: hardSolved,
+      isPro,
+      favorites_count: favorites.length,
+      workbench_count: workbenchList.length,
+      workbench_tools_count: workbenchToolsCount,
+      distinct_tools_used: toolCounts.size,
+      max_single_tool_uses: maxSingleToolUses,
+      used_night_hours: usedNightHours,
+      used_weekend: usedWeekend,
+      account_created_at: user.created_at,
+    });
+
+    setBadges(Array.from(new Set([...earned, ...persistedBadgeIds])));
+
+    // Пишем в achievements только то, что реально новое: не в
+    // persistedBadgeIds (ещё нет в БД) и ещё не отправлялось в этом
+    // сеансе (upsertedRef) — сам upsert идемпотентен (ON CONFLICT DO
+    // NOTHING через существующий UNIQUE(user_id, badge_id)), это просто
+    // чтобы не дёргать сеть на каждое изменение зависимостей эффекта.
+    const toWrite = earned.filter((id) => !persistedBadgeIds.includes(id) && !upsertedRef.current.has(id));
+    if (toWrite.length) {
+      toWrite.forEach((id) => upsertedRef.current.add(id));
+      const supabase = createClient();
+      supabase.from("achievements")
+        .upsert(toWrite.map((badge_id) => ({ user_id: user.id, badge_id })), { onConflict: "user_id,badge_id", ignoreDuplicates: true })
+        .then(({ error }: { error: { message: string } | null }) => {
+          if (error) { console.error("achievements upsert failed", error); return; }
+          setPersistedBadgeIds((prev) => Array.from(new Set([...prev, ...toWrite])));
+        });
+    }
+  }, [user, stats, history, solvedChallenges, favorites, workbenchList, isPro, persistedBadgeIds]);
+
   // Тоггл закрепления задачи на публичном профиле — если задача уже
   // закреплена, снимаем без ограничений; если нет и лимит MAX_PINNED уже
   // исчерпан, клик молча ничего не делает (кнопка сама выглядит disabled
@@ -298,6 +373,24 @@ export default function ProfilePage() {
       if (p.tech_stack.length >= MAX_STACK_TAGS) return p;
       return { ...p, tech_stack: [...p.tech_stack, tagId] };
     });
+  }
+
+  // Экипировать бейдж как публичный статус (или снять — badgeId === null)
+  // — отдельное немедленное сохранение, а не часть общего saveProfile()
+  // ниже: это однокликовое действие (как аватарка/баннер чуть выше по
+  // тому же принципу мгновенного применения), и странно было бы, если бы
+  // выбор бейджа "не сохранился", потому что человек не нажал отдельную
+  // кнопку "Сохранить" в самом низу вкладки Settings ради текста bio.
+  // Валидность значения (что badgeId реально среди заработанных) не
+  // проверяем здесь отдельно — сам пикер ниже предлагает только id из
+  // badges, а на уровне БД это дополнительно гарантирует FK
+  // profiles_equipped_badge_fk (см. supabase/achievements-status-migration.sql).
+  async function equipBadge(badgeId: string | null) {
+    if (!user) return;
+    setProfile((p) => ({ ...p, equipped_badge_id: badgeId }));
+    const supabase = createClient();
+    const { error } = await supabase.from("profiles").update({ equipped_badge_id: badgeId }).eq("id", user.id);
+    if (error) console.error("equipBadge: update failed", error);
   }
 
   async function saveProfile() {
@@ -422,6 +515,7 @@ export default function ProfilePage() {
         score={score}
         bannerGradient={banner}
         publicProfileUrl={profile.is_public ? publicProfileUrl : ""}
+        equippedBadgeId={profile.equipped_badge_id}
         isRu={isRu}
         onSignOut={() => { signOut(); router.push(localePath(locale, "/")); }}
       />
@@ -632,24 +726,38 @@ export default function ProfilePage() {
 
       {/* Badges tab */}
       {tab === "badges" && (
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          {BADGES.map((b) => {
-            const earned = badges.includes(b.id);
-            return (
-              <div key={b.id} className={`flex items-start gap-3 rounded-lg border p-4 transition-colors ${earned ? `${BADGE_COLOR[b.color] ?? "border-border bg-surface"} card-shine` : "border-border bg-surface opacity-40"}`}>
-                <GameIcon id={b.icon} size={24} />
-                <div>
-                  <p className={`text-sm font-semibold ${earned ? "" : "text-text-muted"}`}>
-                    {isRu ? b.labelRu : b.label}
-                    {earned && <span className="ml-2 inline-flex align-middle opacity-70"><CheckIcon size={11} /></span>}
-                  </p>
-                  <p className="text-xs text-text-muted mt-0.5">
-                    {isRu ? b.descriptionRu : b.description}
-                  </p>
+        <div className="space-y-3">
+          <p className="text-xs text-text-muted">
+            {isRu
+              ? "Заработанный бейдж можно экипировать как публичный статус — он появится на профиле /u/username, который видят другие."
+              : "Equip an earned badge as your public status — it shows up on the /u/username profile others see."}
+          </p>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            {BADGES.map((b) => {
+              const earned   = badges.includes(b.id);
+              const equipped = profile.equipped_badge_id === b.id;
+              return (
+                <div key={b.id} className={`flex items-start gap-3 rounded-lg border p-4 transition-colors ${earned ? `${BADGE_COLOR[b.color] ?? "border-border bg-surface"} card-shine` : "border-border bg-surface opacity-40"} ${equipped ? "ring-2 ring-accent" : ""}`}>
+                  <GameIcon id={b.icon} size={24} />
+                  <div className="min-w-0 flex-1">
+                    <p className={`text-sm font-semibold ${earned ? "" : "text-text-muted"}`}>
+                      {isRu ? b.labelRu : b.label}
+                      {earned && <span className="ml-2 inline-flex align-middle opacity-70"><CheckIcon size={11} /></span>}
+                    </p>
+                    <p className="text-xs text-text-muted mt-0.5">
+                      {isRu ? b.descriptionRu : b.description}
+                    </p>
+                    {earned && (
+                      <button onClick={() => equipBadge(equipped ? null : b.id)}
+                        className={`mt-2 rounded px-2 py-1 text-xs font-medium transition-colors ${equipped ? "bg-accent text-accent-fg" : "border border-border text-text-muted hover:border-border-focus hover:text-text-secondary"}`}>
+                        {equipped ? (isRu ? "Экипирован — снять" : "Equipped — unequip") : (isRu ? "Сделать статусом" : "Equip as status")}
+                      </button>
+                    )}
+                  </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
       )}
 
