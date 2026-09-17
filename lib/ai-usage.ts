@@ -7,7 +7,7 @@ export async function checkAiUsage(userId: string, toolSlug: string): Promise<{
   remaining: number;
   isPro: boolean;
 }> {
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
 
   // Check if Pro
   const { data: sub } = await supabase
@@ -35,7 +35,7 @@ export async function checkAiUsage(userId: string, toolSlug: string): Promise<{
 }
 
 export async function incrementAiUsage(userId: string, toolSlug: string): Promise<void> {
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
   const today    = new Date().toISOString().slice(0, 10);
 
   await supabase.from("ai_usage").upsert({

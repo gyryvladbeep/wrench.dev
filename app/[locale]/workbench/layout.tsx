@@ -10,7 +10,8 @@ import { buildPageMetadata } from "@/lib/seo";
 // пропущен в sitemap.ts (в отличие от /workbench/gallery — публичного
 // каталога чужих рабочих столов, чья generateMetadata ниже по дереву
 // явно перекрывает этот noindex через свой собственный robots).
-export async function generateMetadata({ params }: { params: { locale: string } }): Promise<Metadata> {
+export async function generateMetadata(props: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const params = await props.params;
   const locale = isLocale(params.locale) ? params.locale : defaultLocale;
   const isRu   = locale === "ru";
   // Заголовок без "— Wrench-Branch" — его добавляет один раз шаблон

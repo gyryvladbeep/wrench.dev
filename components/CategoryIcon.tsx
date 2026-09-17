@@ -1,3 +1,4 @@
+import type { JSX } from "react";
 import { ToolCategory } from "@/lib/types";
 
 interface IconProps {

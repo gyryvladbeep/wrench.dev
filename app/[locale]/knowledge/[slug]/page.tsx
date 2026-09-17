@@ -12,22 +12,24 @@ export function generateStaticParams() {
   );
 }
 
-export async function generateMetadata({
-  params,
-}: {
-  params: { locale: string; slug: string };
-}): Promise<Metadata> {
+export async function generateMetadata(
+  props: {
+    params: Promise<{ locale: string; slug: string }>;
+  }
+): Promise<Metadata> {
+  const params = await props.params;
   const locale = isLocale(params.locale) ? params.locale : defaultLocale;
   const article = getArticleBySlug(params.slug);
   if (!article) return {};
   return buildArticleMetadata(article, locale);
 }
 
-export default function ArticlePage({
-  params,
-}: {
-  params: { locale: string; slug: string };
-}) {
+export default async function ArticlePage(
+  props: {
+    params: Promise<{ locale: string; slug: string }>;
+  }
+) {
+  const params = await props.params;
   const locale = isLocale(params.locale) ? params.locale : defaultLocale;
   const isRu   = locale === "ru";
 

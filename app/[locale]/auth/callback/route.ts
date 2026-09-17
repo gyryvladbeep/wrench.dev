@@ -7,17 +7,15 @@ import { isLocale, defaultLocale, localePath } from "@/lib/i18n/config";
  * it redirects here with a `code` param. We exchange it for a session, then
  * redirect the user to the right page.
  */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { locale: string } }
-) {
+export async function GET(request: NextRequest, props: { params: Promise<{ locale: string }> }) {
+  const params = await props.params;
   const locale = isLocale(params.locale) ? params.locale : defaultLocale;
   const { searchParams } = new URL(request.url);
   const code = searchParams.get("code");
   const next = searchParams.get("next") ?? localePath(locale, "/profile");
 
   if (code) {
-    const supabase = createServerSupabaseClient();
+    const supabase = await createServerSupabaseClient();
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
       return NextResponse.redirect(new URL(next, request.url));

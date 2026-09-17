@@ -21,7 +21,8 @@ export function generateStaticParams() {
   return locales.flatMap((locale) => categories.map((c) => ({ locale, category: c.slug })));
 }
 
-export async function generateMetadata({ params }: { params: { locale: string; category: string } }): Promise<Metadata> {
+export async function generateMetadata(props: { params: Promise<{ locale: string; category: string }> }): Promise<Metadata> {
+  const params = await props.params;
   const locale = isLocale(params.locale) ? params.locale : defaultLocale;
   const cat = getCategoryBySlug(params.category as ToolCategory);
   if (!cat) return {};
@@ -29,7 +30,8 @@ export async function generateMetadata({ params }: { params: { locale: string; c
   return buildCategoryMetadata(locale, cat.slug, categoryHeading(loc.name, locale), loc.description);
 }
 
-export default function CategoryPage({ params }: { params: { locale: string; category: string } }) {
+export default async function CategoryPage(props: { params: Promise<{ locale: string; category: string }> }) {
+  const params = await props.params;
   const locale = isLocale(params.locale) ? params.locale : defaultLocale;
   const dict   = getDictionary(locale);
   const isRu   = locale === "ru";

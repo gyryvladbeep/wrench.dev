@@ -14,7 +14,8 @@ export function generateStaticParams() {
   );
 }
 
-export async function generateMetadata({ params }: { params: { locale: string; role: string } }): Promise<Metadata> {
+export async function generateMetadata(props: { params: Promise<{ locale: string; role: string }> }): Promise<Metadata> {
+  const params = await props.params;
   const locale = isLocale(params.locale) ? params.locale : defaultLocale;
   const isRu   = locale === "ru";
   const meta   = ROLE_META[params.role as ChallengeRole];
@@ -25,7 +26,8 @@ export async function generateMetadata({ params }: { params: { locale: string; r
   );
 }
 
-export default function ChallengeRolePage({ params }: { params: { locale: string; role: string } }) {
+export default async function ChallengeRolePage(props: { params: Promise<{ locale: string; role: string }> }) {
+  const params = await props.params;
   const locale = isLocale(params.locale) ? params.locale : defaultLocale;
   const isRu   = locale === "ru";
   if (!VALID_ROLES.includes(params.role as ChallengeRole)) notFound();

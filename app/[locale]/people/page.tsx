@@ -6,7 +6,8 @@ import { PeopleDirectory } from "@/components/PeopleDirectory";
 // Та же причина, что и у /u/[username]: осознанно НЕ закрываем от
 // индексации (в отличие от /w/[id], произвольного пользовательского
 // контента) — это каталог, который и должен находиться поисковиком.
-export async function generateMetadata({ params }: { params: { locale: string } }): Promise<Metadata> {
+export async function generateMetadata(props: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const params = await props.params;
   const locale = isLocale(params.locale) ? params.locale : defaultLocale;
   const isRu   = locale === "ru";
   return buildPageMetadata(locale, "/people",
@@ -17,7 +18,8 @@ export async function generateMetadata({ params }: { params: { locale: string } 
   );
 }
 
-export default function PeoplePage({ params }: { params: { locale: string } }) {
+export default async function PeoplePage(props: { params: Promise<{ locale: string }> }) {
+  const params = await props.params;
   const locale = isLocale(params.locale) ? params.locale : defaultLocale;
   return <PeopleDirectory locale={locale} />;
 }

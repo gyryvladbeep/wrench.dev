@@ -11,7 +11,8 @@ import { ToolCard } from "@/components/ToolCard";
 import { RecentlyUsedSection } from "@/components/RecentlyUsedSection";
 import { DisciplineSectionsClient } from "@/components/DisciplineSectionsClient";
 
-export async function generateMetadata({ params }: { params: { locale: string } }): Promise<Metadata> {
+export async function generateMetadata(props: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const params = await props.params;
   const locale = isLocale(params.locale) ? params.locale : defaultLocale;
   const dict   = getDictionary(locale);
   return buildPageMetadata(locale, "/", `${siteConfig.name} — ${siteConfig.tagline}`, dict.site.description);
@@ -50,7 +51,8 @@ async function getPlatformStats(): Promise<{ totalUsers: number; totalSolved: nu
   }
 }
 
-export default async function HomePage({ params }: { params: { locale: string } }) {
+export default async function HomePage(props: { params: Promise<{ locale: string }> }) {
+  const params = await props.params;
   const locale = isLocale(params.locale) ? params.locale : defaultLocale;
   const dict   = getDictionary(locale);
   const isRu   = locale === "ru";

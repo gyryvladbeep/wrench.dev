@@ -16,7 +16,7 @@ export interface AiLimitResult {
  * If free → check ai_usage table for today's count.
  */
 export async function checkAiLimit(): Promise<AiLimitResult> {
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) return { allowed: false, remaining: 0, isPro: false };
@@ -49,7 +49,7 @@ export async function checkAiLimit(): Promise<AiLimitResult> {
  * Increment AI usage counter for today.
  */
 export async function incrementAiUsage(): Promise<void> {
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return;
 

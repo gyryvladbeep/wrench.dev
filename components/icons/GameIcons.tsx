@@ -21,6 +21,8 @@
 // Проверено визуально: рендерил набор в отдельном HTML и смотрел
 // скриншотом (headless Chromium) прежде чем сохранять.
 
+import type { JSX } from "react";
+
 interface IconProps {
   className?: string;
   size?: number;

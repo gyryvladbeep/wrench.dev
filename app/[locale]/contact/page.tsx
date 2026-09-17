@@ -3,7 +3,8 @@ import Link from "next/link";
 import { isLocale, defaultLocale, localePath } from "@/lib/i18n/config";
 import { BugIcon, LightbulbIcon, BriefcaseIcon, LockIcon, ClipboardIcon, MailIcon } from "@/components/icons/GameIcons";
 
-export async function generateMetadata({ params }: { params: { locale: string } }): Promise<Metadata> {
+export async function generateMetadata(props: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const params = await props.params;
   const isRu = params.locale === "ru";
   return {
     title: isRu ? "Контакты — Wrench-Branch" : "Contact — Wrench-Branch",
@@ -11,7 +12,8 @@ export async function generateMetadata({ params }: { params: { locale: string } 
   };
 }
 
-export default function ContactPage({ params }: { params: { locale: string } }) {
+export default async function ContactPage(props: { params: Promise<{ locale: string }> }) {
+  const params = await props.params;
   const locale = isLocale(params.locale) ? params.locale : defaultLocale;
   const isRu   = locale === "ru";
 

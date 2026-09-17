@@ -1,7 +1,12 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 
-export function createServerSupabaseClient() {
+// Next 16 made cookies() an async Dynamic API (previously the codemod at
+// `npx @next/codemod next-async-request-api` reached for the deprecated
+// `UnsafeUnwrappedCookies` sync escape hatch here, but that type was
+// removed in Next 16 — this function is now properly async, and every
+// caller below awaits it, rather than papering over the migration.
+export async function createServerSupabaseClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
@@ -15,7 +20,7 @@ export function createServerSupabaseClient() {
     } as any;
   }
 
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
 
   return createServerClient(url, key, {
     cookies: {
@@ -33,7 +38,7 @@ export function createServerSupabaseClient() {
 }
 
 export async function getServerUser() {
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
   const { data: { user } } = await supabase.auth.getUser();
   return user;
 }
