@@ -1,111 +1,40 @@
-import { checkAiLimit, incrementAiUsage } from "@/lib/rate-limit";
-import { anthropic } from "@ai-sdk/anthropic";
-import { streamText } from "ai";
 import { NextRequest } from "next/server";
 
 export const runtime = "nodejs";
-export const maxDuration = 60;
 
-
+// ═══════════════════════════════════════════════════════
+// AI-генерация временно отключена (2026-09) — по решению владельца
+// продукта, не по техническим причинам. Ни один вызов Anthropic API
+// отсюда больше не происходит: ни checkAiLimit()/incrementAiUsage()
+// (см. lib/rate-limit.ts — сам модуль не тронут, просто больше не
+// импортируется здесь), ни streamText(). Причина: нормальная
+// pay-per-use модель оплаты AI ещё не построена (см. обсуждение
+// Pro-плана и AI-лимитов), а держать это живым без нее — значит
+// платить за токены из своего кармана без единого реального
+// пользователя, который бы это окупал.
+//
+// Полная прежняя реализация (сборка промпта, стриминг ответа Claude)
+// осталась в истории git — откат этого файла к коммиту перед этой
+// заглушкой восстанавливает её один в один.
+// ═══════════════════════════════════════════════════════
 
 export async function POST(req: NextRequest) {
-  // Server-side AI limit check (works across all Vercel instances)
-  const limit = await checkAiLimit();
-  if (!limit.allowed) {
-    return new Response(
-      JSON.stringify({ error: "Daily AI limit reached. Upgrade to Pro for unlimited access.", remaining: 0 }),
-      { status: 429, headers: { "Content-Type": "application/json" } }
-    );
+  let language = "en";
+  try {
+    const body = await req.json();
+    if (body?.language === "ru") language = "ru";
+  } catch {
+    // Тело могло быть невалидным JSON или отсутствовать — неважно,
+    // заглушка отвечает одинаково в любом случае.
   }
 
-  const body = await req.json();
-  const {
-    description, testType, outputFormat, count,
-    includeEdgeCases, includePriority, includePreconditions, language,
-  } = body;
-
-  if (!description?.trim()) {
-    return new Response(
-      JSON.stringify({ error: "Description is required." }),
-      { status: 400, headers: { "Content-Type": "application/json" } }
-    );
-  }
-
-  const systemPrompt = buildSystemPrompt(outputFormat, language);
-  const userPrompt   = buildUserPrompt({
-    description, testType, outputFormat, count,
-    includeEdgeCases, includePriority, includePreconditions,
-  });
-
-  // Increment usage counter before streaming
-  await incrementAiUsage();
-
-  const result = await streamText({
-    model: anthropic("claude-sonnet-4-6"),
-    system: systemPrompt,
-    messages: [{ role: "user", content: userPrompt }],
-    temperature: 0.3,
-  });
-
-  return result.toTextStreamResponse();
-}
-
-function buildSystemPrompt(format: string, language: string): string {
-  const lang = language === "ru" ? "Russian" : "English";
-  return `You are a senior QA engineer with 10+ years of experience writing test cases for enterprise software.
-
-Your test cases are:
-- Precise and actionable — every step has exactly one action
-- Complete — cover happy path, negative, boundary and edge cases
-- Professional — follow industry standards (IEEE 829, ISTQB)
-- Written in ${lang} — match the language of the user's input
-
-Output format: ${format}
-
-Rules:
-- Never write vague steps like "verify the system works correctly"
-- Always write specific expected results with exact values when possible
-- For API tests: include method, endpoint, headers, request body, and expected status codes
-- For UI tests: describe user actions, not CSS selectors or XPaths
-- Do not add preamble, explanations or summaries — output ONLY the test cases
-- Start immediately with the first test case`;
-}
-
-function buildUserPrompt({
-  description, testType, outputFormat, count,
-  includeEdgeCases, includePriority, includePreconditions,
-}: Record<string, unknown>): string {
-  const parts: string[] = [
-    `Generate exactly ${count} test cases for the following feature:`,
-    `"""\n${description}\n"""`,
-    `Test type: ${testType}`,
-    `Output format: ${outputFormat}`,
-  ];
-
-  if (includeEdgeCases) parts.push("Include negative scenarios, boundary values, and edge cases.");
-  if (includePriority)  parts.push("Add Priority (High/Medium/Low) and Severity (Critical/Major/Minor/Trivial) for each test case.");
-  if (includePreconditions) parts.push("Add Preconditions and Test Data sections for each test case.");
-
-  if (outputFormat === "Markdown") {
-    parts.push(`
-Use this structure for each test case:
-## TC-XXX: [Title]
-**Priority:** High/Medium/Low
-**Type:** ${testType}
-**Preconditions:** ...
-**Test Data:** ...
-### Steps:
-1. ...
-2. ...
-**Expected Result:** ...
----`);
-  } else if (outputFormat === "Gherkin") {
-    parts.push("Use Given-When-Then format. Add Scenario Outline with Examples where applicable.");
-  } else if (outputFormat === "JSON") {
-    parts.push(`Output a valid JSON array. Each object: { "id", "title", "priority", "type", "preconditions", "testData", "steps": [], "expectedResult" }`);
-  } else if (outputFormat === "Table") {
-    parts.push("Output a Markdown table with columns: ID | Title | Priority | Steps | Expected Result");
-  }
-
-  return parts.join("\n\n");
+  return new Response(
+    JSON.stringify({
+      error:
+        language === "ru"
+          ? "Генерация тест-кейсов с помощью ИИ временно отключена — скоро вернём. Ничего не было списано."
+          : "AI test-case generation is temporarily disabled for now — it'll be back soon. Nothing was charged.",
+    }),
+    { status: 503, headers: { "Content-Type": "application/json" } }
+  );
 }
