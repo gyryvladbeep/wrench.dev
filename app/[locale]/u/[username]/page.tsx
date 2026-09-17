@@ -12,11 +12,12 @@ import { PublicProfileView } from "@/components/profile/PublicProfileView";
 // username не существует или профиль скрыт (та же причина, что и в
 // PublicProfileView.tsx: не выдавать самим текстом ошибки, существует
 // ли username в базе).
-export async function generateMetadata({
-  params,
-}: {
-  params: { locale: string; username: string };
-}): Promise<Metadata> {
+export async function generateMetadata(
+  props: {
+    params: Promise<{ locale: string; username: string }>;
+  }
+): Promise<Metadata> {
+  const params = await props.params;
   const locale = isLocale(params.locale) ? params.locale : defaultLocale;
   const isRu = locale === "ru";
   const fallback = isRu ? "Профиль — Wrench-Branch" : "Profile — Wrench-Branch";
@@ -29,7 +30,7 @@ export async function generateMetadata({
   // быть фатальными для одного лишь заголовка вкладки: заголовок — это
   // приятное дополнение, а не то, ради чего вообще открывают страницу.
   try {
-    const supabase = createServerSupabaseClient();
+    const supabase = await createServerSupabaseClient();
     const { data: profile } = await supabase
       .from("profiles")
       .select("display_name, username, bio")
@@ -48,7 +49,8 @@ export async function generateMetadata({
   }
 }
 
-export default function PublicProfilePage({ params }: { params: { locale: string; username: string } }) {
+export default async function PublicProfilePage(props: { params: Promise<{ locale: string; username: string }> }) {
+  const params = await props.params;
   const locale = isLocale(params.locale) ? params.locale : defaultLocale;
   return <PublicProfileView locale={locale} username={params.username} />;
 }

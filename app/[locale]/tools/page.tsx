@@ -9,13 +9,15 @@ import { ToolCard } from "@/components/ToolCard";
 import { FavoritesSection } from "@/components/FavoritesSection";
 import { CategoryIcon } from "@/components/CategoryIcon";
 
-export async function generateMetadata({ params }: { params: { locale: string } }): Promise<Metadata> {
+export async function generateMetadata(props: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const params = await props.params;
   const locale = isLocale(params.locale) ? params.locale : defaultLocale;
   const t = getDictionary(locale).toolsIndexPage;
   return buildPageMetadata(locale, "/tools", t.metaTitle, t.metaDescription);
 }
 
-export default function ToolsIndexPage({ params }: { params: { locale: string } }) {
+export default async function ToolsIndexPage(props: { params: Promise<{ locale: string }> }) {
+  const params = await props.params;
   const locale = isLocale(params.locale) ? params.locale : defaultLocale;
   const dict   = getDictionary(locale);
   const t      = dict.toolsIndexPage;

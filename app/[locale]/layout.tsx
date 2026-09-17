@@ -18,11 +18,12 @@ export function generateStaticParams() {
   return locales.map((locale) => ({ locale }));
 }
 
-export async function generateMetadata({
-  params,
-}: {
-  params: { locale: string };
-}): Promise<Metadata> {
+export async function generateMetadata(
+  props: {
+    params: Promise<{ locale: string }>;
+  }
+): Promise<Metadata> {
+  const params = await props.params;
   const locale = isLocale(params.locale) ? params.locale : defaultLocale;
   const dict = getDictionary(locale);
   return {
@@ -53,13 +54,18 @@ export async function generateMetadata({
  * Sets the lang attribute via a small client component (LangSetter) so
  * screen readers and search engines see the correct language per route.
  */
-export default function LocaleLayout({
-  children,
-  params,
-}: {
-  children: React.ReactNode;
-  params: { locale: string };
-}) {
+export default async function LocaleLayout(
+  props: {
+    children: React.ReactNode;
+    params: Promise<{ locale: string }>;
+  }
+) {
+  const params = await props.params;
+
+  const {
+    children
+  } = props;
+
   const rawLocale = params?.locale ?? defaultLocale;
   if (!isLocale(rawLocale)) notFound();
   const locale: Locale = rawLocale;

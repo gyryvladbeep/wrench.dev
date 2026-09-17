@@ -7,11 +7,12 @@ import { PublicWorkbenchView } from "@/components/workbench/PublicWorkbenchView"
 // а не страница продукта. noindex, чтобы такие ссылки не индексировались
 // поисковиками как отдельные "страницы сайта" — они существуют для
 // шаринга по прямой ссылке, не для органического трафика.
-export async function generateMetadata({
-  params,
-}: {
-  params: { locale: string };
-}): Promise<Metadata> {
+export async function generateMetadata(
+  props: {
+    params: Promise<{ locale: string }>;
+  }
+): Promise<Metadata> {
+  const params = await props.params;
   const locale = isLocale(params.locale) ? params.locale : defaultLocale;
   const isRu = locale === "ru";
   return {
@@ -20,7 +21,8 @@ export async function generateMetadata({
   };
 }
 
-export default function PublicWorkbenchPage({ params }: { params: { locale: string; id: string } }) {
+export default async function PublicWorkbenchPage(props: { params: Promise<{ locale: string; id: string }> }) {
+  const params = await props.params;
   const locale = isLocale(params.locale) ? params.locale : defaultLocale;
   return <PublicWorkbenchView locale={locale} id={params.id} />;
 }

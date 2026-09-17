@@ -15,22 +15,24 @@ export function generateStaticParams() {
   );
 }
 
-export async function generateMetadata({
-  params,
-}: {
-  params: { locale: string; slug: string };
-}): Promise<Metadata> {
+export async function generateMetadata(
+  props: {
+    params: Promise<{ locale: string; slug: string }>;
+  }
+): Promise<Metadata> {
+  const params = await props.params;
   const locale = isLocale(params.locale) ? params.locale : defaultLocale;
   const tool = getToolBySlug(params.slug);
   if (!tool) return {};
   return buildToolMetadata(localizeTool(tool, locale), locale);
 }
 
-export default function ToolPage({
-  params,
-}: {
-  params: { locale: string; slug: string };
-}) {
+export default async function ToolPage(
+  props: {
+    params: Promise<{ locale: string; slug: string }>;
+  }
+) {
+  const params = await props.params;
   const locale = isLocale(params.locale) ? params.locale : defaultLocale;
   const dict = getDictionary(locale);
 

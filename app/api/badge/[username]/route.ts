@@ -18,7 +18,7 @@ import { checkAchievements } from "@/lib/achievements";
 export const runtime = "nodejs";
 
 interface RouteParams {
-  params: { username: string };
+  params: Promise<{ username: string }>;
 }
 
 const SVG_HEADERS = {
@@ -34,9 +34,10 @@ function fallbackBadge(message: string) {
   return makeBadge({ label: "wrench score", message, color: "lightgrey", labelColor: "#18181b", style: "flat" });
 }
 
-export async function GET(_req: NextRequest, { params }: RouteParams) {
+export async function GET(_req: NextRequest, props: RouteParams) {
+  const params = await props.params;
   const username = params.username;
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
 
   try {
     const { data: profile } = await supabase

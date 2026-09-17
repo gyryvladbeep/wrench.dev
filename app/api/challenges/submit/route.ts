@@ -92,7 +92,7 @@ export async function POST(req: NextRequest) {
   const { challenge_id, answer, time_seconds, hints_used } = await req.json();
   if (!challenge_id || !answer) return NextResponse.json({ error: "Missing fields" }, { status: 400 });
 
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
   const { data: { user } } = await supabase.auth.getUser();
 
   const { data: challenge, error: cErr } = await supabase

@@ -11,15 +11,18 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 export const runtime = "nodejs";
 
 interface RouteParams {
-  params: { slug: string; path?: string[] };
+  // Next 16 made route-handler `params` an async Dynamic API, same as
+  // `cookies()`/`headers()` — it's now a Promise the handler must await.
+  params: Promise<{ slug: string; path?: string[] }>;
 }
 
-async function handle(req: NextRequest, { params }: RouteParams) {
+async function handle(req: NextRequest, { params: paramsPromise }: RouteParams) {
+  const params = await paramsPromise;
   const slug = params.slug;
   const path = "/" + (params.path ?? []).join("/");
   const method = req.method.toUpperCase();
 
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
 
   let route: { status_code: number; response_body: string; delay_ms: number } | null = null;
   try {

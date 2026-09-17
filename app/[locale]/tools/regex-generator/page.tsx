@@ -8,7 +8,8 @@ import { ToolLayout } from "@/components/ToolLayout";
 import { RegexGeneratorClient } from "@/components/tools/RegexGeneratorClient";
 import { Tool } from "@/lib/types";
 
-export async function generateMetadata({ params }: { params: { locale: string } }): Promise<Metadata> {
+export async function generateMetadata(props: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const params = await props.params;
   const locale = isLocale(params.locale) ? params.locale : defaultLocale;
   const isRu   = locale === "ru";
   return buildPageMetadata(locale, "/tools/regex-generator",
@@ -40,7 +41,8 @@ const TOOL: Tool = {
   ],
 };
 
-export default function RegexGeneratorPage({ params }: { params: { locale: string } }) {
+export default async function RegexGeneratorPage(props: { params: Promise<{ locale: string }> }) {
+  const params = await props.params;
   const locale  = isLocale(params.locale) ? params.locale : defaultLocale;
   const dict    = getDictionary(locale);
   const related = localizeTools(getRelatedTools(TOOL), locale);

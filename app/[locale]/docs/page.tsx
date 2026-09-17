@@ -7,14 +7,16 @@ import { categories, getToolsByCategory } from "@/lib/tools-registry";
 import { localizeCategories } from "@/lib/i18n/localize";
 import { formatToolCount } from "@/lib/i18n/format";
 
-export async function generateMetadata({ params }: { params: { locale: string } }): Promise<Metadata> {
+export async function generateMetadata(props: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const params = await props.params;
   const locale = isLocale(params.locale) ? params.locale : defaultLocale;
   const dict = getDictionary(locale);
   const t = dict.pages.docs;
   return buildPageMetadata(locale, "/docs", t.heading, t.intro);
 }
 
-export default function DocsPage({ params }: { params: { locale: string } }) {
+export default async function DocsPage(props: { params: Promise<{ locale: string }> }) {
+  const params = await props.params;
   const locale = isLocale(params.locale) ? params.locale : defaultLocale;
   const dict = getDictionary(locale);
   const t = dict.pages.docs;

@@ -7,7 +7,8 @@ import { localizeTool, localizeTools, localizeCategory } from "@/lib/i18n/locali
 import { ToolLayout } from "@/components/ToolLayout";
 import { TestCaseGeneratorClient } from "@/components/tools/TestCaseGeneratorClient";
 
-export async function generateMetadata({ params }: { params: { locale: string } }): Promise<Metadata> {
+export async function generateMetadata(props: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const params = await props.params;
   const locale = isLocale(params.locale) ? params.locale : defaultLocale;
   const isRu   = locale === "ru";
   return buildPageMetadata(
@@ -20,7 +21,8 @@ export async function generateMetadata({ params }: { params: { locale: string } 
   );
 }
 
-export default function TestCaseGeneratorPage({ params }: { params: { locale: string } }) {
+export default async function TestCaseGeneratorPage(props: { params: Promise<{ locale: string }> }) {
+  const params = await props.params;
   const locale  = isLocale(params.locale) ? params.locale : defaultLocale;
   const dict    = getDictionary(locale);
   const tool    = getToolBySlug("test-case-generator");
