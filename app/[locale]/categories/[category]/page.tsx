@@ -13,8 +13,8 @@ import { CategoryIcon } from "@/components/CategoryIcon";
 
 const RELATED: Record<string, string[]> = {
   formatting:["encoding","text"], encoding:["formatting","hash"], text:["generators","formatting"],
-  hash:["encoding","api"], generators:["data","text"], datetime:["generators","api"],
-  web:["api","encoding"], data:["generators","qa"], qa:["api","text"], api:["web","qa"],
+  hash:["encoding","api"], generators:["text"], datetime:["generators","api"],
+  web:["api","encoding"], qa:["api","text"], api:["web","qa"],
 };
 
 export function generateStaticParams() {

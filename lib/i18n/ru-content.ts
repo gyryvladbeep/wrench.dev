@@ -1001,10 +1001,6 @@ export const ruCategoryContent: Record<ToolCategory, { name: string; description
     name: "Кодирование",
     description: "Кодирование, декодирование и анализ Base64, URL и JWT.",
   },
-  data: {
-    name: "Данные",
-    description: "Генерация UUID, тестовых данных, паролей и конвертация времени.",
-  },
   qa: {
     name: "QA",
     description: "Инструменты для селекторов и тестовых данных для QA-инженеров и автоматизаторов.",

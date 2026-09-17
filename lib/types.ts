@@ -1,7 +1,6 @@
 export type ToolCategory =
   | "formatting"
   | "encoding"
-  | "data"
   | "qa"
   | "api"
   | "text"
