@@ -1,0 +1,32 @@
+{
+  "_type": "export",
+  "__export_format": 4,
+  "resources": [
+    { "_id": "wrk_1", "_type": "workspace", "name": "Orders Workspace" },
+    { "_id": "fld_1", "_type": "request_group", "name": "Orders" },
+    {
+      "_id": "req_1",
+      "_type": "request",
+      "name": "Get order",
+      "method": "GET",
+      "url": "{{ _.base_url }}/orders/{{ _.id }}",
+      "parentId": "fld_1"
+    },
+    {
+      "_id": "req_2",
+      "_type": "request",
+      "name": "Delete order",
+      "method": "DELETE",
+      "url": "{{ _.base_url }}/orders/42",
+      "parentId": "fld_1"
+    },
+    {
+      "_id": "req_3",
+      "_type": "request",
+      "name": "Trace",
+      "method": "TRACE",
+      "url": "{{ _.base_url }}/orders",
+      "parentId": "fld_1"
+    }
+  ]
+}

@@ -6,7 +6,8 @@ import { useSubscription } from "@/lib/hooks/useSubscription";
 import { useMockEndpoints, MockEndpoint, RouteInput } from "@/lib/hooks/useMockEndpoints";
 import { localePath, Locale } from "@/lib/i18n/config";
 import { CopyButton } from "@/components/CopyButton";
-import { LayersIcon, CloseIcon } from "@/components/icons/GameIcons";
+import { LayersIcon, CloseIcon, UploadIcon } from "@/components/icons/GameIcons";
+import { ImportCollectionModal } from "@/components/mock-api/ImportCollectionModal";
 
 const METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE"] as const;
 const FALLBACK_ORIGIN = "https://wrench-dev-lr29.vercel.app";
@@ -39,7 +40,7 @@ export function MockApiClient({ locale }: { locale: Locale }) {
   const { isPro } = useSubscription();
   const {
     endpoints, loading, maxEndpoints, maxRoutesPerEndpoint,
-    createEndpoint, deleteEndpoint, saveRoute, deleteRoute,
+    createEndpoint, deleteEndpoint, saveRoute, deleteRoute, importCollection,
   } = useMockEndpoints(isPro);
 
   const [origin, setOrigin] = useState(FALLBACK_ORIGIN);
@@ -47,6 +48,7 @@ export function MockApiClient({ locale }: { locale: Locale }) {
 
   const [newName, setNewName] = useState("");
   const [creating, setCreating] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
 
   async function handleCreate() {
     setCreating(true);
@@ -119,6 +121,11 @@ Content-Type: application/json
                 className="shrink-0 rounded bg-accent px-4 py-2 text-sm font-semibold text-accent-fg transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60">
                 {isRu ? "+ Новый эндпоинт" : "+ New endpoint"}
               </button>
+              <button onClick={() => setImportOpen(true)}
+                className="shrink-0 flex items-center gap-1.5 rounded border border-border px-4 py-2 text-sm font-medium text-text-secondary transition-colors hover:bg-surface-hover">
+                <UploadIcon size={13} />
+                {isRu ? "Импорт из Postman / Insomnia" : "Import from Postman / Insomnia"}
+              </button>
             </div>
             <p className="text-xs text-text-muted">
               {endpoints.length} / {maxEndpoints} {isRu ? "эндпоинтов использовано" : "endpoints used"}
@@ -150,6 +157,18 @@ Content-Type: application/json
           </div>
         )}
       </section>
+
+      <ImportCollectionModal
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
+        isRu={isRu}
+        locale={locale}
+        endpoints={endpoints}
+        maxEndpoints={maxEndpoints}
+        maxRoutesPerEndpoint={maxRoutesPerEndpoint}
+        isPro={isPro}
+        onImport={importCollection}
+      />
     </div>
   );
 }

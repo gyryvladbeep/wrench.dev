@@ -356,6 +356,20 @@ export function DownloadIcon({ className = "", size = 12 }: IconProps) {
   );
 }
 
+// Зеркальное отражение DownloadIcon (стрелка из лотка вверх) — кнопка
+// "Импортировать из Postman/Insomnia" в Mock API
+// (ImportCollectionModal.tsx): та же пара стрелка+лоток, что уже
+// узнаваема по DownloadIcon, но развёрнутая по вертикали, чтобы
+// однозначно читаться как "загрузить файл СЮДА", а не "скачать".
+export function UploadIcon({ className = "", size = 14 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 16 16" fill="none" className={className} aria-hidden>
+      <path d="M8 9.8V2.5M4.7 5.3L8 2l3.3 3.3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M2.7 12h10.6" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+    </svg>
+  );
+}
+
 // Торт со свечой — замена "🎂" (Age Calculator, "до дня рождения").
 export function CakeIcon({ className = "", size = 14 }: IconProps) {
   return (
