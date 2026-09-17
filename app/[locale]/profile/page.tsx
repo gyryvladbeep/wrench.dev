@@ -21,6 +21,7 @@ import { ProfileHero } from "@/components/profile/ProfileHero";
 import { StatsHud, type StatHudItem } from "@/components/profile/StatsHud";
 import { GameIcon, CheckIcon, StarIcon, CloseIcon } from "@/components/icons/GameIcons";
 import { ROLE_TAGS } from "@/lib/profile-roles";
+import { STACK_TAGS, MAX_STACK_TAGS } from "@/lib/profile-stack";
 import { BANNER_GRADIENTS, getBannerGradient } from "@/lib/profile-banners";
 import { ROLE_META, DIFFICULTY_META, ChallengeRole, ChallengeDifficulty } from "@/lib/challenges/types";
 import { CopyButton } from "@/components/CopyButton";
@@ -46,6 +47,11 @@ interface Profile {
   linkedin_url:         string | null;
   website_url:          string | null;
   pinned_challenge_ids: string[];
+  // Директория специалистов (/people) — supabase/profile-stack-location-migration.sql.
+  // tech_stack — id из lib/profile-stack.ts, до MAX_STACK_TAGS штук;
+  // location — свободный текст, тот же принцип, что и у tagline.
+  tech_stack:           string[];
+  location:             string | null;
 }
 
 // Решённая задача, доступная для закрепления на публичном профиле (см.
@@ -132,6 +138,7 @@ export default function ProfilePage() {
     username: "", display_name: "", bio: "", avatar_color: "#f59e0b", avatar_emblem: null, role_tag: "developer",
     is_public: true, banner_gradient: null, tagline: null,
     github_url: null, linkedin_url: null, website_url: null, pinned_challenge_ids: [],
+    tech_stack: [], location: null,
   });
   const [stats,    setStats]    = useState<Stats | null>(null);
   const [history,  setHistory]  = useState<ToolHistory[]>([]);
@@ -278,6 +285,18 @@ export default function ProfilePage() {
       if (already) return { ...p, pinned_challenge_ids: p.pinned_challenge_ids.filter((id) => id !== challengeId) };
       if (p.pinned_challenge_ids.length >= MAX_PINNED) return p;
       return { ...p, pinned_challenge_ids: [...p.pinned_challenge_ids, challengeId] };
+    });
+  }
+
+  // Тот же приём, что и у togglePinned выше: снять тег можно всегда, а
+  // добавить — только пока не упёрлись в MAX_STACK_TAGS (кнопка сама
+  // выглядит disabled в этом случае в разметке ниже).
+  function toggleStackTag(tagId: string) {
+    setProfile((p) => {
+      const already = p.tech_stack.includes(tagId);
+      if (already) return { ...p, tech_stack: p.tech_stack.filter((id) => id !== tagId) };
+      if (p.tech_stack.length >= MAX_STACK_TAGS) return p;
+      return { ...p, tech_stack: [...p.tech_stack, tagId] };
     });
   }
 
@@ -819,6 +838,41 @@ export default function ProfilePage() {
                   </button>
                 ))}
               </div>
+            </div>
+
+            {/* Стек — в отличие от роли выше, это мультивыбор (до
+                MAX_STACK_TAGS тегов из lib/profile-stack.ts): показывается
+                чипами на публичном профиле и на карточке в директории
+                (/people), и по нему же там можно фильтровать. */}
+            <div>
+              <label className="input-label">
+                {isRu ? "Технологии" : "Tech stack"} ({profile.tech_stack.length}/{MAX_STACK_TAGS})
+              </label>
+              <p className="text-xs text-text-muted mb-2">
+                {isRu ? "Показывается в директории /people и на публичном профиле" : "Shown in the /people directory and on your public profile"}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {STACK_TAGS.map((t) => {
+                  const selected = profile.tech_stack.includes(t.id);
+                  const atLimit = !selected && profile.tech_stack.length >= MAX_STACK_TAGS;
+                  return (
+                    <button key={t.id} onClick={() => toggleStackTag(t.id)} disabled={atLimit}
+                      className={`rounded-full border px-3 py-1 text-xs transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${selected ? "border-accent/40 bg-accent/10 text-accent" : "border-border bg-surface text-text-muted hover:bg-surface-hover"}`}>
+                      {isRu ? t.labelRu : t.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Локация — свободный текст, не выбор из справочника (см.
+                комментарий в supabase/profile-stack-location-migration.sql):
+                и место жительства, и "Remote" — одно и то же поле. */}
+            <div>
+              <label className="input-label">{isRu ? "Локация" : "Location"}</label>
+              <input value={profile.location ?? ""} onChange={(e) => setProfile(p => ({ ...p, location: e.target.value || null }))}
+                maxLength={60} placeholder={isRu ? "Например: Алматы, или Remote" : "e.g. Berlin, or Remote"}
+                className="code-surface w-full rounded-lg px-3 py-2.5 text-sm text-text-primary outline-none" />
             </div>
 
             {/* Ссылки — три поля вместо произвольного списка: сайту три

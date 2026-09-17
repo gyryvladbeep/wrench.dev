@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/lib/auth/auth-context";
 import { localePath, Locale } from "@/lib/i18n/config";
 import { ROLE_TAGS } from "@/lib/profile-roles";
+import { getStackTag } from "@/lib/profile-stack";
 import { getBannerGradient } from "@/lib/profile-banners";
 import { BADGES, BADGE_COLOR, checkAchievements } from "@/lib/achievements";
 import { ROLE_META, DIFFICULTY_META, ChallengeRole, ChallengeDifficulty } from "@/lib/challenges/types";
@@ -26,6 +27,8 @@ interface PublicProfile {
   linkedin_url:          string | null;
   website_url:           string | null;
   pinned_challenge_ids:  string[];
+  tech_stack:            string[];
+  location:              string | null;
 }
 
 interface Stats {
@@ -81,7 +84,7 @@ export function PublicProfileView({ locale, username }: PublicProfileViewProps) 
     // проверки доступа, не дублируем её в JS.
     supabase
       .from("profiles")
-      .select("id, username, display_name, bio, avatar_color, avatar_emblem, role_tag, banner_gradient, tagline, github_url, linkedin_url, website_url, pinned_challenge_ids")
+      .select("id, username, display_name, bio, avatar_color, avatar_emblem, role_tag, banner_gradient, tagline, github_url, linkedin_url, website_url, pinned_challenge_ids, tech_stack, location")
       .eq("username", username)
       .single()
       .then(async ({ data: profile, error }: { data: PublicProfile | null; error: unknown }) => {
@@ -162,6 +165,8 @@ export function PublicProfileView({ locale, username }: PublicProfileViewProps) 
     { url: profile.website_url,  label: isRu ? "Сайт" : "Website" },
   ].filter((l): l is { url: string; label: string } => Boolean(l.url));
 
+  const stackTags = profile.tech_stack.map(getStackTag).filter((t): t is NonNullable<typeof t> => Boolean(t));
+
   return (
     <div className="mx-auto max-w-3xl px-5 py-8">
       {/* Баннер + аватарка внахлёст — тот же визуальный язык, что у
@@ -186,7 +191,19 @@ export function PublicProfileView({ locale, username }: PublicProfileViewProps) 
             <h1 className="text-xl font-bold text-text-primary">
               {profile.display_name || `@${profile.username}`}
             </h1>
-            <p className="text-sm text-text-muted">@{profile.username}</p>
+            <p className="flex items-center gap-1 text-sm text-text-muted">
+              <span>@{profile.username}</span>
+              {profile.location && (
+                <>
+                  <span aria-hidden="true">·</span>
+                  <svg width="11" height="11" viewBox="0 0 16 16" fill="none" className="shrink-0" aria-hidden>
+                    <path d="M8 14.5s5-4.36 5-8.5a5 5 0 10-10 0c0 4.14 5 8.5 5 8.5z" stroke="currentColor" strokeWidth="1.3"/>
+                    <circle cx="8" cy="6" r="1.8" stroke="currentColor" strokeWidth="1.3"/>
+                  </svg>
+                  <span>{profile.location}</span>
+                </>
+              )}
+            </p>
 
             {profile.tagline && (
               <p className="mt-2 text-sm font-medium text-accent">{profile.tagline}</p>
@@ -208,6 +225,21 @@ export function PublicProfileView({ locale, username }: PublicProfileViewProps) 
                 </a>
               ))}
             </div>
+
+            {/* Стек — отдельная строка чипов, не смешана со строкой
+                роль/ссылки выше: та строка — про идентичность и внешние
+                профили, эта — конкретный список технологий, который
+                может быть длиннее и хочет своей строки, чтобы не ломать
+                перенос остальных чипов. */}
+            {stackTags.length > 0 && (
+              <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                {stackTags.map((t) => (
+                  <span key={t.id} className="rounded border border-accent/20 bg-accent/5 px-2 py-0.5 text-xs text-accent">
+                    {isRu ? t.labelRu : t.label}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>

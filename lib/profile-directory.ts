@@ -15,6 +15,10 @@ export interface DirectoryProfile {
   avatar_emblem: string | null;
   role_tag:      string;
   tagline:       string | null;
+  // Оба поля — supabase/profile-stack-location-migration.sql. tech_stack
+  // никогда не null (DEFAULT '{}' в БД), location может быть не указан.
+  tech_stack:    string[];
+  location:      string | null;
 }
 
 export const PEOPLE_PAGE_SIZE = 24;
@@ -31,6 +35,13 @@ interface SearchProfilesOptions {
   query?:  string;
   // null/undefined/"all" — без фильтра по роли.
   role?:   string | null;
+  // Id одного тега из lib/profile-stack.ts — null/undefined/"all" без
+  // фильтра. Один тег за раз (не набор), тот же UX, что и у role: чип,
+  // а не мультивыбор с чекбоксами, для директории с сотнями профилей.
+  stack?:    string | null;
+  // Свободный текст, матчится ilike-подстрокой — та же логика, что и у
+  // query (см. escapeForFilter ниже), просто по отдельной колонке.
+  location?: string;
   limit?:  number;
   offset?: number;
 }
@@ -45,11 +56,11 @@ export interface SearchProfilesResult {
 
 export async function searchProfiles(
   supabase: ReturnType<typeof createClient>,
-  { query = "", role, limit = PEOPLE_PAGE_SIZE, offset = 0 }: SearchProfilesOptions = {}
+  { query = "", role, stack, location = "", limit = PEOPLE_PAGE_SIZE, offset = 0 }: SearchProfilesOptions = {}
 ): Promise<SearchProfilesResult> {
   let q = supabase
     .from("profiles")
-    .select("id, username, display_name, avatar_color, avatar_emblem, role_tag, tagline", { count: "exact" })
+    .select("id, username, display_name, avatar_color, avatar_emblem, role_tag, tagline, tech_stack, location", { count: "exact" })
     // RLS-политика profiles_select_public (is_public = true, см.
     // supabase/profile-public-migration.sql) уже сама решает, какие
     // строки вообще видны анониму/другому пользователю — не дублируем
@@ -67,6 +78,16 @@ export async function searchProfiles(
   }
   if (role && role !== "all") {
     q = q.eq("role_tag", role);
+  }
+  // .contains() → Postgres @> на tech_stack (индексирован GIN'ом, см.
+  // supabase/profile-stack-location-migration.sql) — "профиль содержит
+  // этот тег", не точное равенство массива.
+  if (stack && stack !== "all") {
+    q = q.contains("tech_stack", [stack]);
+  }
+  const trimmedLocation = location.trim();
+  if (trimmedLocation) {
+    q = q.ilike("location", `%${escapeForFilter(trimmedLocation)}%`);
   }
 
   const { data, count, error } = await q.range(offset, offset + limit - 1);

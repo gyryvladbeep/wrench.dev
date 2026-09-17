@@ -4,6 +4,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { localePath, Locale } from "@/lib/i18n/config";
 import { ROLE_TAGS } from "@/lib/profile-roles";
+import { STACK_TAGS, getStackTag } from "@/lib/profile-stack";
 import { calcWrenchScore, getLevel } from "@/lib/wrench-score";
 import { AvatarGlyph } from "@/components/profile/AvatarGlyph";
 import { GameIcon } from "@/components/icons/GameIcons";
@@ -35,12 +36,23 @@ interface PersonCardProps {
   score:   number;
 }
 
+// Сколько тегов стека рисуем прямо на карточке в сетке — у профиля их
+// может быть до MAX_STACK_TAGS (lib/profile-stack.ts), но узкая карточка
+// в grid-sm:grid-cols-2 не резиновая: остаток сворачивается в "+N", тот
+// же приём, что уже используется для скрытых пунктов в других местах
+// сайта (например бейджей на Overview в app/[locale]/profile/page.tsx —
+// там slice(0, 8) с полным списком на отдельной вкладке).
+const STACK_CHIPS_ON_CARD = 3;
+
 function PersonCard({ locale, profile, score }: PersonCardProps) {
   const isRu   = locale === "ru";
   const level  = getLevel(score);
   const role   = ROLE_TAGS.find((r) => r.id === profile.role_tag);
   const name   = profile.display_name || `@${profile.username}`;
   const initials = (profile.display_name || profile.username || "?")[0].toUpperCase();
+  const stackTags = profile.tech_stack.map(getStackTag).filter((t): t is NonNullable<typeof t> => Boolean(t));
+  const shownStack = stackTags.slice(0, STACK_CHIPS_ON_CARD);
+  const hiddenStackCount = stackTags.length - shownStack.length;
 
   return (
     <Link href={localePath(locale, `/u/${profile.username}`)}
@@ -54,7 +66,19 @@ function PersonCard({ locale, profile, score }: PersonCardProps) {
       />
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium text-text-primary">{name}</p>
-        <p className="truncate text-xs text-text-muted">@{profile.username}</p>
+        <div className="flex items-center gap-1 truncate text-xs text-text-muted">
+          <span className="truncate">@{profile.username}</span>
+          {profile.location && (
+            <>
+              <span aria-hidden="true">·</span>
+              <svg width="10" height="10" viewBox="0 0 16 16" fill="none" className="shrink-0" aria-hidden>
+                <path d="M8 14.5s5-4.36 5-8.5a5 5 0 10-10 0c0 4.14 5 8.5 5 8.5z" stroke="currentColor" strokeWidth="1.3"/>
+                <circle cx="8" cy="6" r="1.8" stroke="currentColor" strokeWidth="1.3"/>
+              </svg>
+              <span className="truncate">{profile.location}</span>
+            </>
+          )}
+        </div>
         {profile.tagline && (
           <p className="mt-0.5 truncate text-xs text-text-secondary">{profile.tagline}</p>
         )}
@@ -70,6 +94,14 @@ function PersonCard({ locale, profile, score }: PersonCardProps) {
             <span className="rounded border border-border px-1.5 py-px text-[10px] text-text-muted">
               {isRu ? role.labelRu : role.label}
             </span>
+          )}
+          {shownStack.map((t) => (
+            <span key={t.id} className="rounded border border-accent/20 bg-accent/5 px-1.5 py-px text-[10px] text-accent">
+              {isRu ? t.labelRu : t.label}
+            </span>
+          ))}
+          {hiddenStackCount > 0 && (
+            <span className="text-[10px] text-text-muted">+{hiddenStackCount}</span>
           )}
         </div>
       </div>
@@ -98,6 +130,13 @@ export function PeopleDirectory({ locale }: { locale: Locale }) {
   // сразу), а сетевой запрос — с задержкой.
   const [query,     setQuery]     = useState("");
   const [role,      setRole]      = useState<string>("all");
+  const [stack,     setStack]     = useState<string>("all");
+  const [locationInput, setLocationInput] = useState("");
+  // Тот же дебаунс, что и у queryInput выше — своё отдельное значение,
+  // потому что location фильтруется отдельной колонкой (ilike), не
+  // склеена с query в один OR: человек может искать по имени И сузить
+  // по городу одновременно, это два разных условия AND, а не одно OR.
+  const [location,  setLocation]  = useState("");
   const [profiles,  setProfiles]  = useState<DirectoryProfile[]>([]);
   const [scores,    setScores]    = useState<Record<string, number>>({});
   const [count,     setCount]     = useState<number | null>(null);
@@ -116,12 +155,17 @@ export function PeopleDirectory({ locale }: { locale: Locale }) {
   }, [queryInput]);
 
   useEffect(() => {
+    const t = setTimeout(() => setLocation(locationInput), 300);
+    return () => clearTimeout(t);
+  }, [locationInput]);
+
+  useEffect(() => {
     const myId = ++requestId.current;
     setLoading(true);
     setError(false);
     const supabase = createClient();
 
-    searchProfiles(supabase, { query, role, limit: PEOPLE_PAGE_SIZE, offset: 0 })
+    searchProfiles(supabase, { query, role, stack, location, limit: PEOPLE_PAGE_SIZE, offset: 0 })
       .then(async ({ data, count: total, error: err }) => {
         // Пока этот запрос летел, ушёл более новый (сменили фильтр
         // раньше, чем пришёл ответ на предыдущий) — тот же приём, что
@@ -156,12 +200,12 @@ export function PeopleDirectory({ locale }: { locale: Locale }) {
       // него страница осталась бы в состоянии "Загружаю…" навсегда,
       // вместо явного "не удалось загрузить".
       .catch(() => { if (myId === requestId.current) { setError(true); setLoading(false); } });
-  }, [query, role]);
+  }, [query, role, stack, location]);
 
   function loadMore() {
     setLoadingMore(true);
     const supabase = createClient();
-    searchProfiles(supabase, { query, role, limit: PEOPLE_PAGE_SIZE, offset: profiles.length })
+    searchProfiles(supabase, { query, role, stack, location, limit: PEOPLE_PAGE_SIZE, offset: profiles.length })
       .then(async ({ data, count: total, error: err }) => {
         setLoadingMore(false);
         if (err) return;
@@ -197,36 +241,82 @@ export function PeopleDirectory({ locale }: { locale: Locale }) {
         </p>
       </div>
 
-      {/* Поиск */}
-      <div className="mb-4 flex items-center gap-3 rounded-lg border border-border bg-surface px-3.5 py-2.5">
-        <svg width="15" height="15" viewBox="0 0 16 16" fill="none" className="shrink-0 text-text-muted" aria-hidden>
-          <circle cx="7" cy="7" r="4.5" stroke="currentColor" strokeWidth="1.5"/>
-          <path d="M10.5 10.5L13 13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-        </svg>
-        <input
-          value={queryInput}
-          onChange={(e) => setQueryInput(e.target.value)}
-          placeholder={isRu ? "Имя или username…" : "Name or username…"}
-          className="flex-1 bg-transparent text-sm text-text-primary outline-none placeholder:text-text-muted"
-        />
+      {/* Поиск + локация — два отдельных текстовых поля (не одно на оба),
+          потому что это два разных AND-условия на сервере (см.
+          searchProfiles): "имя содержит X" и "город содержит Y" ищутся
+          по разным колонкам, а не одной и той же подстрокой. */}
+      <div className="mb-4 grid gap-3 sm:grid-cols-2">
+        <div className="flex items-center gap-3 rounded-lg border border-border bg-surface px-3.5 py-2.5">
+          <svg width="15" height="15" viewBox="0 0 16 16" fill="none" className="shrink-0 text-text-muted" aria-hidden>
+            <circle cx="7" cy="7" r="4.5" stroke="currentColor" strokeWidth="1.5"/>
+            <path d="M10.5 10.5L13 13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+          </svg>
+          <input
+            value={queryInput}
+            onChange={(e) => setQueryInput(e.target.value)}
+            placeholder={isRu ? "Имя или username…" : "Name or username…"}
+            className="flex-1 min-w-0 bg-transparent text-sm text-text-primary outline-none placeholder:text-text-muted"
+          />
+        </div>
+        <div className="flex items-center gap-3 rounded-lg border border-border bg-surface px-3.5 py-2.5">
+          <svg width="15" height="15" viewBox="0 0 16 16" fill="none" className="shrink-0 text-text-muted" aria-hidden>
+            <path d="M8 14.5s5-4.36 5-8.5a5 5 0 10-10 0c0 4.14 5 8.5 5 8.5z" stroke="currentColor" strokeWidth="1.5"/>
+            <circle cx="8" cy="6" r="1.8" stroke="currentColor" strokeWidth="1.5"/>
+          </svg>
+          <input
+            value={locationInput}
+            onChange={(e) => setLocationInput(e.target.value)}
+            placeholder={isRu ? "Город или «Remote»…" : "City or \"Remote\"…"}
+            className="flex-1 min-w-0 bg-transparent text-sm text-text-primary outline-none placeholder:text-text-muted"
+          />
+        </div>
       </div>
 
       {/* Фильтр по роли */}
-      <div className="mb-6 flex flex-wrap gap-1.5">
-        <button onClick={() => setRole("all")}
-          className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
-            role === "all" ? "border-accent/40 bg-accent/10 text-accent" : "border-border text-text-muted hover:text-text-secondary"
-          }`}>
-          {isRu ? "Все" : "All"}
-        </button>
-        {ROLE_TAGS.map((r) => (
-          <button key={r.id} onClick={() => setRole(r.id)}
+      <div className="mb-3">
+        <p className="mb-1.5 text-xs font-medium text-text-muted">{isRu ? "Роль" : "Role"}</p>
+        <div className="flex flex-wrap gap-1.5">
+          <button onClick={() => setRole("all")}
             className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
-              role === r.id ? "border-accent/40 bg-accent/10 text-accent" : "border-border text-text-muted hover:text-text-secondary"
+              role === "all" ? "border-accent/40 bg-accent/10 text-accent" : "border-border text-text-muted hover:text-text-secondary"
             }`}>
-            {isRu ? r.labelRu : r.label}
+            {isRu ? "Все" : "All"}
           </button>
-        ))}
+          {ROLE_TAGS.map((r) => (
+            <button key={r.id} onClick={() => setRole(r.id)}
+              className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+                role === r.id ? "border-accent/40 bg-accent/10 text-accent" : "border-border text-text-muted hover:text-text-secondary"
+              }`}>
+              {isRu ? r.labelRu : r.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Фильтр по стеку — тот же чиповый UI, что и у роли выше, только
+          источник тегов — lib/profile-stack.ts, и выбор тоже одиночный
+          (см. комментарий у stack? в lib/profile-directory.ts): "все с
+          React" — частый запрос, "все с React И TypeScript одновременно"
+          — куда более редкий, не стоящий усложнения фильтра до
+          мультивыбора. */}
+      <div className="mb-6">
+        <p className="mb-1.5 text-xs font-medium text-text-muted">{isRu ? "Стек" : "Stack"}</p>
+        <div className="flex flex-wrap gap-1.5">
+          <button onClick={() => setStack("all")}
+            className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+              stack === "all" ? "border-accent/40 bg-accent/10 text-accent" : "border-border text-text-muted hover:text-text-secondary"
+            }`}>
+            {isRu ? "Все" : "All"}
+          </button>
+          {STACK_TAGS.map((t) => (
+            <button key={t.id} onClick={() => setStack(t.id)}
+              className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+                stack === t.id ? "border-accent/40 bg-accent/10 text-accent" : "border-border text-text-muted hover:text-text-secondary"
+              }`}>
+              {isRu ? t.labelRu : t.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Результаты */}
@@ -245,7 +335,7 @@ export function PeopleDirectory({ locale }: { locale: Locale }) {
             {isRu ? "Никого не нашли" : "No one found"}
           </h3>
           <p className="mt-2 text-sm text-text-muted">
-            {isRu ? "Попробуй другой запрос или сними фильтр по роли." : "Try a different search term or clear the role filter."}
+            {isRu ? "Попробуй другой запрос или сними фильтры." : "Try a different search term or clear the filters."}
           </p>
         </div>
       ) : (
