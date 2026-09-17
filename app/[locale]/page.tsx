@@ -9,6 +9,7 @@ import { createPublicSupabaseClient } from "@/lib/supabase/public";
 import { HeroLiveDemo } from "@/components/HeroLiveDemo";
 import { ToolCard } from "@/components/ToolCard";
 import { RecentlyUsedSection } from "@/components/RecentlyUsedSection";
+import { ContinueWidget } from "@/components/ContinueWidget";
 import { DisciplineSectionsClient } from "@/components/DisciplineSectionsClient";
 
 export async function generateMetadata(props: { params: Promise<{ locale: string }> }): Promise<Metadata> {
@@ -180,6 +181,13 @@ export default async function HomePage(props: { params: Promise<{ locale: string
 
       {/* ── Recently Used ── */}
       <RecentlyUsedSection />
+
+      {/* ── Continue where you left off ── ненавязчивый виджет только
+          для залогиненных, ничего не рендерит, пока сам не найдёт что
+          предложить (см. ContinueWidget.tsx) — та же SSR-безопасная
+          схема "показывается только внутри эффекта в браузере", что и
+          у RecentlyUsedSection выше. */}
+      <ContinueWidget />
 
       {/*
         ── Discipline sections ──
