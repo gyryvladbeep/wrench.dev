@@ -19,7 +19,7 @@ function flattenObject(obj: unknown, prefix = ""): Record<string, unknown> {
   return result;
 }
 
-function diffJson(left: string, right: string): { ok: boolean; diffs: DiffResult; error?: string } {
+function diffJson(left: string, right: string, isRu: boolean): { ok: boolean; diffs: DiffResult; error?: string } {
   try {
     const l = flattenObject(JSON.parse(left));
     const r = flattenObject(JSON.parse(right));
@@ -34,7 +34,7 @@ function diffJson(left: string, right: string): { ok: boolean; diffs: DiffResult
     }
     return { ok:true, diffs };
   } catch (e) {
-    return { ok:false, diffs:[], error: e instanceof Error ? e.message : "Parse error" };
+    return { ok:false, diffs:[], error: e instanceof Error ? e.message : (isRu ? "Ошибка разбора" : "Parse error") };
   }
 }
 
@@ -67,7 +67,7 @@ export function JsonDiffTool({ dict }: { dict: Dictionary }) {
   const [right, setRight] = useState(RIGHT);
   const [showUnchanged, setShowUnchanged] = useState(false);
 
-  const result = useMemo(() => diffJson(left, right), [left, right]);
+  const result = useMemo(() => diffJson(left, right, isRu), [left, right, isRu]);
 
   const stats = useMemo(() => {
     const s = { added:0, removed:0, changed:0, unchanged:0 };

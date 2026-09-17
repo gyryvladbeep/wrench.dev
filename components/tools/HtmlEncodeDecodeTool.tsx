@@ -20,6 +20,7 @@ function decodeHtml(str: string): string {
 }
 
 export function HtmlEncodeDecodeTool({ dict }: { dict: Dictionary }) {
+  const isRu = dict.isRu;
   const [mode, setMode] = useState<"encode" | "decode">("encode");
   const [input, setInput] = useState('<p class="greeting">Hello & <strong>World</strong>!</p>');
 
@@ -29,7 +30,7 @@ export function HtmlEncodeDecodeTool({ dict }: { dict: Dictionary }) {
       const value = mode === "encode" ? encodeHtml(input) : decodeHtml(input);
       return { ok: true as const, value };
     } catch (e) {
-      return { ok: false as const, message: e instanceof Error ? e.message : "Error" };
+      return { ok: false as const, message: e instanceof Error ? e.message : (isRu ? "Ошибка" : "Error") };
     }
   }, [input, mode]);
 

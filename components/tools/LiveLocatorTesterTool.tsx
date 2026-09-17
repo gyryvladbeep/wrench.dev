@@ -65,7 +65,7 @@ export function LiveLocatorTesterTool({ dict }: { dict: Dictionary }) {
       const found = mode === "css" ? runCss(doc, selector) : runXPath(doc, selector);
       return { matches: found, error: "", totalElements: total };
     } catch (e) {
-      return { matches: [] as Element[], error: e instanceof Error ? e.message : "Error", totalElements: total };
+      return { matches: [] as Element[], error: e instanceof Error ? e.message : (isRu ? "Ошибка" : "Error"), totalElements: total };
     }
   }, [html, mode, selector, isRu]);
 

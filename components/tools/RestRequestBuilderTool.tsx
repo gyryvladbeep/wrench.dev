@@ -11,6 +11,7 @@ type Method = typeof METHODS[number];
 interface KV { key: string; value: string; }
 
 export function RestRequestBuilderTool({ dict }: { dict: Dictionary }) {
+  const isRu = dict.isRu;
   const t = dict.tools.restBuilder;
   const [method, setMethod] = useState<Method>("GET");
   const [url, setUrl] = useState("https://jsonplaceholder.typicode.com/todos/1");
@@ -43,7 +44,7 @@ export function RestRequestBuilderTool({ dict }: { dict: Dictionary }) {
       }
       setResponse({ status: res.status, statusText: res.statusText, time: Date.now() - start, body: responseBody });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Request failed");
+      setError(err instanceof Error ? err.message : (isRu ? "Запрос не выполнен" : "Request failed"));
     } finally {
       setSending(false);
     }

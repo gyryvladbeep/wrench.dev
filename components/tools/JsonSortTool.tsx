@@ -15,6 +15,7 @@ function sortKeys(value: unknown): unknown {
 }
 
 export function JsonSortTool({ dict }: { dict: Dictionary }) {
+  const isRu = dict.isRu;
   const [input, setInput] = useState('{"zebra":1,"apple":{"mango":2,"banana":3},"cherry":[5,2,1]}');
   const [indent, setIndent] = useState<2 | 4>(2);
 
@@ -24,7 +25,7 @@ export function JsonSortTool({ dict }: { dict: Dictionary }) {
       const sorted = sortKeys(JSON.parse(input));
       return { ok: true as const, value: JSON.stringify(sorted, null, indent) };
     } catch (e) {
-      return { ok: false as const, message: e instanceof Error ? e.message : "Invalid JSON" };
+      return { ok: false as const, message: e instanceof Error ? e.message : (isRu ? "Невалидный JSON" : "Invalid JSON") };
     }
   }, [input, indent]);
 

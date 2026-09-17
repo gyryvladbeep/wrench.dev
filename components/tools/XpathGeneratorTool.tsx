@@ -69,6 +69,7 @@ function generateXPaths(html: string, t: Dictionary["tools"]["xpathGenerator"]):
 }
 
 export function XpathGeneratorTool({ dict }: { dict: Dictionary }) {
+  const isRu = dict.isRu;
   const [input, setInput] = useState(dict.tools.xpathGenerator.htmlPlaceholder);
   const [results, setResults] = useState<SelectorResult[]>([]);
   const [error, setError] = useState("");
@@ -81,7 +82,7 @@ export function XpathGeneratorTool({ dict }: { dict: Dictionary }) {
       const r = generateXPaths(input, t);
       setResults(r);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error");
+      setError(err instanceof Error ? err.message : (isRu ? "Ошибка" : "Error"));
     }
   }
 

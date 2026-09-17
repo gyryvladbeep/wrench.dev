@@ -115,6 +115,7 @@ function minifySql(sql: string): string {
 }
 
 export function SqlFormatterTool({ dict }: { dict: Dictionary }) {
+  const isRu = dict.isRu;
   const [input, setInput] = useState(
     "select u.id, u.name, u.email, o.total from users u left join orders o on u.id = o.user_id where u.active = 1 and o.total > 100 order by o.total desc limit 20;"
   );
@@ -128,7 +129,7 @@ export function SqlFormatterTool({ dict }: { dict: Dictionary }) {
       const value = mode === "minify" ? minifySql(input) : formatSql(input);
       return { ok: true as const, value };
     } catch (err) {
-      return { ok: false as const, message: err instanceof Error ? err.message : "Error" };
+      return { ok: false as const, message: err instanceof Error ? err.message : (isRu ? "Ошибка" : "Error") };
     }
   }, [input, mode]);
 

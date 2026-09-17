@@ -5,6 +5,7 @@ import { CopyButton } from "@/components/CopyButton";
 import { Dictionary } from "@/lib/i18n/dictionary-types";
 
 export function JsonEscapeTool({ dict }: { dict: Dictionary }) {
+  const isRu = dict.isRu;
   const [mode, setMode] = useState<"escape" | "unescape">("escape");
   const [input, setInput] = useState(`{"name":"Ada Lovelace","quote":"She said \\"hello\\"!"}`);
 
@@ -20,7 +21,7 @@ export function JsonEscapeTool({ dict }: { dict: Dictionary }) {
         return { ok: true as const, value: typeof parsed === "string" ? parsed : JSON.stringify(parsed, null, 2) };
       }
     } catch (e) {
-      return { ok: false as const, message: e instanceof Error ? e.message : "Error" };
+      return { ok: false as const, message: e instanceof Error ? e.message : (isRu ? "Ошибка" : "Error") };
     }
   }, [input, mode]);
 

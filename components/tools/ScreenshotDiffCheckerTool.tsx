@@ -100,7 +100,7 @@ export function ScreenshotDiffCheckerTool({ dict }: { dict: Dictionary }) {
         height,
       });
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Error");
+      setError(e instanceof Error ? e.message : (isRu ? "Ошибка" : "Error"));
     } finally {
       setLoading(false);
     }

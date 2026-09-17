@@ -20,6 +20,7 @@ skills:
 active: true`;
 
 export function JsonToYamlTool({ dict }: { dict: Dictionary }) {
+  const isRu = dict.isRu;
   const [mode, setMode] = useState<"json2yaml" | "yaml2json">("json2yaml");
   const [input, setInput] = useState(SAMPLE_JSON);
 
@@ -34,7 +35,7 @@ export function JsonToYamlTool({ dict }: { dict: Dictionary }) {
         return { ok: true as const, value: JSON.stringify(parsed, null, 2) };
       }
     } catch (e) {
-      return { ok: false as const, message: e instanceof Error ? e.message : "Parse error" };
+      return { ok: false as const, message: e instanceof Error ? e.message : (isRu ? "Ошибка разбора" : "Parse error") };
     }
   }, [input, mode]);
 

@@ -10,6 +10,7 @@ import { CloseIcon } from "@/components/icons/GameIcons";
 const SAMPLE = `{"name":"Ada Lovelace","born":1815,"skills":["math","programming"],"active":true}`;
 
 export function JsonFormatterTool({ dict }: { dict: Dictionary }) {
+  const isRu = dict.isRu;
   const [input, setInput] = useState(SAMPLE);
   const [indent, setIndent] = useState<2|4|"tab">(2);
   const [mode, setMode]     = useState<"format"|"minify">("format");
@@ -21,7 +22,7 @@ export function JsonFormatterTool({ dict }: { dict: Dictionary }) {
       const parsed = JSON.parse(input);
       const value  = mode==="minify" ? JSON.stringify(parsed) : JSON.stringify(parsed, null, indent==="tab"?"\t":indent);
       return { ok:true as const, value };
-    } catch(e) { return { ok:false as const, message: e instanceof Error ? e.message : "Invalid JSON" }; }
+    } catch(e) { return { ok:false as const, message: e instanceof Error ? e.message : (isRu ? "Невалидный JSON" : "Invalid JSON") }; }
   }, [input, mode, indent]);
 
   return (

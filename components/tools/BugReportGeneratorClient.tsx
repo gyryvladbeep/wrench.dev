@@ -90,7 +90,7 @@ export function BugReportGeneratorClient({ locale }: { locale: Locale }) {
       }
       setTimeout(() => resultRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
     } catch (e: unknown) {
-      if ((e as Error).name !== "AbortError") setError((e as Error).message ?? "Error");
+      if ((e as Error).name !== "AbortError") setError((e as Error).message ?? (isRu ? "Ошибка" : "Error"));
     } finally { setLoading(false); }
   }
 
