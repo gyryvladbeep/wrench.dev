@@ -136,8 +136,37 @@ export function ImportCollectionModal({
     return ep ? Math.max(0, maxRoutesPerEndpoint - ep.mock_routes.length) : 0;
   }, [target, endpoints, maxRoutesPerEndpoint]);
 
+  // method+path уже существующих в целевом эндпоинте маршрутов — нужно,
+  // чтобы понять, сколько из ВЫБРАННЫХ строк реально займут новый слот.
+  // Пустой набор для "новый эндпоинт": там по определению ничего ещё не
+  // существует, все выбранные маршруты новые.
+  const existingRouteKeys = useMemo(() => {
+    if (target === "new") return new Set<string>();
+    const ep = endpoints.find((e) => e.id === target);
+    return new Set((ep?.mock_routes ?? []).map((r) => `${r.method} ${r.path}`));
+  }, [target, endpoints]);
+
+  // Сколько из выбранных маршрутов реально потребуют новый слот — та же
+  // логика, что и при сохранении (importCollection() в
+  // useMockEndpoints.ts): маршрут с тем же method+path, что уже есть в
+  // целевом эндпоинте, обновит существующую строку и слота не тратит.
+  // Раньше здесь ВСЕ выбранные маршруты сравнивались с оставшейся
+  // вместимостью без разбора — из-за этого, как только эндпоинт
+  // заполнялся до лимита, повторный импорт становился невозможен вообще
+  // ни при каком выборе (даже когда речь шла просто об обновлении уже
+  // существующих маршрутов, которое ничего нового не добавляет).
+  const newSlotsNeeded = useMemo(() => {
+    if (!parsed) return 0;
+    let count = 0;
+    selected.forEach((i) => {
+      const r = parsed.routes[i];
+      if (r && !existingRouteKeys.has(`${r.method} ${r.path}`)) count++;
+    });
+    return count;
+  }, [parsed, selected, existingRouteKeys]);
+
   const selectedCount = selected.size;
-  const overCapacity = selectedCount > targetCapacity;
+  const overCapacity = newSlotsNeeded > targetCapacity;
   const exampleCount = parsed?.routes.filter((r) => r.hasExample).length ?? 0;
 
   function toggle(i: number) {
@@ -299,7 +328,16 @@ export function ImportCollectionModal({
             <div className="border-t border-border px-5 py-3">
               <div className="mb-2 flex items-center justify-between text-xs">
                 <span className={overCapacity ? "text-red-400" : "text-text-muted"}>
-                  {isRu ? `Выбрано ${selectedCount} из ${targetCapacity} доступных слотов.` : `${selectedCount} selected of ${targetCapacity} available slots.`}
+                  {/* Маршруты, уже существующие в целевом эндпоинте (по method+path),
+                      только обновятся и слота не займут — см. newSlotsNeeded выше и
+                      ту же логику в importCollection() (useMockEndpoints.ts). Показываем
+                      это явно, а не просто "N из M", иначе цифры не сходятся с тем,
+                      что реально произойдёт при сохранении. */}
+                  {newSlotsNeeded === selectedCount
+                    ? (isRu ? `Выбрано ${selectedCount} — доступно ${targetCapacity} свободных слотов.` : `${selectedCount} selected — ${targetCapacity} slots available.`)
+                    : (isRu
+                        ? `Выбрано ${selectedCount} (новых: ${newSlotsNeeded}, обновят существующие: ${selectedCount - newSlotsNeeded}) — доступно ${targetCapacity} свободных слотов.`
+                        : `${selectedCount} selected (${newSlotsNeeded} new, ${selectedCount - newSlotsNeeded} will update existing) — ${targetCapacity} slots available.`)}
                 </span>
                 {overCapacity && !isPro && (
                   <Link href={localePath(locale, "/pro")} className="text-accent hover:underline">

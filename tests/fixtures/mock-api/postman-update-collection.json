@@ -1,0 +1,37 @@
+{
+  "info": {
+    "name": "Orders API — Update",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Get order by id",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/orders/:id",
+          "host": ["{{baseUrl}}"],
+          "path": ["orders", ":id"],
+          "variable": [{ "key": "id", "value": "42" }]
+        }
+      },
+      "response": [
+        {
+          "name": "200 OK (updated)",
+          "originalRequest": {
+            "url": { "raw": "{{baseUrl}}/orders/42", "path": ["orders", "42"] }
+          },
+          "code": 200,
+          "body": "{\n  \"id\": 42,\n  \"status\": \"delivered\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "Health check",
+      "request": {
+        "method": "GET",
+        "url": { "raw": "{{baseUrl}}/health", "path": ["health"] }
+      }
+    }
+  ]
+}

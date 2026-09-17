@@ -46,6 +46,14 @@ function uniqueTestEmail(): string {
 const PASSWORD = "TestPassword123!";
 const FIXTURES = path.join(__dirname, "fixtures", "mock-api");
 const POSTMAN_FIXTURE = path.join(FIXTURES, "postman-collection.json");
+// Отдельная маленькая коллекция для теста "повторный импорт в уже
+// заполненный эндпоинт" ниже — один маршрут ("Get order by id")
+// намеренно совпадает по method+path с уже сохранённым из
+// POSTMAN_FIXTURE (тот же /orders/42, но с другим телом примера —
+// "delivered" вместо "shipped", чтобы обновление было видно), второй
+// ("List orders", GET /orders) — заведомо новый, ничего похожего в
+// эндпоинте ещё нет.
+const UPDATE_FIXTURE = path.join(FIXTURES, "postman-update-collection.json");
 
 test.describe.serial("Mock API: импорт коллекции", () => {
   let page: Page;
@@ -108,27 +116,42 @@ test.describe.serial("Mock API: импорт коллекции", () => {
     expect(await res.json()).toEqual({ id: 42, status: "shipped" });
   });
 
-  test("повторный импорт в тот же (единственный, уже не пустой) эндпоинт: выбор сверх лимита блокирует кнопку, снятие галочки с уже существующего маршрута снимает блокировку", async () => {
+  test("повторный импорт в тот же (единственный, уже заполненный) эндпоинт: обновление уже существующего маршрута не требует слота, а новый — требует и блокирует кнопку, пока не снят", async () => {
+    // После предыдущего теста эндпоинт уже ПОЛНОСТЬЮ заполнен: 3 из 3
+    // (FREE_MAX_MOCK_ROUTES) — GET /orders/42, POST /orders, GET /ping.
+    // Свободных слотов под новые маршруты — 0. UPDATE_FIXTURE предлагает
+    // 2 маршрута: "Get order by id" (тот же GET /orders/42, что уже
+    // есть — при сохранении обновит существующую строку, слота не
+    // тратит) и "Health check" (GET /health — совсем новый путь,
+    // которому просто негде поместиться).
     await mockApi.openImportModal();
-    await mockApi.uploadFixture(POSTMAN_FIXTURE);
-    await expect(mockApi.previewHeading).toBeVisible();
-    // Free-лимит маршрутов на эндпоинт — 3 (FREE_MAX_MOCK_ROUTES), в
-    // эндпоинте уже 1 маршрут из предыдущего теста ("Get order by id"
-    // → /orders/42) — значит свободных слотов под НОВЫЕ маршруты
-    // осталось 2. Коллекция снова предлагает все те же 3 (включая тот
-    // самый /orders/42, который на самом деле обновит существующий
-    // маршрут, а не займёт новый слот) — но UI-счётчик считает
-    // консервативно (см. комментарий в ImportCollectionModal.tsx про
-    // targetCapacity), поэтому при всех 3 выбранных галочках кнопка
-    // должна быть заблокирована.
+    await mockApi.uploadFixture(UPDATE_FIXTURE);
+    await expect(mockApi.previewHeading).toContainText("2");
+
+    // Оба выбраны по умолчанию — один из них новый, а свободных слотов
+    // нет вовсе, поэтому кнопка должна быть заблокирована.
     await expect(mockApi.confirmImportButton).toBeDisabled();
 
-    // Снимаем галочку именно с /orders/42 — он и так уже существует в
-    // эндпоинте, реального нового слота не требует.
-    await mockApi.routeRow("GET", "/orders/42").locator('input[type="checkbox"]').uncheck();
+    // Снимаем галочку именно с НОВОГО маршрута (Health check) — тот, что
+    // просто обновит /orders/42, слота и так не требовал, поэтому сам по
+    // себе он блокировку никогда бы не снял (это и есть исправленное
+    // поведение: снятие галочки с уже существующего маршрута раньше
+    // ошибочно считалось "снимающим лимит", хотя реального слота он не
+    // занимал ни до, ни после).
+    await mockApi.routeRow("GET", "/health").locator('input[type="checkbox"]').uncheck();
     await expect(mockApi.confirmImportButton).toBeEnabled();
     await mockApi.confirmImportButton.click();
-    await expect(page.getByText("Saved 2 route(s).")).toBeVisible();
+    await expect(page.getByText("Saved 1 route(s).")).toBeVisible();
     await mockApi.doneButton.click();
+
+    // Публичный mock-URL действительно отдаёт ОБНОВЛЁННОЕ тело
+    // ("delivered", а не "shipped" из первого импорта) — подтверждает,
+    // что это было реальное обновление существующей строки, а не
+    // no-op и не случайно пропущенный маршрут.
+    const baseUrl = (await mockApi.baseUrlCode().textContent())?.trim();
+    expect(baseUrl).toBeTruthy();
+    const res = await page.request.get(`${baseUrl}/orders/42`);
+    expect(res.status()).toBe(200);
+    expect(await res.json()).toEqual({ id: 42, status: "delivered" });
   });
 });
