@@ -175,7 +175,7 @@ function EndpointCard({
       JSON.parse(form.response_body);
       return { ok: true as const };
     } catch (err) {
-      return { ok: false as const, message: err instanceof Error ? err.message : "Invalid JSON" };
+      return { ok: false as const, message: err instanceof Error ? err.message : (isRu ? "Невалидный JSON" : "Invalid JSON") };
     }
   }, [form.response_body]);
 

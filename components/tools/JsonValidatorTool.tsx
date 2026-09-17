@@ -38,6 +38,7 @@ function describeValue(value: unknown, t: Dictionary["tools"]["jsonValidator"]):
 }
 
 export function JsonValidatorTool({ dict }: { dict: Dictionary }) {
+  const isRu = dict.isRu;
   const [input, setInput] = useState(VALID_SAMPLE);
   const t = dict.tools.jsonValidator;
 
@@ -47,7 +48,7 @@ export function JsonValidatorTool({ dict }: { dict: Dictionary }) {
       const parsed = JSON.parse(input);
       return { state: "valid" as const, summary: describeValue(parsed, t) };
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Invalid JSON";
+      const message = err instanceof Error ? err.message : (isRu ? "Невалидный JSON" : "Invalid JSON");
       const posMatch = message.match(/position (\d+)/);
       const lineColMatch = message.match(/line (\d+) column (\d+)/i);
       let location: { line: number; column: number } | null = null;

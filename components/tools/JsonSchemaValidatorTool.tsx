@@ -110,7 +110,7 @@ export function JsonSchemaValidatorTool({ dict }: { dict: Dictionary }) {
       const errors       = validateJsonSchema(parsedJson, parsedSchema);
       return { ok: true as const, errors };
     } catch (e) {
-      return { ok: false as const, message: e instanceof Error ? e.message : "Parse error" };
+      return { ok: false as const, message: e instanceof Error ? e.message : (isRu ? "Ошибка разбора" : "Parse error") };
     }
   }, [json, schema]);
 

@@ -19,6 +19,7 @@ function buildUrl(base: string, params: KV[]): string {
 }
 
 export function ApiRequestBuilderTool({ dict }: { dict: Dictionary }) {
+  const isRu = dict.isRu;
   const t = dict.tools.apiBuilder;
   const [method, setMethod] = useState<Method>("GET");
   const [url, setUrl] = useState("https://jsonplaceholder.typicode.com/posts/1");
@@ -76,7 +77,7 @@ export function ApiRequestBuilderTool({ dict }: { dict: Dictionary }) {
         time: Date.now() - start, body: responseBody, headers: responseHeaders,
       });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Request failed");
+      setError(err instanceof Error ? err.message : (isRu ? "Запрос не выполнен" : "Request failed"));
     } finally {
       setSending(false);
     }

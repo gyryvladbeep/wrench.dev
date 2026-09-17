@@ -145,7 +145,7 @@ export function JsonMutatorTool({ dict }: { dict: Dictionary }) {
   // Parse JSON
   const parsed = useMemo<{ ok: boolean; data: JsonValue | null; error: string }>(() => {
     try { return { ok: true, data: JSON.parse(input), error: "" }; }
-    catch (e) { return { ok: false, data: null, error: e instanceof Error ? e.message : "Invalid JSON" }; }
+    catch (e) { return { ok: false, data: null, error: e instanceof Error ? e.message : (isRu ? "Невалидный JSON" : "Invalid JSON") }; }
   }, [input]);
 
   // All field paths

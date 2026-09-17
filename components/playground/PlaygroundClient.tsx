@@ -134,21 +134,21 @@ function runJavaScript(code: string): Output[] {
   return outputs;
 }
 
-function formatJSON(code: string): { ok: boolean; result: string } {
+function formatJSON(code: string, isRu: boolean): { ok: boolean; result: string } {
   try {
     const parsed = JSON.parse(code);
     return { ok: true, result: JSON.stringify(parsed, null, 2) };
   } catch (e) {
-    return { ok: false, result: e instanceof Error ? e.message : "Invalid JSON" };
+    return { ok: false, result: e instanceof Error ? e.message : (isRu ? "Невалидный JSON" : "Invalid JSON") };
   }
 }
 
-function testRegex(pattern: string): { ok: boolean; matches: { str: string; match: boolean }[]; error?: string } {
+function testRegex(pattern: string, isRu: boolean): { ok: boolean; matches: { str: string; match: boolean }[]; error?: string } {
   try {
     const re = new RegExp(pattern);
     return { ok: true, matches: REGEX_TEST_STRINGS.map(str => ({ str, match: re.test(str) })) };
   } catch (e) {
-    return { ok: false, matches: [], error: e instanceof Error ? e.message : "Invalid regex" };
+    return { ok: false, matches: [], error: e instanceof Error ? e.message : (isRu ? "Невалидное регулярное выражение" : "Invalid regex") };
   }
 }
 
@@ -199,12 +199,12 @@ export function PlaygroundClient({ locale }: { locale: Locale }) {
           const out = runJavaScript(code);
           setOutputs(out);
         } else if (lang === "json") {
-          const { ok, result: r } = formatJSON(code);
+          const { ok, result: r } = formatJSON(code, isRu);
           if (ok) setResult(r);
           else setOutputs([{ type:"error", text: r }]);
         } else if (lang === "regex") {
-          const { ok, matches, error } = testRegex(regexInput);
-          if (!ok) setOutputs([{ type:"error", text: error ?? "Invalid regex" }]);
+          const { ok, matches, error } = testRegex(regexInput, isRu);
+          if (!ok) setOutputs([{ type:"error", text: error ?? (isRu ? "Невалидное регулярное выражение" : "Invalid regex") }]);
           else {
             const out = matches.map(m => ({
               type: (m.match ? "log" : "warn") as Output["type"],

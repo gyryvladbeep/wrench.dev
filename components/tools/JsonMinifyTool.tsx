@@ -13,6 +13,7 @@ const SAMPLE = `{
 }`;
 
 export function JsonMinifyTool({ dict }: { dict: Dictionary }) {
+  const isRu = dict.isRu;
   const [input, setInput] = useState(SAMPLE);
 
   const result = useMemo(() => {
@@ -22,7 +23,7 @@ export function JsonMinifyTool({ dict }: { dict: Dictionary }) {
       const saved = Math.round((1 - minified.length / input.length) * 100);
       return { ok: true as const, value: minified, saved };
     } catch (e) {
-      return { ok: false as const, message: e instanceof Error ? e.message : "Invalid JSON", saved: 0 };
+      return { ok: false as const, message: e instanceof Error ? e.message : (isRu ? "Невалидный JSON" : "Invalid JSON"), saved: 0 };
     }
   }, [input]);
 

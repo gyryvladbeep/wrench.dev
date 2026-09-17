@@ -6,6 +6,7 @@ import { Dictionary } from "@/lib/i18n/dictionary-types";
 import { DownloadIcon } from "@/components/icons/GameIcons";
 
 export function QrCodeGeneratorTool({ dict }: { dict: Dictionary }) {
+  const isRu = dict.isRu;
   const [input, setInput] = useState("https://devtoolbox.example.com");
   const [ecLevel, setEcLevel] = useState<"L" | "M" | "Q" | "H">("M");
   const [size, setSize] = useState(300);
@@ -20,7 +21,7 @@ export function QrCodeGeneratorTool({ dict }: { dict: Dictionary }) {
       margin: 2,
       errorCorrectionLevel: ecLevel,
       color: { dark: "#F2F2F5", light: "#0B0B0F" },
-    }).catch((e) => setError(e.message));
+    }).catch((e) => setError(e instanceof Error ? e.message : (isRu ? "Ошибка" : "Error")));
   }, [input, ecLevel, size]);
 
   function download(format: "png" | "svg") {

@@ -125,7 +125,7 @@ export function YamlFormatterTool({ dict }: { dict: Dictionary }) {
         : objToYaml(parsed);
       return { ok: true as const, value };
     } catch (e) {
-      return { ok: false as const, message: e instanceof Error ? e.message : "Invalid YAML" };
+      return { ok: false as const, message: e instanceof Error ? e.message : (isRu ? "Невалидный YAML" : "Invalid YAML") };
     }
   }, [input, mode]);
 

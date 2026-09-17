@@ -6,6 +6,7 @@ import { Dictionary } from "@/lib/i18n/dictionary-types";
 interface MatchInfo { text: string; index: number; groups: (string | undefined)[]; }
 
 export function RegexTesterTool({ dict }: { dict: Dictionary }) {
+  const isRu = dict.isRu;
   const [pattern, setPattern] = useState("(\\w+)@(\\w+\\.\\w+)");
   const [flags, setFlags] = useState("gi");
   const [testString, setTestString] = useState(
@@ -34,7 +35,7 @@ export function RegexTesterTool({ dict }: { dict: Dictionary }) {
       }
       return { ok: true as const, matches };
     } catch (err) {
-      return { ok: false as const, message: err instanceof Error ? err.message : "Invalid regex" };
+      return { ok: false as const, message: err instanceof Error ? err.message : (isRu ? "Невалидное регулярное выражение" : "Invalid regex") };
     }
   }, [pattern, flags, testString]);
 
