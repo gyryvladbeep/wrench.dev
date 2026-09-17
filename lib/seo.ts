@@ -6,7 +6,13 @@ import { Locale, localePath } from "./i18n/config";
 export const siteConfig = {
   name: "Wrench-Branch",
   tagline: "Professional developer tools in one workspace",
-  url: "https://wrench-branch.dev",
+  // Было "https://wrench-branch.dev" — домен, который никогда не
+  // резолвился (не куплен/не подключён; происхождение неизвестно).
+  // canonical, hreflang, og:url, sitemap.xml и robots.txt (все читают
+  // это же siteConfig.url) молча указывали на несуществующий адрес.
+  // Реальный прод — Vercel-домен ниже; поменять здесь на кастомный
+  // домен, если/когда wrench-branch.dev будет реально куплен и подключён.
+  url: "https://wrench-branch.vercel.app",
 };
 
 function buildAlternates(locale: Locale, path: string) {
