@@ -8,7 +8,6 @@ export const categories: CategoryMeta[] = [
   { slug: "generators", name: "Generators", description: "Generate UUIDs, passwords, colors, Lorem Ipsum and more." },
   { slug: "datetime",   name: "Date & Time", description: "Convert timestamps, calculate date differences and parse cron." },
   { slug: "web",        name: "Web",        description: "Parse URLs, inspect headers, generate QR codes." },
-  { slug: "data",       name: "Data",       description: "Generate fake test data, convert formats, work with CSV." },
   { slug: "qa",         name: "QA",         description: "XPath, CSS selectors, API testing and QA utilities." },
   { slug: "api",        name: "API",        description: "Build curl commands, REST requests and inspect HTTP." },
   { slug: "gamedev",    name: "Gamedev",    description: "Loot tables, coordinate systems, framerate math and other game dev/QA tools." },
@@ -613,19 +612,6 @@ export const tools: Tool[] = [
     keywords: ["password strength checker", "password strength meter", "password entropy", "how strong is my password"],
     howToSteps: ["Type or paste the password to check.", "Read the entropy, estimated crack time and rule checklist.", "Adjust the password until it passes the suggestions."],
     faqs: [{ question: "Is the password sent anywhere?", answer: "No — the entire analysis runs locally in your browser; the password is never transmitted, logged or stored." }],
-  },
-
-  // ═══════════════════════════════ DATA / EXISTING ════════════════════════════
-
-  {
-    slug: "fake-test-data-generator-alias",
-    isHidden: true, // merged above
-    name: "Fake Test Data Generator",
-    shortDescription: "Generate realistic fake data for testing.",
-    longDescription: "Generate realistic fake data for testing.",
-    metaDescription: "Generate fake test data.",
-    category: "data", isImplemented: false,
-    keywords: ["fake data"],
   },
 
   // ═══════════════════════════════ QA ═════════════════════════════════════════

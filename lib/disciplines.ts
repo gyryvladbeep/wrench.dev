@@ -62,7 +62,7 @@ export const DISCIPLINES: DisciplineMeta[] = [
     taglineRu: "ID, даты, пароли, повседневные помощники",
     icon: "wrench",
     color: "#c49964",
-    categories: ["generators", "datetime", "data"],
+    categories: ["generators", "datetime"],
   },
   {
     id: "gamedev",
