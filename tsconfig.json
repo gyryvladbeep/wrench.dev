@@ -38,6 +38,7 @@
   ],
   "exclude": [
     "node_modules",
-    "Claude outputs"
+    "Claude outputs",
+    "vscode-extension"
   ]
 }

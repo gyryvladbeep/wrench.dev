@@ -1,0 +1,60 @@
+{
+  "name": "wrench-branch-toolbox",
+  "displayName": "Wrench-Branch Toolbox",
+  "description": "JSON, Base64, JWT, UUID, hash, URL and timestamp tools from wrench-branch.vercel.app, right in the command palette.",
+  "version": "0.1.0",
+  "publisher": "wrench-branch",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gyryvladbeep/wrench.dev",
+    "directory": "vscode-extension"
+  },
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Formatters",
+    "Other"
+  ],
+  "keywords": [
+    "json",
+    "base64",
+    "jwt",
+    "uuid",
+    "hash",
+    "wrench-branch"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      { "command": "wrench.formatJson", "title": "Format JSON", "category": "Wrench" },
+      { "command": "wrench.minifyJson", "title": "Minify JSON", "category": "Wrench" },
+      { "command": "wrench.validateJson", "title": "Validate JSON", "category": "Wrench" },
+      { "command": "wrench.encodeBase64", "title": "Encode Base64", "category": "Wrench" },
+      { "command": "wrench.decodeBase64", "title": "Decode Base64", "category": "Wrench" },
+      { "command": "wrench.decodeJwt", "title": "Decode JWT", "category": "Wrench" },
+      { "command": "wrench.generateUuid", "title": "Generate UUID", "category": "Wrench" },
+      { "command": "wrench.generateHash", "title": "Generate Hash (MD5 / SHA-1 / SHA-256 / SHA-512)", "category": "Wrench" },
+      { "command": "wrench.encodeUrl", "title": "URL Encode", "category": "Wrench" },
+      { "command": "wrench.decodeUrl", "title": "URL Decode", "category": "Wrench" },
+      { "command": "wrench.convertTimestamp", "title": "Convert Timestamp", "category": "Wrench" }
+    ]
+  },
+  "scripts": {
+    "esbuild-base": "esbuild ./src/extension.ts --bundle --outfile=out/extension.js --external:vscode --format=cjs --platform=node --target=node18",
+    "compile": "npm run esbuild-base -- --sourcemap",
+    "package-js": "npm run esbuild-base -- --minify",
+    "watch": "npm run esbuild-base -- --sourcemap --watch",
+    "typecheck": "tsc --noEmit",
+    "vscode:prepublish": "npm run package-js",
+    "test-units": "tsc -p tsconfig.test.json && node --test out-test/tests/tools.test.js"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.85.0",
+    "@vscode/vsce": "^2.32.0",
+    "esbuild": "^0.23.0",
+    "typescript": "^5.5.0"
+  }
+}
