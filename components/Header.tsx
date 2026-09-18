@@ -168,6 +168,7 @@ function LearnDropdown({ locale }: { locale: Locale }) {
     // объяснена в комментарии у самого nav ниже (5 пунктов верхнего
     // уровня вместо прежних 9-10).
     { key: "people",     href: localePath(locale, "/people"),     label: isRu ? "Люди" : "People" },
+    { key: "leaderboard", href: localePath(locale, "/leaderboard"), label: isRu ? "Лидерборд" : "Leaderboard" },
   ];
   const active = items.some((i) => pathname.startsWith(i.href));
   return (

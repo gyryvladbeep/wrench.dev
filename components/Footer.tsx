@@ -45,6 +45,7 @@ export function Footer({ dict, locale }: FooterProps) {
       { label: "Mock API",                                 href: "/mock-api" },
       { label: isRu ? "Вебхуки"         : "Webhooks",     href: "/webhook-inspector" },
       { label: isRu ? "Дайджест"        : "Digest",       href: "/digest" },
+      { label: isRu ? "Лидерборд"       : "Leaderboard",  href: "/leaderboard" },
     ],
     [isRu ? "Компания" : "Company"]: [
       { label: isRu ? "Pro план"        : "Pro Plan",     href: "/pro" },

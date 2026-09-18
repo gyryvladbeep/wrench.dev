@@ -274,6 +274,16 @@ export function DigestClient({ locale }: { locale: Locale }) {
               ))}
             </div>
           )}
+          {/* Это только топ-5 по стрику для дайджеста — полноценный,
+              ранжированный по Wrench Score (не только стрику) список на
+              /leaderboard, отдельная индексируемая страница (пункт 22 из
+              ROADMAP-BRAINSTORM.md). */}
+          <Link
+            href={localePath(locale, "/leaderboard")}
+            className="mt-3 inline-flex items-center gap-1 text-xs text-accent transition-colors hover:text-amber-400"
+          >
+            {isRu ? "Полный лидерборд Wrench Score →" : "Full Wrench Score leaderboard →"}
+          </Link>
         </section>
       </div>
 

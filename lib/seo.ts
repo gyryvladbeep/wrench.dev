@@ -134,3 +134,42 @@ export function buildToolJsonLd(tool: Tool, locale: Locale, categoryName: string
     }] : []),
   ];
 }
+
+// ItemList + BreadcrumbList для /leaderboard (пункт 22 из
+// ROADMAP-BRAINSTORM.md — "не только срез в дайджесте", отдельная
+// индексируемая страница) — тот же двухблочный приём, что уже у
+// buildArticleJsonLd(): один блок описывает сам контент страницы,
+// второй — её место в навигации сайта. ItemList.item — ссылка на
+// публичный профиль, а не полноценная Person-сущность: у профилей нет
+// устойчивого внешнего identifier'а (email/sameAs), раздувать разметку
+// ради топ-N ников не даёт поисковику ничего, чего не даёт сама
+// страница со ссылками на /u/[username].
+export function buildLeaderboardJsonLd(
+  locale: Locale,
+  homeLabel: string,
+  leaderboardLabel: string,
+  entries: { username: string; display_name: string | null }[]
+) {
+  const path = "/leaderboard";
+  const url  = `${siteConfig.url}${localePath(locale, path)}`;
+  const homeUrl = `${siteConfig.url}${localePath(locale, "/")}`;
+  return [
+    {
+      "@context": "https://schema.org", "@type": "ItemList",
+      name: leaderboardLabel,
+      url,
+      itemListElement: entries.map((e, i) => ({
+        "@type": "ListItem", position: i + 1,
+        name: e.display_name || `@${e.username}`,
+        url: `${siteConfig.url}${localePath(locale, `/u/${e.username}`)}`,
+      })),
+    },
+    {
+      "@context": "https://schema.org", "@type": "BreadcrumbList",
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: homeLabel, item: homeUrl },
+        { "@type": "ListItem", position: 2, name: leaderboardLabel, item: url },
+      ],
+    },
+  ];
+}
