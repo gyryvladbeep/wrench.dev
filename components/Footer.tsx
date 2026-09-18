@@ -42,6 +42,7 @@ export function Footer({ dict, locale }: FooterProps) {
       { label: "Playground",                               href: "/playground" },
       { label: isRu ? "База знаний"     : "Knowledge",    href: "/knowledge" },
       { label: isRu ? "Зарплаты"        : "Salaries",     href: "/salary" },
+      { label: isRu ? "Срез рынка зарплат" : "Salary Market Snapshot", href: "/salary/report" },
       { label: "Mock API",                                 href: "/mock-api" },
       { label: isRu ? "Вебхуки"         : "Webhooks",     href: "/webhook-inspector" },
       { label: isRu ? "Дайджест"        : "Digest",       href: "/digest" },

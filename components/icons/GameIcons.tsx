@@ -31,7 +31,7 @@ interface IconProps {
 export type GameIconId =
   | "wrench" | "gear" | "rocket" | "star" | "sparkle" | "crown"
   | "lightning" | "fire" | "flag" | "diamond" | "target"
-  | "trophy" | "magnifier" | "palette" | "medal" | "flask" | "brackets" | "gamepad";
+  | "trophy" | "magnifier" | "palette" | "medal" | "flask" | "brackets" | "gamepad" | "chart";
 
 const icons: Record<GameIconId, (p: IconProps) => JSX.Element> = {
   wrench: ({ className = "", size = 16 }) => (
@@ -147,6 +147,15 @@ const icons: Record<GameIconId, (p: IconProps) => JSX.Element> = {
       <path d="M5.3 7v2M4.3 8h2" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
       <circle cx="10" cy="7.3" r="0.5" stroke="currentColor" strokeWidth="1.4"/>
       <circle cx="11.3" cy="8.6" r="0.5" stroke="currentColor" strokeWidth="1.4"/>
+    </svg>
+  ),
+  // Chart — статистика/отчёты (app/[locale]/salary/report). Три
+  // столбика восходящей высоты + базовая линия — узнаваемее и
+  // геометричнее на маленьком размере, чем линейный график.
+  chart: ({ className = "", size = 16 }) => (
+    <svg width={size} height={size} viewBox="0 0 16 16" fill="none" className={className} aria-hidden>
+      <path d="M2 13.5h12" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+      <path d="M4.2 13.5V9M8 13.5V5.5M11.8 13.5V7.2" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
     </svg>
   ),
 };

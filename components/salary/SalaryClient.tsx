@@ -211,6 +211,9 @@ export function SalaryClient({ locale }: { locale: Locale }) {
                   ? `${totalCount} ${totalCount === 1 ? "человек поделился" : "человек поделились"} своей зарплатой.`
                   : `${totalCount} ${totalCount === 1 ? "person has" : "people have"} shared their salary.`)}
           </p>
+          <Link href={localePath(locale, "/salary/report")} className="mt-1 inline-block text-xs text-link hover:underline">
+            {isRu ? "Полный срез рынка по роли, уровню и стране →" : "Full market snapshot by role, level and country →"}
+          </Link>
         </div>
       </div>
 

@@ -173,3 +173,52 @@ export function buildLeaderboardJsonLd(
     },
   ];
 }
+
+// Пункт 23 из ROADMAP-BRAINSTORM.md — тот же двухблочный приём, что и
+// у buildLeaderboardJsonLd() выше, но контент тут не список сущностей
+// (профилей), а агрегированная статистика, поэтому Dataset — более
+// точный тип schema.org, чем ItemList (и потенциально попадает в
+// Google Dataset Search, отдельный бонус к обычному веб-поиску).
+// variableMeasured называет сами измеряемые величины, а не приводит
+// числа — числа и так в самом HTML таблицы, дублировать их в JSON-LD
+// не даёт ничего, чего не даёт сам контент страницы.
+export function buildSalaryReportJsonLd(
+  locale: Locale,
+  homeLabel: string,
+  salaryLabel: string,
+  reportLabel: string,
+  sampleSize: number
+) {
+  const path = "/salary/report";
+  const url  = `${siteConfig.url}${localePath(locale, path)}`;
+  const homeUrl = `${siteConfig.url}${localePath(locale, "/")}`;
+  const salaryUrl = `${siteConfig.url}${localePath(locale, "/salary")}`;
+  const isRu = locale === "ru";
+  return [
+    {
+      "@context": "https://schema.org", "@type": "Dataset",
+      name: reportLabel,
+      description: isRu
+        ? "Агрегированная, анонимизированная статистика зарплат QA-инженеров и разработчиков по роли, уровню и стране — собрано пользователями Wrench-Branch."
+        : "Aggregated, anonymized QA/developer salary statistics by role, seniority and country — crowd-sourced from Wrench-Branch users.",
+      url,
+      variableMeasured: [
+        isRu ? "Медианная зарплата (USD/мес)" : "Median salary (USD/month)",
+        isRu ? "Средняя зарплата (USD/мес)" : "Average salary (USD/month)",
+        isRu ? "Диапазон зарплат (USD/мес)" : "Salary range (USD/month)",
+      ],
+      // Не чувствительное само по себе (см. комментарий в
+      // supabase/salary-report-migration.sql) — общее число откликов,
+      // не связанное ни с одной конкретной суммой.
+      size: `${sampleSize} responses`,
+    },
+    {
+      "@context": "https://schema.org", "@type": "BreadcrumbList",
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: homeLabel, item: homeUrl },
+        { "@type": "ListItem", position: 2, name: salaryLabel, item: salaryUrl },
+        { "@type": "ListItem", position: 3, name: reportLabel, item: url },
+      ],
+    },
+  ];
+}

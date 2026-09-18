@@ -39,6 +39,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     pages.push(url(localePath(locale, "/interview"), 0.7, "weekly"));
     pages.push(url(localePath(locale, "/playground"), 0.6, "weekly"));
     pages.push(url(localePath(locale, "/salary"), 0.7, "weekly"));
+    pages.push(url(localePath(locale, "/salary/report"), 0.7, "daily"));
+    pages.push(url(localePath(locale, "/leaderboard"), 0.6, "daily"));
     pages.push(url(localePath(locale, "/mock-api"), 0.6, "monthly"));
     pages.push(url(localePath(locale, "/webhook-inspector"), 0.6, "monthly"));
     pages.push(url(localePath(locale, "/digest"), 0.5, "daily"));

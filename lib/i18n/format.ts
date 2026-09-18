@@ -17,6 +17,24 @@ export function formatToolCount(count: number, locale: Locale): string {
   return `${count} tool${count === 1 ? "" : "s"}`;
 }
 
+/** Same 1 / 2–4 / 5+ distinction as formatToolCount(), for salary-report
+ *  response counts (app/[locale]/salary/report/page.tsx) — nominative
+ *  case ("N откликов"), kept separate from formatToolCount() rather than
+ *  parameterized by noun, since Russian plural stems don't share a
+ *  predictable suffix pattern across unrelated nouns. */
+export function formatResponseCount(count: number, locale: Locale): string {
+  if (locale === "ru") {
+    const mod10 = count % 10;
+    const mod100 = count % 100;
+    let word = "откликов";
+    if (mod100 >= 11 && mod100 <= 14) word = "откликов";
+    else if (mod10 === 1) word = "отклик";
+    else if (mod10 >= 2 && mod10 <= 4) word = "отклика";
+    return `${count} ${word}`;
+  }
+  return `${count} response${count === 1 ? "" : "s"}`;
+}
+
 /** "{Category} Tools" reads naturally in English; the literal Russian
  *  word-for-word equivalent doesn't, so the order flips instead of
  *  reusing one template for both locales. */
