@@ -1,0 +1,42 @@
+{
+  "name": "wrench-branch",
+  "description": "CLI for wrench-branch.vercel.app — JSON, Base64, JWT, UUID, hash, URL, timestamp, plus salary/mock-API/webhook commands.",
+  "version": "0.1.0",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gyryvladbeep/wrench.dev",
+    "directory": "cli"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "cli",
+    "json",
+    "base64",
+    "jwt",
+    "uuid",
+    "hash",
+    "wrench-branch"
+  ],
+  "bin": {
+    "wrench": "./dist/index.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "esbuild-base": "esbuild ./src/index.ts --bundle --outfile=dist/index.js --platform=node --target=node18 --format=cjs",
+    "build": "npm run esbuild-base -- --minify && node -e \"require('fs').chmodSync('dist/index.js', 0o755)\"",
+    "watch": "npm run esbuild-base -- --sourcemap --watch",
+    "typecheck": "tsc --noEmit",
+    "prepack": "npm run build",
+    "test-units": "tsc -p tsconfig.test.json && node --test out-test/tests/*.test.js"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "esbuild": "^0.23.0",
+    "typescript": "^5.5.0"
+  }
+}

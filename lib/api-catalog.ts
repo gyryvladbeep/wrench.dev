@@ -5,19 +5,27 @@ import { getImplementedTools, getToolBySlug } from "./tools-registry";
 // ═══════════════════════════════════════════════════════════════
 // Публичный, бесплатный, rate-limited API каталога инструментов
 // (пункты 10+11 из ROADMAP-BRAINSTORM.md) — curl .../api/v1/tools/<slug>.
-// Отдаёт только МЕТАДАННЫЕ (название, описание, категория, ...) — сама
-// логика каждого инструмента (форматирование JSON, декод JWT, ...)
-// работает целиком в браузере пользователя (см. howItWorksBody в
-// lib/i18n/dictionaries/*.ts) и не выполняется на сервере ни для кого,
-// это НЕ API для "выполнить форматирование JSON по HTTP" — та идея
-// (CLI, `npx wrench <tool> <input>`) отдельная и намеренно отложена
-// (пункт 9 в роадмапе).
+// /tools и /tools/{slug} отдают только МЕТАДАННЫЕ (название, описание,
+// категория, ...) — сама логика каждого инструмента (форматирование
+// JSON, декод JWT, ...) работает целиком в браузере пользователя (см.
+// howItWorksBody в lib/i18n/dictionaries/*.ts) и не выполняется на
+// сервере ни для кого. Выполнить эти же инструменты по-настоящему
+// (а не только прочитать их метаданные) — отдельная история: локально,
+// без сети, через CLI (cli/, пункт 9 — `wrench json format`, `wrench
+// uuid` и т.д., та же логика, что уже переиспользована в
+// vscode-extension/src/tools/*) или через VS Code-расширение (пункт 8).
 //
-// buildOpenApiSpec() и buildPostmanCollection() читают отсюда одни и те
-// же PUBLIC_ROUTES — единственный источник правды для обоих документов,
-// это и есть смысл "автогенерируемая" из пункта 11: спек и коллекция
-// не могут разъехаться друг с другом, потому что оба считаются из одного
-// массива, а не переписаны вручную дважды.
+// buildOpenApiSpec() и buildPostmanCollection() читают одни и те же
+// исходники данных (listPublicTools()/getPublicToolDetail() для
+// каталога), поэтому спек и коллекция не могут разойтись друг с другом
+// по названиям/описаниям инструментов — это и есть смысл
+// "автогенерируемая" из пункта 11. Пути write-эндпоинтов с личным
+// токеном (/mock-endpoints, /webhook-bins, .../requests — пункт 13) и
+// анонимного среза зарплат (/salary, /salary/report — пункт 23)
+// описаны в buildOpenApiSpec()/buildPostmanCollection() вручную рядом
+// с остальными путями: в отличие от каталога инструментов, у них нет
+// отдельного динамического списка "все зарплатные эндпоинты", который
+// стоило бы городить ради трёх записей.
 // ═══════════════════════════════════════════════════════════════
 
 export const API_VERSION = "v1";
@@ -133,8 +141,93 @@ export function buildOpenApiSpec() {
           },
         },
       },
+      "/salary": {
+        get: {
+          summary: "Get salary stats for one segment",
+          description:
+            "Aggregated, anonymized salary stats for one role (optionally narrowed by seniority/country). " +
+            "Numeric fields are null when the segment has fewer than 3 responses.",
+          parameters: [
+            { name: "role", in: "query", required: true, schema: { type: "string" }, description: "Role tag, e.g. qa, frontend, backend." },
+            { name: "seniority", in: "query", required: false, schema: { type: "string" }, description: "e.g. junior, middle, senior." },
+            { name: "country", in: "query", required: false, schema: { type: "string" }, description: "e.g. am, ru, us." },
+          ],
+          responses: {
+            "200": { description: "OK", content: { "application/json": { schema: { $ref: "#/components/schemas/SalaryStats" } } } },
+            "400": { description: "Invalid role/seniority/country", content: { "application/json": { schema: { $ref: "#/components/schemas/Error" } } } },
+            "429": { description: "Rate limit exceeded", content: { "application/json": { schema: { $ref: "#/components/schemas/Error" } } } },
+          },
+        },
+      },
+      "/salary/report": {
+        get: {
+          summary: "Get the full salary market snapshot",
+          description: "The same data behind /salary/report — every role×seniority and country breakdown in one call.",
+          responses: {
+            "200": { description: "OK", content: { "application/json": { schema: { $ref: "#/components/schemas/SalaryReport" } } } },
+            "429": { description: "Rate limit exceeded", content: { "application/json": { schema: { $ref: "#/components/schemas/Error" } } } },
+          },
+        },
+      },
+      "/mock-endpoints": {
+        post: {
+          summary: "Create or update a mock API endpoint",
+          description:
+            "Requires a personal API token (Profile -> Settings -> API tokens). Idempotent by `name`: reusing the " +
+            "same name replaces that endpoint's routes instead of creating a new one, so repeated CI runs don't hit the free-tier limit.",
+          security: [{ bearerAuth: [] }],
+          requestBody: { required: true, content: { "application/json": { schema: { $ref: "#/components/schemas/MockEndpointRequest" } } } },
+          responses: {
+            "200": { description: "Existing endpoint updated", content: { "application/json": { schema: { $ref: "#/components/schemas/MockEndpointResponse" } } } },
+            "201": { description: "New endpoint created", content: { "application/json": { schema: { $ref: "#/components/schemas/MockEndpointResponse" } } } },
+            "400": { description: "Invalid request body", content: { "application/json": { schema: { $ref: "#/components/schemas/Error" } } } },
+            "401": { description: "Missing or invalid token", content: { "application/json": { schema: { $ref: "#/components/schemas/Error" } } } },
+            "403": { description: "Plan limit reached", content: { "application/json": { schema: { $ref: "#/components/schemas/Error" } } } },
+            "429": { description: "Rate limit exceeded", content: { "application/json": { schema: { $ref: "#/components/schemas/Error" } } } },
+          },
+        },
+      },
+      "/webhook-bins": {
+        post: {
+          summary: "Create or reset a webhook bin",
+          description:
+            "Requires a personal API token. Idempotent by `name`: reusing the same name resets that bin's received " +
+            "requests instead of creating a new one, so a fresh CI run doesn't see a previous run's webhooks.",
+          security: [{ bearerAuth: [] }],
+          requestBody: { required: false, content: { "application/json": { schema: { $ref: "#/components/schemas/WebhookBinRequest" } } } },
+          responses: {
+            "200": { description: "Existing bin reset", content: { "application/json": { schema: { $ref: "#/components/schemas/WebhookBinResponse" } } } },
+            "201": { description: "New bin created", content: { "application/json": { schema: { $ref: "#/components/schemas/WebhookBinResponse" } } } },
+            "401": { description: "Missing or invalid token", content: { "application/json": { schema: { $ref: "#/components/schemas/Error" } } } },
+            "403": { description: "Plan limit reached", content: { "application/json": { schema: { $ref: "#/components/schemas/Error" } } } },
+            "429": { description: "Rate limit exceeded", content: { "application/json": { schema: { $ref: "#/components/schemas/Error" } } } },
+          },
+        },
+      },
+      "/webhook-bins/{slug}/requests": {
+        get: {
+          summary: "List requests received by a webhook bin",
+          description: "Requires the same personal API token used to create the bin; only its owner can read it.",
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            { name: "slug", in: "path", required: true, schema: { type: "string" } },
+          ],
+          responses: {
+            "200": { description: "OK", content: { "application/json": { schema: { $ref: "#/components/schemas/WebhookRequestsResponse" } } } },
+            "401": { description: "Missing or invalid token", content: { "application/json": { schema: { $ref: "#/components/schemas/Error" } } } },
+            "404": { description: "Bin not found (or not owned by this token)", content: { "application/json": { schema: { $ref: "#/components/schemas/Error" } } } },
+            "429": { description: "Rate limit exceeded", content: { "application/json": { schema: { $ref: "#/components/schemas/Error" } } } },
+          },
+        },
+      },
     },
     components: {
+      securitySchemes: {
+        bearerAuth: {
+          type: "http", scheme: "bearer",
+          description: "Personal token (wrb_...) from Profile -> Settings -> API tokens, sent as `Authorization: Bearer <token>`.",
+        },
+      },
       schemas: {
         ToolSummary: {
           type: "object",
@@ -172,6 +265,95 @@ export function buildOpenApiSpec() {
           type: "object",
           properties: { error: { type: "string" } },
         },
+        SalaryStatsCore: {
+          type: "object",
+          properties: {
+            sample_size: { type: "integer" },
+            median_usd:  { type: "number", nullable: true },
+            avg_usd:     { type: "number", nullable: true },
+            min_usd:     { type: "number", nullable: true },
+            max_usd:     { type: "number", nullable: true },
+          },
+        },
+        SalaryStats: {
+          allOf: [
+            { type: "object", properties: { role: { type: "string" }, seniority: { type: "string", nullable: true }, country: { type: "string", nullable: true } } },
+            { $ref: "#/components/schemas/SalaryStatsCore" },
+          ],
+        },
+        SalaryReport: {
+          type: "object",
+          properties: {
+            totalCount: { type: "integer" },
+            byRole: {
+              type: "array",
+              items: { allOf: [{ type: "object", properties: { role_tag: { type: "string" }, seniority: { type: "string" } } }, { $ref: "#/components/schemas/SalaryStatsCore" }] },
+            },
+            byCountry: {
+              type: "array",
+              items: { allOf: [{ type: "object", properties: { country: { type: "string" } } }, { $ref: "#/components/schemas/SalaryStatsCore" }] },
+            },
+          },
+        },
+        MockRoute: {
+          type: "object",
+          required: ["method", "path"],
+          properties: {
+            method:        { type: "string", enum: ["GET", "POST", "PUT", "PATCH", "DELETE"] },
+            path:          { type: "string", description: "Must start with '/'." },
+            status_code:   { type: "integer", default: 200 },
+            response_body: { type: "string", default: "{}" },
+            delay_ms:      { type: "integer", default: 0 },
+          },
+        },
+        MockEndpointRequest: {
+          type: "object",
+          required: ["name", "routes"],
+          properties: {
+            name:   { type: "string", maxLength: 100 },
+            routes: { type: "array", items: { $ref: "#/components/schemas/MockRoute" } },
+          },
+        },
+        MockEndpointResponse: {
+          type: "object",
+          properties: {
+            id:   { type: "string" },
+            slug: { type: "string" },
+            name: { type: "string" },
+            url:  { type: "string", format: "uri" },
+            routes: { type: "array", items: { allOf: [{ $ref: "#/components/schemas/MockRoute" }, { type: "object", properties: { url: { type: "string", format: "uri" } } }] } },
+          },
+        },
+        WebhookBinRequest: {
+          type: "object",
+          properties: { name: { type: "string", maxLength: 100, default: "CI run" } },
+        },
+        WebhookBinResponse: {
+          type: "object",
+          properties: {
+            id:  { type: "string" },
+            slug: { type: "string" },
+            name: { type: "string" },
+            url:  { type: "string", format: "uri" },
+            requestsUrl: { type: "string", format: "uri" },
+          },
+        },
+        WebhookRequestEntry: {
+          type: "object",
+          properties: {
+            id: { type: "string" }, method: { type: "string" }, path: { type: "string" },
+            query: { type: "object" }, headers: { type: "object" }, body: { type: "string" },
+            content_type: { type: "string", nullable: true }, source_ip: { type: "string", nullable: true },
+            received_at: { type: "string", format: "date-time" },
+          },
+        },
+        WebhookRequestsResponse: {
+          type: "object",
+          properties: {
+            count: { type: "integer" },
+            requests: { type: "array", items: { $ref: "#/components/schemas/WebhookRequestEntry" } },
+          },
+        },
       },
     },
   };
@@ -194,6 +376,13 @@ function postmanUrl(rawUrl: string) {
   };
 }
 
+// Bearer-заголовок для трёх запросов, которым нужен личный токен —
+// сам токен подставляется переменной коллекции wrench_api_token (см.
+// variable ниже), а не хардкодится, чтобы коллекцию можно было
+// импортировать и сразу заполнить своим токеном в Postman, не редактируя
+// каждый запрос по отдельности.
+const AUTH_HEADER = [{ key: "Authorization", value: "Bearer {{wrench_api_token}}" }];
+
 export function buildPostmanCollection() {
   const base = `${siteConfig.url}${API_BASE_PATH}`;
   return {
@@ -201,9 +390,12 @@ export function buildPostmanCollection() {
       name: `${siteConfig.name} Public API`,
       description:
         "Auto-generated from the same route definitions as /api/v1/openapi.json — see that spec for full schemas. " +
-        "Free, rate-limited (60 req/min per IP), no auth required.",
+        "GET requests are free, rate-limited (60 req/min per IP), no auth required. The three POST/write requests " +
+        "need a personal token (Profile -> Settings -> API tokens on the site) — set it once as this collection's " +
+        "wrench_api_token variable.",
       schema: "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
     },
+    variable: [{ key: "wrench_api_token", value: "wrb_your_token_here" }],
     item: [
       {
         name: "List tools",
@@ -216,6 +408,42 @@ export function buildPostmanCollection() {
       {
         name: "Get tool detail",
         request: { method: "GET", header: [], url: postmanUrl(`${base}/tools/json-formatter`) },
+      },
+      {
+        name: "Get salary stats for one segment",
+        request: { method: "GET", header: [], url: postmanUrl(`${base}/salary?role=qa&seniority=senior`) },
+      },
+      {
+        name: "Get full salary market snapshot",
+        request: { method: "GET", header: [], url: postmanUrl(`${base}/salary/report`) },
+      },
+      {
+        name: "Create or update a mock endpoint",
+        request: {
+          method: "POST",
+          header: [...AUTH_HEADER, { key: "Content-Type", value: "application/json" }],
+          body: {
+            mode: "raw",
+            raw: JSON.stringify(
+              { name: "Example mock", routes: [{ method: "GET", path: "/users/1", status_code: 200, response_body: "{\"id\":1}" }] },
+              null, 2
+            ),
+          },
+          url: postmanUrl(`${base}/mock-endpoints`),
+        },
+      },
+      {
+        name: "Create or reset a webhook bin",
+        request: {
+          method: "POST",
+          header: [...AUTH_HEADER, { key: "Content-Type", value: "application/json" }],
+          body: { mode: "raw", raw: JSON.stringify({ name: "CI run" }, null, 2) },
+          url: postmanUrl(`${base}/webhook-bins`),
+        },
+      },
+      {
+        name: "List requests received by a webhook bin",
+        request: { method: "GET", header: AUTH_HEADER, url: postmanUrl(`${base}/webhook-bins/your-bin-slug/requests`) },
       },
     ],
   };

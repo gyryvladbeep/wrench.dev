@@ -72,21 +72,36 @@ test.describe("toPublicToolSummary", () => {
 });
 
 test.describe("buildOpenApiSpec", () => {
-  test("описывает оба публичных маршрута и версию API", () => {
+  test("описывает все публичные маршруты (каталог, зарплаты, mock/webhook write-эндпоинты) и версию API", () => {
     const spec = buildOpenApiSpec();
     expect(spec.openapi).toBe("3.0.3");
     expect(spec.info.version).toBe(API_VERSION);
-    expect(Object.keys(spec.paths)).toEqual(["/tools", "/tools/{slug}"]);
+    expect(Object.keys(spec.paths)).toEqual([
+      "/tools", "/tools/{slug}", "/salary", "/salary/report",
+      "/mock-endpoints", "/webhook-bins", "/webhook-bins/{slug}/requests",
+    ]);
     expect(spec.servers[0].url).toBe(`https://wrench-branch.vercel.app/api/${API_VERSION}`);
+  });
+
+  test("write-эндпоинты требуют bearerAuth, GET-каталог/зарплаты — нет", () => {
+    const spec = buildOpenApiSpec();
+    expect((spec.paths["/mock-endpoints"] as any).post.security).toEqual([{ bearerAuth: [] }]);
+    expect((spec.paths["/webhook-bins"] as any).post.security).toEqual([{ bearerAuth: [] }]);
+    expect((spec.paths["/webhook-bins/{slug}/requests"] as any).get.security).toEqual([{ bearerAuth: [] }]);
+    expect((spec.paths["/tools"] as any).get.security).toBeUndefined();
+    expect((spec.paths["/salary"] as any).get.security).toBeUndefined();
+    expect((spec.components.securitySchemes as any).bearerAuth.scheme).toBe("bearer");
   });
 });
 
 test.describe("buildPostmanCollection", () => {
-  test("3 запроса, все GET, с абсолютными URL", () => {
+  test("8 запросов — 6 GET (бесплатных) и 2 POST (с личным токеном)", () => {
     const collection = buildPostmanCollection();
-    expect(collection.item.length).toBe(3);
+    expect(collection.item.length).toBe(8);
+    const methods = collection.item.map((i) => i.request.method);
+    expect(methods.filter((m) => m === "GET").length).toBe(6);
+    expect(methods.filter((m) => m === "POST").length).toBe(2);
     for (const item of collection.item) {
-      expect(item.request.method).toBe("GET");
       expect(item.request.url.raw.startsWith("https://wrench-branch.vercel.app/api/v1/")).toBe(true);
     }
   });
@@ -95,5 +110,20 @@ test.describe("buildPostmanCollection", () => {
     const collection = buildPostmanCollection();
     const byCategory = collection.item.find((i) => i.request.url.raw.includes("category="))!;
     expect((byCategory.request.url as any).query).toEqual([{ key: "category", value: "formatting" }]);
+  });
+
+  test("POST-запросы несут заголовок Authorization: Bearer {{wrench_api_token}}", () => {
+    const collection = buildPostmanCollection();
+    const postItems = collection.item.filter((i) => i.request.method === "POST");
+    expect(postItems.length).toBe(2);
+    for (const item of postItems) {
+      const authHeader = item.request.header.find((h: any) => h.key === "Authorization");
+      expect(authHeader?.value).toBe("Bearer {{wrench_api_token}}");
+    }
+  });
+
+  test("коллекция объявляет переменную wrench_api_token для подстановки своего токена", () => {
+    const collection = buildPostmanCollection();
+    expect(collection.variable).toEqual([{ key: "wrench_api_token", value: "wrb_your_token_here" }]);
   });
 });
