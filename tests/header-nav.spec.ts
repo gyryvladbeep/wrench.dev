@@ -78,13 +78,14 @@ test.describe("Шапка сайта — навигация", () => {
     await expect(page).toHaveURL(/\/categories\//);
   });
 
-  test("дропдаун 'Learn' открывается и содержит 10 пунктов: Challenges/Interview/Playground/Trainer/Knowledge/Salaries/Mock API/Webhooks/Digest/People", async () => {
+  test("дропдаун 'Learn' открывается и содержит 11 пунктов: Challenges/Interview/Playground/Trainer/Knowledge/Salaries/Mock API/Webhooks/Digest/People/Leaderboard", async () => {
     await header.openLearn();
-    // 10 — было 9 до добавления Daily Digest "Дайджест"/"Digest"
-    // (2026-09): components/Header.tsx → LearnDropdown → items. Если
-    // кто-то добавит или уберёт пункт меню Learn, этот тест — сигнал
-    // обновить и число здесь, и список проверяемых ссылок ниже.
-    await expect(header.dropdownLinks()).toHaveCount(10);
+    // 11 — было 10 до добавления "Лидерборд"/"Leaderboard" (2026-09,
+    // публичный рейтинг Wrench Score): components/Header.tsx →
+    // LearnDropdown → items. Если кто-то добавит или уберёт пункт меню
+    // Learn, этот тест — сигнал обновить и число здесь, и список
+    // проверяемых ссылок ниже.
+    await expect(header.dropdownLinks()).toHaveCount(11);
     await expect(header.dropdownLinks().filter({ hasText: "Challenges" })).toBeVisible();
     await expect(header.dropdownLinks().filter({ hasText: "Interview" })).toBeVisible();
     await expect(header.dropdownLinks().filter({ hasText: "Playground" })).toBeVisible();
@@ -95,6 +96,7 @@ test.describe("Шапка сайта — навигация", () => {
     await expect(header.dropdownLinks().filter({ hasText: "Webhooks" })).toBeVisible();
     await expect(header.dropdownLinks().filter({ hasText: "Digest" })).toBeVisible();
     await expect(header.dropdownLinks().filter({ hasText: "People" })).toBeVisible();
+    await expect(header.dropdownLinks().filter({ hasText: "Leaderboard" })).toBeVisible();
   });
 
   test("Escape закрывает открытый дропдаун", async () => {
