@@ -26,6 +26,7 @@ import { BANNER_GRADIENTS, getBannerGradient } from "@/lib/profile-banners";
 import { ROLE_META, DIFFICULTY_META, ChallengeRole, ChallengeDifficulty } from "@/lib/challenges/types";
 import { CopyButton } from "@/components/CopyButton";
 import { ApiTokensPanel } from "@/components/profile/ApiTokensPanel";
+import { SkillEndorsements } from "@/components/profile/SkillEndorsements";
 
 interface Profile {
   username: string;
@@ -607,6 +608,23 @@ export default function ProfilePage() {
               </p>
             )}
           </div>
+
+          {/* Peer-эндорсементы навыков (roadmap item 2) — читаемая
+              версия на приватной странице: isOwnProfile всегда true
+              здесь, кнопки эндорса скрыты, виден только результат.
+              Обёртка условна на tech_stack (не только внутренний return
+              null компонента) — иначе пустой md:col-span-2 div остался
+              бы в сетке даже без единого тега. */}
+          {profile.tech_stack.length > 0 && (
+            <div className="md:col-span-2">
+              <SkillEndorsements
+                locale={locale}
+                profileUserId={user.id}
+                techStack={profile.tech_stack}
+                isOwnProfile
+              />
+            </div>
+          )}
 
           {/* Activity calendar */}
           <div className="rounded-lg border border-border bg-surface p-5 md:col-span-2">

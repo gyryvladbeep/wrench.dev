@@ -12,6 +12,7 @@ import { ROLE_META, DIFFICULTY_META, ChallengeRole, ChallengeDifficulty } from "
 import { WrenchScorePanel } from "@/components/WrenchScorePanel";
 import { GameIcon, ExternalLinkIcon } from "@/components/icons/GameIcons";
 import { AvatarGlyph } from "@/components/profile/AvatarGlyph";
+import { SkillEndorsements } from "@/components/profile/SkillEndorsements";
 
 interface PublicProfile {
   id:                    string;
@@ -319,6 +320,18 @@ export function PublicProfileView({ locale, username }: PublicProfileViewProps) 
             </div>
           </div>
         )}
+
+        {/* Peer-эндорсементы навыков (roadmap item 2) — только теги,
+            которые владелец сам выбрал в tech_stack; компонент сам
+            прячется целиком, если tech_stack пуст. isOwnProfile
+            покрывает и залогиненного владельца, зашедшего на свою же
+            публичную ссылку — эндорсить себя всё равно нельзя. */}
+        <SkillEndorsements
+          locale={locale}
+          profileUserId={profile.id}
+          techStack={profile.tech_stack}
+          isOwnProfile={user?.id === profile.id}
+        />
 
         {/* Бейджи */}
         {badges.length > 0 && (

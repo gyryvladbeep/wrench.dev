@@ -5,7 +5,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/gyryvladbeep/wrench.dev",
+    "url": "git+https://github.com/gyryvladbeep/wrench.dev.git",
     "directory": "cli"
   },
   "engines": {
@@ -21,7 +21,7 @@
     "wrench-branch"
   ],
   "bin": {
-    "wrench": "./dist/index.js"
+    "wrench": "dist/index.js"
   },
   "files": [
     "dist"
