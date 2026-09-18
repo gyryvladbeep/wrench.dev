@@ -382,6 +382,10 @@ export interface Dictionary {
       apiFutureNote: string;
       apiOpenApiLinkText: string;
       apiPostmanLinkText: string;
+      apiWriteHeading: string;
+      apiWriteBody: string;
+      apiWriteTokenLinkText: string;
+      apiWriteActionsLinkText: string;
       aiHeading: string;
       aiBodyPrefix: string;
       aiBodyLinkText: string;

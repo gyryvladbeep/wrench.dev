@@ -48,7 +48,7 @@ export default async function DocsPage(props: { params: Promise<{ locale: string
         <p className="mt-2 text-sm text-text-muted">{t.howItWorksBody}</p>
       </section>
 
-      <section className="mt-8">
+      <section id="api" className="mt-8">
         <h2 className="text-lg font-medium">{t.apiHeading}</h2>
         <p className="mt-2 text-sm text-text-muted">{t.apiBody}</p>
         <pre className="code-surface mt-3 overflow-x-auto rounded-lg p-3 text-xs leading-relaxed text-text-secondary">
@@ -64,6 +64,25 @@ export default async function DocsPage(props: { params: Promise<{ locale: string
           <a href="/api/v1/postman-collection.json" className="text-link hover:underline">{t.apiPostmanLinkText} →</a>
         </div>
         <p className="mt-3 text-sm text-text-muted">{t.apiFutureNote}</p>
+
+        <div className="mt-5 border-t border-border pt-4">
+          <h3 className="text-sm font-semibold text-text-primary">{t.apiWriteHeading}</h3>
+          <p className="mt-2 text-sm text-text-muted">{t.apiWriteBody}</p>
+          <pre className="code-surface mt-3 overflow-x-auto rounded-lg p-3 text-xs leading-relaxed text-text-secondary">
+            {`curl -X POST ${siteConfig.url}/api/v1/mock-endpoints \\\n  -H "Authorization: Bearer wrb_..." -H "Content-Type: application/json" \\\n  -d '{"name":"CI mock","routes":[{"method":"GET","path":"/ping","status_code":200}]}'`}
+          </pre>
+          <div className="mt-2.5 flex flex-wrap gap-x-4 gap-y-1 text-xs">
+            <Link href={localePath(locale, "/profile")} className="text-link hover:underline">{t.apiWriteTokenLinkText} →</Link>
+            <a
+              href="https://github.com/gyryvladbeep/wrench.dev/tree/main/.github/actions"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-link hover:underline"
+            >
+              {t.apiWriteActionsLinkText} →
+            </a>
+          </div>
+        </div>
       </section>
 
       <section className="mt-8">

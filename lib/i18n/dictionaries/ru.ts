@@ -381,6 +381,11 @@ export const ru: Dictionary = {
         "Отдельный версионированный REST API для обращения к самой логике инструментов из кода (не только метаданным) по-прежнему планируется для тарифов Pro/Team.",
       apiOpenApiLinkText: "OpenAPI-спек",
       apiPostmanLinkText: "Postman-коллекция",
+      apiWriteHeading: "Доступ на запись (CI / скрипты)",
+      apiWriteBody:
+        "Создайте личный токен в Профиль -> Настройки -> API-токены, чтобы создавать mock-эндпоинты (POST /api/v1/mock-endpoints) и webhook-бины (POST /api/v1/webhook-bins) из скрипта или CI-пайплайна, без входа в браузере. Оба эндпоинта идемпотентны по имени — повторный запуск workflow с тем же именем переиспользует тот же ресурс, а не упирается в лимит бесплатного тарифа.",
+      apiWriteTokenLinkText: "Создать токен",
+      apiWriteActionsLinkText: "GitHub Actions для CI",
       aiHeading: "AI-инструменты (скоро)",
       aiBodyPrefix: "Смотрите раздел",
       aiBodyLinkText: "«Инструменты с AI»",

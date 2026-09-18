@@ -382,6 +382,11 @@ export const en: Dictionary = {
         "A separate, versioned REST API for scripting against the tool logic itself (not just metadata) remains planned for the Pro/Team tiers.",
       apiOpenApiLinkText: "OpenAPI spec",
       apiPostmanLinkText: "Postman collection",
+      apiWriteHeading: "Write access (CI / scripts)",
+      apiWriteBody:
+        "Create a personal token in Profile -> Settings -> API tokens to create mock endpoints (POST /api/v1/mock-endpoints) and webhook bins (POST /api/v1/webhook-bins) from a script or CI pipeline, without a browser session. Both endpoints are idempotent by name, so rerunning a workflow with the same name reuses the same resource instead of hitting the free-tier limit.",
+      apiWriteTokenLinkText: "Create a token",
+      apiWriteActionsLinkText: "GitHub Actions for CI",
       aiHeading: "AI tools (coming soon)",
       aiBodyPrefix: "See the",
       aiBodyLinkText: "AI-Powered Tools",

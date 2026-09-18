@@ -25,6 +25,7 @@ import { STACK_TAGS, MAX_STACK_TAGS } from "@/lib/profile-stack";
 import { BANNER_GRADIENTS, getBannerGradient } from "@/lib/profile-banners";
 import { ROLE_META, DIFFICULTY_META, ChallengeRole, ChallengeDifficulty } from "@/lib/challenges/types";
 import { CopyButton } from "@/components/CopyButton";
+import { ApiTokensPanel } from "@/components/profile/ApiTokensPanel";
 
 interface Profile {
   username: string;
@@ -1138,6 +1139,8 @@ export default function ProfilePage() {
             </button>
             {saveError && <p className="text-xs text-red-400">{saveError}</p>}
           </div>
+
+          <ApiTokensPanel />
 
           {/* Danger zone */}
           <div className="rounded-lg border border-red-500/20 bg-red-500/5 p-5">

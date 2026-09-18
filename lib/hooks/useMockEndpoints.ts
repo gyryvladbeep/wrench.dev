@@ -2,6 +2,14 @@
 import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth/auth-context";
 import { createClient } from "@/lib/supabase/client";
+import { FREE_MAX_MOCK_ENDPOINTS, FREE_MAX_MOCK_ROUTES, PRO_MAX_MOCK_ENDPOINTS, PRO_MAX_MOCK_ROUTES } from "@/lib/tier-limits";
+
+// Реэкспорт под теми же именами, которыми их уже импортируют
+// остальные файлы (components/mock-api/*, tests/*) — сами значения
+// теперь живут в lib/tier-limits.ts, единственном источнике правды,
+// общем с серверным app/api/v1/mock-endpoints/route.ts (см. комментарий
+// в том файле).
+export { FREE_MAX_MOCK_ENDPOINTS, FREE_MAX_MOCK_ROUTES, PRO_MAX_MOCK_ENDPOINTS, PRO_MAX_MOCK_ROUTES };
 
 export interface MockRoute {
   id: string;
@@ -21,20 +29,6 @@ export interface MockEndpoint {
   created_at: string;
   mock_routes: MockRoute[];
 }
-
-// ═══════════════════════════════════════════════════════
-// Лимиты free/Pro
-// ═══════════════════════════════════════════════════════
-// Тот же принцип, что у Workbench (lib/hooks/useWorkbenches.ts):
-// бесплатный аккаунт получает достаточно, чтобы попробовать фичу на
-// реальном сценарии (один эндпоинт с несколькими маршрутами обычно
-// хватает на один тестовый сценарий), а Pro — уже под то, кто держит
-// несколько независимых наборов моков одновременно (разные проекты,
-// разные версии API).
-export const FREE_MAX_MOCK_ENDPOINTS = 1;
-export const FREE_MAX_MOCK_ROUTES = 3;
-export const PRO_MAX_MOCK_ENDPOINTS = 5;
-export const PRO_MAX_MOCK_ROUTES = 15;
 
 export interface RouteInput {
   method: string;

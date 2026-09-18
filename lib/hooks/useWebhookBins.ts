@@ -2,6 +2,12 @@
 import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth/auth-context";
 import { createClient } from "@/lib/supabase/client";
+import { FREE_MAX_WEBHOOK_BINS, PRO_MAX_WEBHOOK_BINS, WEBHOOK_REQUEST_RETENTION } from "@/lib/tier-limits";
+
+// Реэкспорт под теми же именами — значения теперь в lib/tier-limits.ts,
+// общем источнике правды с серверным app/api/v1/webhook-bins/route.ts
+// (см. комментарий в том файле).
+export { FREE_MAX_WEBHOOK_BINS, PRO_MAX_WEBHOOK_BINS, WEBHOOK_REQUEST_RETENTION };
 
 export interface WebhookRequestRow {
   id: string;
@@ -23,21 +29,6 @@ export interface WebhookBin {
   webhook_requests: WebhookRequestRow[];
 }
 
-// ═══════════════════════════════════════════════════════
-// Лимиты free/Pro
-// ═══════════════════════════════════════════════════════
-// Тот же принцип, что у Mock API (lib/hooks/useMockEndpoints.ts) —
-// один бесплатный бин достаточно, чтобы попробовать фичу на реальном
-// вебхуке (например настроить его в тестовом Stripe-проекте), Pro —
-// под тех, кто держит несколько независимых интеграций одновременно.
-export const FREE_MAX_WEBHOOK_BINS = 1;
-export const PRO_MAX_WEBHOOK_BINS = 5;
-
-// Системный потолок хранимых запросов на один бин — реально применяется
-// внутри ingest_webhook_request() (см. supabase/webhook-inspector-migration.sql),
-// не здесь; число продублировано в клиенте только для текста в UI
-// ("хранятся последние N запросов"), а не для логики отсечения.
-export const WEBHOOK_REQUEST_RETENTION = 50;
 
 // supabase.rpc() / .select() с embedded-таблицами и т.п. отсутствуют у
 // заглушки createClient() (см. её же комментарий в lib/supabase/client.ts) —
