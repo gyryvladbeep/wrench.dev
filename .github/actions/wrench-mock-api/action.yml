@@ -1,0 +1,77 @@
+name: "Wrench-Branch Mock API"
+description: "Creates or updates a Wrench-Branch mock API endpoint and exposes its URL to later steps."
+author: "Wrench-Branch"
+
+# Пункт 13 из ROADMAP-BRAINSTORM.md — GitHub Action для Mock API,
+# поднимающий mock-эндпоинт как шаг CI (например, чтобы протестировать
+# фронтенд/интеграцию против фиктивного бэкенда без деплоя настоящего).
+# Composite-обёртка вокруг POST /api/v1/mock-endpoints
+# (app/api/v1/mock-endpoints/route.ts) — сама логика (валидация,
+# идемпотентность по имени, лимиты тарифа) целиком на сервере, тут
+# только curl + разбор ответа. Токен создаётся один раз в
+# Profile -> Settings -> API tokens (components/profile/ApiTokensPanel.tsx)
+# и хранится как секрет репозитория, а НЕ в самом workflow.
+#
+# Повторные прогоны с тем же `name` заменяют маршруты существующего
+# эндпоинта вместо создания нового — это специально сделано на сервере,
+# чтобы бесплатный тариф (1 эндпоинт) не упирался в лимит на втором
+# прогоне CI.
+
+inputs:
+  token:
+    description: "Personal Wrench-Branch API token (wrb_...), created in Profile -> Settings -> API tokens. Pass as a repository secret, never hardcode it."
+    required: true
+  name:
+    description: "Name of the mock endpoint. Reusing the same name across runs updates the same endpoint instead of creating a new one."
+    required: true
+  routes:
+    description: >
+      JSON array of route definitions, e.g.
+      '[{"method":"GET","path":"/users/1","status_code":200,"response_body":"{\"id\":1}"}]'.
+      Each route accepts: method (GET/POST/PUT/PATCH/DELETE), path (must start with "/"),
+      status_code (default 200), response_body (default "{}"), delay_ms (default 0).
+    required: true
+  base-url:
+    description: "Wrench-Branch instance to call."
+    required: false
+    default: "https://wrench-branch.vercel.app"
+
+outputs:
+  url:
+    description: "Base URL of the created/updated mock endpoint, e.g. https://wrench-branch.vercel.app/api/mock/abc123."
+    value: ${{ steps.create.outputs.url }}
+  slug:
+    description: "Slug of the mock endpoint."
+    value: ${{ steps.create.outputs.slug }}
+
+runs:
+  using: "composite"
+  steps:
+    - id: create
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        payload=$(jq -n --arg name "${{ inputs.name }}" --argjson routes '${{ inputs.routes }}' \
+          '{name: $name, routes: $routes}')
+
+        response=$(curl -sS -w "\n%{http_code}" -X POST "${{ inputs.base-url }}/api/v1/mock-endpoints" \
+          -H "Authorization: Bearer ${{ inputs.token }}" \
+          -H "Content-Type: application/json" \
+          -d "$payload")
+
+        http_code=$(echo "$response" | tail -n1)
+        body=$(echo "$response" | sed '$d')
+
+        if [ "$http_code" -ge 400 ]; then
+          echo "Wrench-Branch mock API request failed (HTTP $http_code):"
+          echo "$body"
+          exit 1
+        fi
+
+        url=$(echo "$body" | jq -r '.url')
+        slug=$(echo "$body" | jq -r '.slug')
+
+        echo "Mock endpoint ready: $url"
+        echo "url=$url" >> "$GITHUB_OUTPUT"
+        echo "slug=$slug" >> "$GITHUB_OUTPUT"

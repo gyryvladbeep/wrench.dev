@@ -1,0 +1,73 @@
+name: "Wrench-Branch Webhook Bin"
+description: "Creates (or resets) a Wrench-Branch webhook bin and exposes its URL to later steps."
+author: "Wrench-Branch"
+
+# Пункт 13 из ROADMAP-BRAINSTORM.md — GitHub Action для Webhook
+# Inspector, поднимающий webhook-бин как шаг CI (например: "деплой
+# должен отправить вебхук о готовности — прими его тут и провалидируй
+# в следующем шаге через GET .../requests", см. README.md рядом).
+# Composite-обёртка вокруг POST /api/v1/webhook-bins
+# (app/api/v1/webhook-bins/route.ts). Токен — тот же личный API-токен,
+# что и у wrench-mock-api (Profile -> Settings -> API tokens),
+# передаётся секретом репозитория.
+#
+# Повторный прогон с тем же `name` переиспользует тот же бин, но
+# ОЧИЩАЕТ историю принятых запросов на сервере — свежий прогон CI
+# видит только вебхуки из этого прогона, а не хвост от предыдущего.
+
+inputs:
+  token:
+    description: "Personal Wrench-Branch API token (wrb_...), created in Profile -> Settings -> API tokens. Pass as a repository secret, never hardcode it."
+    required: true
+  name:
+    description: "Name of the webhook bin. Reusing the same name across runs resets the same bin (clears previously received requests) instead of creating a new one."
+    required: false
+    default: "CI run"
+  base-url:
+    description: "Wrench-Branch instance to call."
+    required: false
+    default: "https://wrench-branch.vercel.app"
+
+outputs:
+  url:
+    description: "URL to send webhooks to, e.g. https://wrench-branch.vercel.app/api/hook/abc123."
+    value: ${{ steps.create.outputs.url }}
+  slug:
+    description: "Slug of the webhook bin."
+    value: ${{ steps.create.outputs.slug }}
+  requests-url:
+    description: "API URL to poll for received requests (GET, same Authorization header)."
+    value: ${{ steps.create.outputs.requests_url }}
+
+runs:
+  using: "composite"
+  steps:
+    - id: create
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        payload=$(jq -n --arg name "${{ inputs.name }}" '{name: $name}')
+
+        response=$(curl -sS -w "\n%{http_code}" -X POST "${{ inputs.base-url }}/api/v1/webhook-bins" \
+          -H "Authorization: Bearer ${{ inputs.token }}" \
+          -H "Content-Type: application/json" \
+          -d "$payload")
+
+        http_code=$(echo "$response" | tail -n1)
+        body=$(echo "$response" | sed '$d')
+
+        if [ "$http_code" -ge 400 ]; then
+          echo "Wrench-Branch webhook bin request failed (HTTP $http_code):"
+          echo "$body"
+          exit 1
+        fi
+
+        url=$(echo "$body" | jq -r '.url')
+        slug=$(echo "$body" | jq -r '.slug')
+        requests_url=$(echo "$body" | jq -r '.requestsUrl')
+
+        echo "Webhook bin ready: $url"
+        echo "url=$url" >> "$GITHUB_OUTPUT"
+        echo "slug=$slug" >> "$GITHUB_OUTPUT"
+        echo "requests_url=$requests_url" >> "$GITHUB_OUTPUT"
