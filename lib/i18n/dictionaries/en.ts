@@ -375,9 +375,13 @@ export const en: Dictionary = {
       howItWorksHeading: "How tools work",
       howItWorksBody:
         "With one exception (the Header Inspector, which needs a server hop to read cross-origin response headers), every tool runs entirely client-side in your browser. Nothing you paste into a formatter, encoder, or generator is uploaded anywhere.",
-      apiHeading: "API access (coming soon)",
+      apiHeading: "Public API",
       apiBody:
-        "A versioned REST API (/api/v1/...) for scripting against the same tool logic is planned for the Pro/Team tiers — not available yet.",
+        "A free, rate-limited, read-only API for the tools catalog is live at /api/v1/tools — metadata only (name, description, category, keywords), not the tool logic itself.",
+      apiFutureNote:
+        "A separate, versioned REST API for scripting against the tool logic itself (not just metadata) remains planned for the Pro/Team tiers.",
+      apiOpenApiLinkText: "OpenAPI spec",
+      apiPostmanLinkText: "Postman collection",
       aiHeading: "AI tools (coming soon)",
       aiBodyPrefix: "See the",
       aiBodyLinkText: "AI-Powered Tools",

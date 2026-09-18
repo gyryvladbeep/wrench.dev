@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Metadata } from "next";
 import { isLocale, defaultLocale, localePath } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/get-dictionary";
-import { buildPageMetadata } from "@/lib/seo";
+import { buildPageMetadata, siteConfig } from "@/lib/seo";
 import { categories, getToolsByCategory } from "@/lib/tools-registry";
 import { localizeCategories } from "@/lib/i18n/localize";
 import { formatToolCount } from "@/lib/i18n/format";
@@ -51,6 +51,19 @@ export default async function DocsPage(props: { params: Promise<{ locale: string
       <section className="mt-8">
         <h2 className="text-lg font-medium">{t.apiHeading}</h2>
         <p className="mt-2 text-sm text-text-muted">{t.apiBody}</p>
+        <pre className="code-surface mt-3 overflow-x-auto rounded-lg p-3 text-xs leading-relaxed text-text-secondary">
+          curl {siteConfig.url}/api/v1/tools/json-formatter
+        </pre>
+        {/* Обычные <a>, не <Link> — оба ведут на JSON-ответ роут-хендлера
+            (app/api/v1/...), а не на страницу приложения: Link здесь
+            добавил бы клиентский префетч/навигацию туда, где смысл —
+            просто открыть/скачать файл, обычная браузерная переходность
+            подходит лучше. */}
+        <div className="mt-2.5 flex flex-wrap gap-x-4 gap-y-1 text-xs">
+          <a href="/api/v1/openapi.json" className="text-link hover:underline">{t.apiOpenApiLinkText} →</a>
+          <a href="/api/v1/postman-collection.json" className="text-link hover:underline">{t.apiPostmanLinkText} →</a>
+        </div>
+        <p className="mt-3 text-sm text-text-muted">{t.apiFutureNote}</p>
       </section>
 
       <section className="mt-8">

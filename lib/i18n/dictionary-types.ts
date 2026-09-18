@@ -379,6 +379,9 @@ export interface Dictionary {
       howItWorksBody: string;
       apiHeading: string;
       apiBody: string;
+      apiFutureNote: string;
+      apiOpenApiLinkText: string;
+      apiPostmanLinkText: string;
       aiHeading: string;
       aiBodyPrefix: string;
       aiBodyLinkText: string;
