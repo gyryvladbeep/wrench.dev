@@ -89,13 +89,67 @@ export function togglePortfolioSection(current: readonly string[], id: string): 
     : [...normalized, id];
 }
 
-// Разделы для отрисовки — всегда в порядке каталога PORTFOLIO_SECTIONS,
-// а не в порядке хранения в portfolio_sections (тот меняется в
-// зависимости от истории кликов): иначе один и тот же набор включённых
-// разделов рисовался бы по-разному у разных пользователей.
-export function orderedEnabledSections(enabled: readonly string[] | null | undefined): PortfolioSectionMeta[] {
-  const set = new Set(normalizePortfolioSections(enabled));
-  return PORTFOLIO_SECTIONS.filter((s) => set.has(s.id));
+// Полный порядок всех 12 разделов — нормализованный customOrder
+// (portfolio_section_order из БД), достроенный до полного списка
+// разделами, которых в нём ещё нет (новыми разделами, добавленными в
+// каталог уже после того, как пользователь в последний раз что-то
+// перетаскивал, или вообще ни разу не трогавший сортировку профилем) —
+// они дописываются в конец в порядке каталога. Всегда ровно 12
+// элементов, безопасно использовать напрямую как список строк для
+// перетаскивания в редакторе (components/profile) — каждый раздел
+// в списке ровно один раз.
+export function fullSectionOrder(order: readonly string[] | null | undefined): string[] {
+  const normalized = normalizePortfolioSections(order);
+  const seen = new Set(normalized);
+  const rest = PORTFOLIO_SECTIONS.map((s) => s.id).filter((id) => !seen.has(id));
+  return [...normalized, ...rest];
+}
+
+// Разделы для отрисовки — по умолчанию (без customOrder, как и раньше)
+// всегда в порядке каталога PORTFOLIO_SECTIONS, а не в порядке хранения
+// в portfolio_sections (тот меняется в зависимости от истории кликов):
+// иначе один и тот же набор включённых разделов рисовался бы по-разному
+// у разных пользователей. Второй необязательный аргумент — сохранённый
+// пользователем порядок (portfolio_section_order): когда он задан,
+// разделы рисуются в этом порядке вместо порядка каталога. Один и тот же
+// вызов и в живом превью (PortfolioPreview.tsx), и на публичной веб-
+// странице портфолио, и в экспорте PNG (route.tsx) — расхождения между
+// ними исключены тем же приёмом, что и у resolvePortfolioText.
+export function orderedEnabledSections(
+  enabled: readonly string[] | null | undefined,
+  customOrder?: readonly string[] | null
+): PortfolioSectionMeta[] {
+  const enabledSet = new Set(normalizePortfolioSections(enabled));
+  const order = customOrder && customOrder.length > 0 ? fullSectionOrder(customOrder) : PORTFOLIO_SECTIONS.map((s) => s.id);
+  return order
+    .filter((id) => enabledSet.has(id))
+    .map((id) => PORTFOLIO_SECTIONS.find((s) => s.id === id)!);
+}
+
+// Сдвинуть один раздел на позицию вверх/вниз в общем порядке (не только
+// среди включённых — порядок хранит позиции ВСЕХ 12 разделов, включая
+// выключенные, чтобы выключенный раздел не терял своё место в списке,
+// если его снова включат). Чистая функция без UI: кнопки "вверх"/"вниз"
+// в редакторе (вместо HTML5 drag-and-drop — так реордер одинаково
+// работает и на мобильном, и без риска не собраться в разных браузерах)
+// вызывают её и сразу сохраняют результат, тот же принцип мгновенного
+// сохранения, что у toggleSectionAndSave. На границе списка (первый
+// элемент "вверх" или последний "вниз") или при неизвестном id — просто
+// возвращает список без изменений, а не бросает ошибку: кнопка сама
+// выглядит disabled в этом случае, но лишняя защита не помешает.
+export function moveSectionOrder(
+  order: readonly string[] | null | undefined,
+  id: string,
+  direction: "up" | "down"
+): string[] {
+  const full = fullSectionOrder(order);
+  const idx = full.indexOf(id);
+  if (idx === -1) return full;
+  const swapWith = direction === "up" ? idx - 1 : idx + 1;
+  if (swapWith < 0 || swapWith >= full.length) return full;
+  const next = [...full];
+  [next[idx], next[swapWith]] = [next[swapWith], next[idx]];
+  return next;
 }
 
 // Имя файла экспорта — вынесено отдельно, чтобы UI (кнопки "Скачать

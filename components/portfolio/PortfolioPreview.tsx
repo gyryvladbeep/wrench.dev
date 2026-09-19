@@ -51,6 +51,12 @@ interface PortfolioPreviewProps {
   experience: PortfolioExperienceEntry[];
   projects: PortfolioProjectEntry[];
   enabledSections: string[];
+  // Ручная сортировка разделов (кнопки "вверх"/"вниз" во вкладке
+  // Портфолио) — id всех 12 разделов в сохранённом пользователем
+  // порядке, или пустой массив/undefined, если сортировку ещё ни разу
+  // не трогали (тогда используется порядок каталога, см.
+  // orderedEnabledSections в lib/portfolio.ts).
+  sectionOrder?: string[];
   themeId: PortfolioThemeId;
 }
 
@@ -80,11 +86,11 @@ const MAX_BADGES_SHOWN = 6;
 export function PortfolioPreview(props: PortfolioPreviewProps) {
   const { isRu, profileUserId, username, displayName, tagline, bio, titleOverride, taglineOverride, bioOverride, footerOverride,
     avatarColor, avatarEmblem, roleLabel, location, bannerCss, links, techStack, score, level, badgeIds, pinnedChallenges,
-    experience, projects, enabledSections, themeId } = props;
+    experience, projects, enabledSections, sectionOrder, themeId } = props;
 
   const [endorsementRows, setEndorsementRows] = useState<EndorsementRow[]>([]);
   const theme = getPortfolioTheme(themeId);
-  const sections = orderedEnabledSections(enabledSections);
+  const sections = orderedEnabledSections(enabledSections, sectionOrder);
   const label = (id: string) => {
     const meta = sections.find((s) => s.id === id);
     return meta ? themeSectionLabel(theme.id, meta, isRu) : "";

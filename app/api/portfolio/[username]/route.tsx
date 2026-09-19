@@ -81,7 +81,15 @@ export async function GET(req: NextRequest, props: RouteParams) {
   const enabledSections = sectionsParam
     ? normalizePortfolioSections(sectionsParam.split(","))
     : normalizePortfolioSections(profile.portfolio_sections);
-  const sections = orderedEnabledSections(enabledSections);
+  // ?order= — та же ручная сортировка разделов (кнопки "вверх"/"вниз"),
+  // что и в живом превью: явный query-параметр передаётся с той же целью,
+  // что и ?sections= выше (см. комментарий у portfolioImageUrl() в
+  // app/[locale]/profile/page.tsx) — без гонки между только что
+  // сохранённым порядком и тем, что успела прочитать БД. Фолбэк — то,
+  // что реально сохранено в профиле.
+  const orderParam = url.searchParams.get("order");
+  const sectionOrder = orderParam ? orderParam.split(",") : (profile.portfolio_section_order ?? []);
+  const sections = orderedEnabledSections(enabledSections, sectionOrder);
   const sectionIds = new Set(sections.map((s) => s.id));
 
   const themeParam = url.searchParams.get("theme");

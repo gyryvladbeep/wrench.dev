@@ -19,6 +19,8 @@ import {
   MAX_PROJECT_ENTRIES,
   PortfolioExperienceEntry,
   PortfolioProjectEntry,
+  fullSectionOrder,
+  moveSectionOrder,
 } from "@/lib/portfolio";
 
 function makeExperience(id: string): PortfolioExperienceEntry {
@@ -176,5 +178,72 @@ test.describe("addProjectEntry / removeProjectEntry", () => {
   test("removes only the matching entry", () => {
     const result = removeProjectEntry([makeProject("1"), makeProject("2")], "1");
     expect(result.map((p) => p.id)).toEqual(["2"]);
+  });
+});
+
+test.describe("fullSectionOrder", () => {
+  test("empty/null input falls back to catalog order", () => {
+    const catalogIds = PORTFOLIO_SECTIONS.map((s) => s.id);
+    expect(fullSectionOrder([])).toEqual(catalogIds);
+    expect(fullSectionOrder(null)).toEqual(catalogIds);
+    expect(fullSectionOrder(undefined)).toEqual(catalogIds);
+  });
+
+  test("keeps the given order and appends missing sections in catalog order", () => {
+    const result = fullSectionOrder(["score", "bio"]);
+    expect(result[0]).toBe("score");
+    expect(result[1]).toBe("bio");
+    expect(result).toHaveLength(PORTFOLIO_SECTIONS.length);
+    expect(new Set(result).size).toBe(PORTFOLIO_SECTIONS.length);
+  });
+
+  test("drops unknown ids and duplicates like normalizePortfolioSections", () => {
+    const result = fullSectionOrder(["bio", "not-a-real-section", "bio"]);
+    expect(result[0]).toBe("bio");
+    expect(new Set(result).size).toBe(PORTFOLIO_SECTIONS.length);
+  });
+});
+
+test.describe("orderedEnabledSections with a custom order", () => {
+  test("renders enabled sections in the custom order, not catalog order", () => {
+    const result = orderedEnabledSections(["badges", "tagline", "score"], ["score", "tagline", "badges"]);
+    expect(result.map((s) => s.id)).toEqual(["score", "tagline", "badges"]);
+  });
+
+  test("falls back to catalog order when no custom order is given", () => {
+    const result = orderedEnabledSections(["badges", "tagline", "score"]);
+    expect(result.map((s) => s.id)).toEqual(["tagline", "score", "badges"]);
+  });
+
+  test("a section enabled but missing from the custom order still appears, at the end in catalog order", () => {
+    const result = orderedEnabledSections(["tagline", "bio"], ["bio"]);
+    expect(result.map((s) => s.id)).toEqual(["bio", "tagline"]);
+  });
+});
+
+test.describe("moveSectionOrder", () => {
+  test("swaps a section with its upward neighbor", () => {
+    const order = fullSectionOrder([]);
+    const result = moveSectionOrder(order, order[2], "up");
+    expect(result[1]).toBe(order[2]);
+    expect(result[2]).toBe(order[1]);
+  });
+
+  test("swaps a section with its downward neighbor", () => {
+    const order = fullSectionOrder([]);
+    const result = moveSectionOrder(order, order[2], "down");
+    expect(result[2]).toBe(order[3]);
+    expect(result[3]).toBe(order[2]);
+  });
+
+  test("does nothing at the top/bottom boundary", () => {
+    const order = fullSectionOrder([]);
+    expect(moveSectionOrder(order, order[0], "up")).toEqual(order);
+    expect(moveSectionOrder(order, order[order.length - 1], "down")).toEqual(order);
+  });
+
+  test("does nothing for an unknown id", () => {
+    const order = fullSectionOrder([]);
+    expect(moveSectionOrder(order, "not-a-real-section", "up")).toEqual(order);
   });
 });

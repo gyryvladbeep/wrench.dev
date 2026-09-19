@@ -33,6 +33,7 @@ import {
   PORTFOLIO_THEMES, DEFAULT_PORTFOLIO_THEME, getPortfolioTheme, PortfolioThemeId,
   PortfolioExperienceEntry, PortfolioProjectEntry, MAX_EXPERIENCE_ENTRIES, MAX_PROJECT_ENTRIES,
   addExperienceEntry, removeExperienceEntry, addProjectEntry, removeProjectEntry,
+  fullSectionOrder, moveSectionOrder,
 } from "@/lib/portfolio";
 
 interface Profile {
@@ -71,6 +72,11 @@ interface Profile {
   // PORTFOLIO_SECTIONS (включает "avatar"/"banner" — теперь тоже
   // переключаемые, а не всегда обязательные). supabase/portfolio-migration.sql.
   portfolio_sections:   string[];
+  // Ручная сортировка разделов портфолио (кнопки "вверх"/"вниз") — id
+  // всех 12 разделов в сохранённом пользователем порядке, пустой массив,
+  // если сортировку ещё ни разу не трогали (тогда используется порядок
+  // каталога). См. fullSectionOrder()/moveSectionOrder() в lib/portfolio.ts.
+  portfolio_section_order: string[];
   // Ручной редактор портфолио — необязательные переопределения текста,
   // независимые от display_name/tagline/bio выше: null = показать как в
   // самом профиле. См. resolvePortfolioText() в lib/portfolio.ts.
@@ -171,7 +177,7 @@ export default function ProfilePage() {
     is_public: true, banner_gradient: null, tagline: null,
     github_url: null, linkedin_url: null, website_url: null, pinned_challenge_ids: [],
     tech_stack: [], location: null, equipped_badge_id: null,
-    portfolio_sections: DEFAULT_PORTFOLIO_SECTIONS,
+    portfolio_sections: DEFAULT_PORTFOLIO_SECTIONS, portfolio_section_order: [],
     portfolio_title: null, portfolio_tagline: null, portfolio_bio: null, portfolio_footer: null,
     portfolio_theme: DEFAULT_PORTFOLIO_THEME, portfolio_experience: [], portfolio_projects: [],
   });
@@ -257,6 +263,11 @@ export default function ProfilePage() {
         // supabase/portfolio-migration.sql, но могла накопить
         // неизвестные id при будущих изменениях каталога.
         portfolio_sections: normalizePortfolioSections((prof as Record<string, unknown>).portfolio_sections as string[] | undefined),
+        // Та же нормализация, что и у portfolio_sections выше — пустой
+        // массив (в т.ч. если колонка ещё undefined, миграция не
+        // выполнена) означает "сортировки ещё нет, используем порядок
+        // каталога", см. fullSectionOrder() в lib/portfolio.ts.
+        portfolio_section_order: normalizePortfolioSections((prof as Record<string, unknown>).portfolio_section_order as string[] | undefined),
         // getPortfolioTheme() сам откатывается на 'classic' при
         // неизвестном id — id тут же и нормализуем, чтобы дальше по
         // коду всегда можно было доверять profile.portfolio_theme как
@@ -480,6 +491,22 @@ export default function ProfilePage() {
     if (error) console.error("changeThemeAndSave: update failed", error);
   }
 
+  // Сдвинуть раздел на позицию вверх/вниз в списке — тот же принцип
+  // мгновенного сохранения, что и у toggleSectionAndSave/changeThemeAndSave
+  // выше: клик по стрелке — законченное действие само по себе, не
+  // черновик, который стоит копить до отдельного "Сохранить". Кнопки
+  // вверх/вниз вместо перетаскивания мышью — тот же реордер работает и
+  // на телефоне, и не зависит от того, поддержал ли браузер HTML5
+  // drag-and-drop так, как ожидалось.
+  async function moveSectionAndSave(id: string, direction: "up" | "down") {
+    if (!user) return;
+    const next = moveSectionOrder(profile.portfolio_section_order, id, direction);
+    setProfile((p) => ({ ...p, portfolio_section_order: next }));
+    const supabase = createClient();
+    const { error } = await supabase.from("profiles").update({ portfolio_section_order: next }).eq("id", user.id);
+    if (error) console.error("moveSectionAndSave: update failed", error);
+  }
+
   // Опыт работы и проекты — добавление/удаление записи меняет только
   // локальный profile-стейт (как и ручной редактор title/tagline/bio/
   // footer чуть выше по коду): у одной записи несколько текстовых полей,
@@ -571,6 +598,12 @@ export default function ProfilePage() {
     if (!profile.username) return null;
     const sections = profile.portfolio_sections.join(",");
     const params = new URLSearchParams({ sections, theme: profile.portfolio_theme });
+    // order передаём только если сортировку хоть раз трогали — пустая
+    // строка в query значила бы "явно пустой порядок", а не "используй
+    // порядок каталога", это разные вещи для orderedEnabledSections().
+    if (profile.portfolio_section_order.length > 0) {
+      params.set("order", profile.portfolio_section_order.join(","));
+    }
     return `/api/portfolio/${encodeURIComponent(profile.username)}?${params.toString()}`;
   }
 
@@ -674,6 +707,16 @@ export default function ProfilePage() {
   // тот же guard, что уже используется для shareUrl в workbench/page.tsx.
   const publicProfileUrl = profile.username && typeof window !== "undefined"
     ? `${window.location.origin}${localePath(locale, `/u/${profile.username}`)}`
+    : "";
+  // Веб-версия портфолио (app/[locale]/u/[username]/portfolio/page.tsx) —
+  // та же тема/разделы/сортировка/ручной редактор, что и в превью справа,
+  // отрисованные как настоящая страница, а не картинка: ссылку можно
+  // скинуть рекрутёру вместо файла. Видна ровно тем же посетителям, что и
+  // publicProfileUrl выше — отдельного тумблера "публиковать портфолио"
+  // нет, используется тот же profile.is_public (см. комментарий в
+  // supabase/portfolio-migration.sql).
+  const portfolioPageUrl = profile.username && typeof window !== "undefined"
+    ? `${window.location.origin}${localePath(locale, `/u/${profile.username}/portfolio`)}`
     : "";
   // Бейдж — картинка, не страница, поэтому без localePath: /api/badge/
   // сам ничего не локализует и не должен, это чистый SVG для README.
@@ -1050,23 +1093,40 @@ export default function ProfilePage() {
               </h2>
               <p className="mb-4 text-xs text-text-muted">
                 {isRu
-                  ? "Имя, юзернейм, роль и локация есть в экспорте всегда. Остальное — по выбору, включая фон и аватар."
-                  : "Name, username, role and location are always included. Everything else is optional, including the background and avatar."}
+                  ? "Имя, юзернейм, роль и локация есть в экспорте всегда. Остальное — по выбору, включая фон и аватар. Стрелки меняют порядок разделов в карточке."
+                  : "Name, username, role and location are always included. Everything else is optional, including the background and avatar. The arrows change the section order on the card."}
               </p>
               <div className="space-y-1.5">
-                {PORTFOLIO_SECTIONS.map((s) => {
+                {fullSectionOrder(profile.portfolio_section_order).map((id, idx, order) => {
+                  const s = PORTFOLIO_SECTIONS.find((sec) => sec.id === id);
+                  if (!s) return null;
                   const checked = profile.portfolio_sections.includes(s.id);
                   return (
-                    <button key={s.id} onClick={() => toggleSectionAndSave(s.id)}
-                      className={`flex w-full items-center gap-2.5 rounded-md border px-3 py-2 text-left text-sm transition-colors ${
-                        checked ? "border-accent/30 bg-accent/5 text-text-primary" : "border-border text-text-secondary hover:border-border-focus hover:bg-surface-hover"
+                    <div key={s.id}
+                      className={`flex w-full items-center gap-2 rounded-md border px-2 py-1.5 text-sm transition-colors ${
+                        checked ? "border-accent/30 bg-accent/5 text-text-primary" : "border-border text-text-secondary"
                       }`}>
-                      <span className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border ${checked ? "border-accent bg-accent text-accent-fg" : "border-border"}`}>
-                        {checked && <CheckIcon size={11} />}
-                      </span>
-                      <GameIcon id={s.icon} size={14} />
-                      <span className="min-w-0 truncate">{isRu ? s.labelRu : s.label}</span>
-                    </button>
+                      <div className="flex shrink-0 flex-col">
+                        <button type="button" onClick={() => moveSectionAndSave(s.id, "up")} disabled={idx === 0}
+                          aria-label={isRu ? "Сдвинуть выше" : "Move up"}
+                          className="flex h-3.5 w-4 items-center justify-center text-text-muted transition-colors hover:text-text-primary disabled:opacity-25 disabled:hover:text-text-muted">
+                          <svg width="9" height="6" viewBox="0 0 10 6" fill="none" aria-hidden="true"><path d="M1 5L5 1L9 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                        </button>
+                        <button type="button" onClick={() => moveSectionAndSave(s.id, "down")} disabled={idx === order.length - 1}
+                          aria-label={isRu ? "Сдвинуть ниже" : "Move down"}
+                          className="flex h-3.5 w-4 items-center justify-center text-text-muted transition-colors hover:text-text-primary disabled:opacity-25 disabled:hover:text-text-muted">
+                          <svg width="9" height="6" viewBox="0 0 10 6" fill="none" aria-hidden="true"><path d="M1 1L5 5L9 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                        </button>
+                      </div>
+                      <button onClick={() => toggleSectionAndSave(s.id)}
+                        className="flex min-w-0 flex-1 items-center gap-2.5 text-left">
+                        <span className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border ${checked ? "border-accent bg-accent text-accent-fg" : "border-border"}`}>
+                          {checked && <CheckIcon size={11} />}
+                        </span>
+                        <GameIcon id={s.icon} size={14} />
+                        <span className="min-w-0 truncate">{isRu ? s.labelRu : s.label}</span>
+                      </button>
+                    </div>
                   );
                 })}
               </div>
@@ -1231,6 +1291,37 @@ export default function ProfilePage() {
               {saveError && <p className="text-xs text-error">{saveError}</p>}
             </div>
 
+            {/* Веб-ссылка на портфолио — та же публичность, что у обычного
+                публичного профиля (profile.is_public, вкладка Настройки),
+                отдельного тумблера нет. Тот же CopyButton, что уже
+                используется для publicProfileUrl/бейджа в Settings. */}
+            <div className="rounded-lg border border-border bg-surface p-5 space-y-2">
+              <h2 className="text-sm font-semibold text-text-primary">
+                {isRu ? "Веб-ссылка" : "Web link"}
+              </h2>
+              <p className="text-xs text-text-muted">
+                {isRu
+                  ? "Живая страница с этой же карточкой — можно отправить вместо файла."
+                  : "A live page with this same card — send it instead of a file."}
+              </p>
+              {!profile.username ? (
+                <p className="text-xs text-text-muted">
+                  {isRu ? "Сначала задай username во вкладке Настройки." : "Set a username in the Settings tab first."}
+                </p>
+              ) : !profile.is_public ? (
+                <p className="text-xs text-amber-400">
+                  {isRu
+                    ? "Включи \"Показывать профиль по прямой ссылке\" во вкладке Настройки, чтобы ссылка заработала."
+                    : "Turn on \"Show profile at a direct link\" in the Settings tab to make the link live."}
+                </p>
+              ) : (
+                <div className="flex items-center gap-1.5 rounded-lg border border-border bg-canvas px-2.5 py-1.5">
+                  <span className="min-w-0 flex-1 truncate font-mono text-xs text-text-secondary">{portfolioPageUrl}</span>
+                  <CopyButton value={portfolioPageUrl} iconOnly />
+                </div>
+              )}
+            </div>
+
             <div className="rounded-lg border border-border bg-surface p-5 space-y-2.5">
               <h2 className="text-sm font-semibold text-text-primary">
                 {isRu ? "Экспорт" : "Export"}
@@ -1284,6 +1375,7 @@ export default function ProfilePage() {
               experience={profile.portfolio_experience}
               projects={profile.portfolio_projects}
               enabledSections={profile.portfolio_sections}
+              sectionOrder={profile.portfolio_section_order}
               themeId={getPortfolioTheme(profile.portfolio_theme).id}
             />
           </div>
