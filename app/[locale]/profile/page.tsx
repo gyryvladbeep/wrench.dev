@@ -27,6 +27,8 @@ import { ROLE_META, DIFFICULTY_META, ChallengeRole, ChallengeDifficulty } from "
 import { CopyButton } from "@/components/CopyButton";
 import { ApiTokensPanel } from "@/components/profile/ApiTokensPanel";
 import { SkillEndorsements } from "@/components/profile/SkillEndorsements";
+import { PortfolioPreview } from "@/components/portfolio/PortfolioPreview";
+import { PORTFOLIO_SECTIONS, DEFAULT_PORTFOLIO_SECTIONS, normalizePortfolioSections, togglePortfolioSection, buildPortfolioFileName } from "@/lib/portfolio";
 
 interface Profile {
   username: string;
@@ -59,6 +61,10 @@ interface Profile {
   // Settings ниже. На БД-уровне ограничен FK на achievements(user_id,
   // badge_id): выставить сюда можно только реально заработанный бейдж.
   equipped_badge_id:    string | null;
+  // Конструктор портфолио (Profile → Портфолио) — какие необязательные
+  // разделы включены в экспортируемую карточку, id из lib/portfolio.ts
+  // PORTFOLIO_SECTIONS. supabase/portfolio-migration.sql.
+  portfolio_sections:   string[];
 }
 
 // Решённая задача, доступная для закрепления на публичном профиле (см.
@@ -146,6 +152,7 @@ export default function ProfilePage() {
     is_public: true, banner_gradient: null, tagline: null,
     github_url: null, linkedin_url: null, website_url: null, pinned_challenge_ids: [],
     tech_stack: [], location: null, equipped_badge_id: null,
+    portfolio_sections: DEFAULT_PORTFOLIO_SECTIONS,
   });
   const [stats,    setStats]    = useState<Stats | null>(null);
   const [history,  setHistory]  = useState<ToolHistory[]>([]);
@@ -172,7 +179,14 @@ export default function ProfilePage() {
   // видимым, а не гадаемым по тому, что данные откатились на следующей
   // загрузке страницы.
   const [saveError, setSaveError] = useState<string | null>(null);
-  const [tab,      setTab]      = useState<"overview"|"history"|"badges"|"favorites"|"settings">("overview");
+  const [tab,      setTab]      = useState<"overview"|"history"|"badges"|"favorites"|"portfolio"|"settings">("overview");
+  // Экспорт PNG/PDF (вкладка Портфолио) — отдельные булевы вместо
+  // переиспользования saving/saved выше: это скачивание файла, а не
+  // сохранение профиля, и обе операции не должны блокировать друг
+  // друга видом кнопки.
+  const [exportingPng, setExportingPng] = useState(false);
+  const [exportingPdf, setExportingPdf] = useState(false);
+  const [exportError,  setExportError]  = useState<string | null>(null);
 
   // Удаление аккаунта — состояние живёт здесь, не в JSX Settings-вкладки,
   // потому что вкладки условно рендерятся (см. {tab === "settings" && ...}
@@ -211,7 +225,19 @@ export default function ProfilePage() {
       supabase.from("achievements").select("badge_id").eq("user_id", user.id),
     ]);
 
-    if (prof) setProfile(prof as Profile);
+    if (prof) {
+      setProfile({
+        ...(prof as Profile),
+        // Нормализуем сразу при загрузке — единственное место, а не
+        // защитные проверки по всему JSX ниже (тот же приём, что уже
+        // применён к persistedBadgeIds чуть выше): если миграция ещё не
+        // выполнена, колонки в prof вообще не будет (undefined), а если
+        // выполнена — она гарантированно не null благодаря DEFAULT в
+        // supabase/portfolio-migration.sql, но могла накопить
+        // неизвестные id при будущих изменениях каталога.
+        portfolio_sections: normalizePortfolioSections((prof as Record<string, unknown>).portfolio_sections as string[] | undefined),
+      });
+    }
     if (streak) setStats(streak as Stats);
     if (earnedRows) setPersistedBadgeIds((earnedRows as { badge_id: string }[]).map((r) => r.badge_id));
     if (hist) setHistory(hist as ToolHistory[]);
@@ -395,6 +421,19 @@ export default function ProfilePage() {
     if (error) console.error("equipBadge: update failed", error);
   }
 
+  // Включить/выключить раздел портфолио — тот же принцип мгновенного
+  // сохранения, что и у equipBadge выше: это одна галочка, а не текстовое
+  // поле, которое хочется довести до ума перед сохранением, странно
+  // было бы требовать отдельного нажатия "Сохранить" ради чекбокса.
+  async function toggleSectionAndSave(id: string) {
+    if (!user) return;
+    const next = togglePortfolioSection(profile.portfolio_sections, id);
+    setProfile((p) => ({ ...p, portfolio_sections: next }));
+    const supabase = createClient();
+    const { error } = await supabase.from("profiles").update({ portfolio_sections: next }).eq("id", user.id);
+    if (error) console.error("toggleSectionAndSave: update failed", error);
+  }
+
   async function saveProfile() {
     if (!user) return;
     setSaving(true);
@@ -432,6 +471,82 @@ export default function ProfilePage() {
     // только что сохранённых изменениях. Событие — самый простой способ
     // сообщить ему об этом, не заводя глобальный стор ради одного места.
     window.dispatchEvent(new CustomEvent("wrench:profile-saved"));
+  }
+
+  // Общий URL картинки-портфолио — sections передаётся явно (текущее
+  // состояние profile.portfolio_sections), а не читается роутом заново
+  // из БД: toggleSectionAndSave сохраняет мгновенно, так что расхождения
+  // тут практически нет, но явная передача избавляет от гонки "успел ли
+  // предыдущий toggle долететь до базы до того, как нажали Скачать".
+  function portfolioImageUrl(): string | null {
+    if (!profile.username) return null;
+    const sections = profile.portfolio_sections.join(",");
+    return `/api/portfolio/${encodeURIComponent(profile.username)}?sections=${encodeURIComponent(sections)}`;
+  }
+
+  async function downloadPortfolioPng() {
+    const src = portfolioImageUrl();
+    if (!src) return;
+    setExportError(null);
+    setExportingPng(true);
+    try {
+      const res = await fetch(src);
+      if (!res.ok) throw new Error(String(res.status));
+      const blob = await res.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = objectUrl;
+      a.download = buildPortfolioFileName(profile.username, "png");
+      a.click();
+      URL.revokeObjectURL(objectUrl);
+    } catch (e) {
+      console.error("downloadPortfolioPng: failed", e);
+      setExportError(isRu ? "Не удалось собрать картинку. Попробуй ещё раз." : "Couldn't build the image. Try again.");
+    } finally {
+      setExportingPng(false);
+    }
+  }
+
+  // PDF собирается на клиенте вокруг той же самой PNG, что отдаёт
+  // /api/portfolio/[username] — отдельного серверного PDF-роута
+  // (Puppeteer/Chromium) нет, см. комментарий в самом роуте экспорта.
+  // Размер страницы PDF подгоняется под реальные пиксели картинки
+  // (px → pt через 0.75, стандартный коэффициент при 96 DPI), а не под
+  // готовый формат A4/Letter — тогда картинка всегда заполняет страницу
+  // целиком, без белых полей или обрезки с любой стороны.
+  async function downloadPortfolioPdf() {
+    const src = portfolioImageUrl();
+    if (!src) return;
+    setExportError(null);
+    setExportingPdf(true);
+    try {
+      const res = await fetch(src);
+      if (!res.ok) throw new Error(String(res.status));
+      const blob = await res.blob();
+      const dataUrl: string = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+      const { width, height } = await new Promise<{ width: number; height: number }>((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve({ width: img.naturalWidth, height: img.naturalHeight });
+        img.onerror = reject;
+        img.src = dataUrl;
+      });
+      const { jsPDF } = await import("jspdf");
+      const widthPt = width * 0.75;
+      const heightPt = height * 0.75;
+      const doc = new jsPDF({ orientation: width > height ? "landscape" : "portrait", unit: "pt", format: [widthPt, heightPt] });
+      doc.addImage(dataUrl, "PNG", 0, 0, widthPt, heightPt);
+      doc.save(buildPortfolioFileName(profile.username, "pdf"));
+    } catch (e) {
+      console.error("downloadPortfolioPdf: failed", e);
+      setExportError(isRu ? "Не удалось собрать PDF. Попробуй ещё раз." : "Couldn't build the PDF. Try again.");
+    } finally {
+      setExportingPdf(false);
+    }
   }
 
   // Требует ввода фразы-подтверждения (кнопка "Удалить навсегда" ниже
@@ -497,6 +612,7 @@ export default function ProfilePage() {
     { id:"history",   label: isRu ? "История"    : "History" },
     { id:"favorites", label: isRu ? "Избранное"  : "Favorites" },
     { id:"badges",    label: isRu ? "Награды"    : "Badges" },
+    { id:"portfolio", label: isRu ? "Портфолио"  : "Portfolio" },
     { id:"settings",  label: isRu ? "Настройки"  : "Settings" },
   ] as const;
 
@@ -824,6 +940,97 @@ export default function ProfilePage() {
               </div>
             </>
           )}
+        </div>
+      )}
+
+      {/* Portfolio tab — конструктор-страница: слева список
+          переключаемых разделов (см. PORTFOLIO_SECTIONS в lib/portfolio.ts),
+          справа живой предпросмотр в реальном времени (см. комментарий
+          "Отдельная страница-конструктор" — так пользователь и выбрал
+          структуру фичи через AskUserQuestion). Каждый чекбокс сохраняется
+          мгновенно (toggleSectionAndSave), поэтому предпросмотр справа
+          всегда показывает уже сохранённое состояние, а не черновик,
+          который можно потерять, забыв нажать "Сохранить". */}
+      {tab === "portfolio" && (
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,320px)_1fr]">
+          <div className="space-y-4">
+            <div className="rounded-lg border border-border bg-surface p-5">
+              <h2 className="mb-1 text-sm font-semibold text-text-primary">
+                {isRu ? "Разделы портфолио" : "Portfolio sections"}
+              </h2>
+              <p className="mb-4 text-xs text-text-muted">
+                {isRu
+                  ? "Шапка (аватар, имя, роль, локация) есть в экспорте всегда. Остальное — по выбору."
+                  : "The header (avatar, name, role, location) is always included. Everything else is optional."}
+              </p>
+              <div className="space-y-1.5">
+                {PORTFOLIO_SECTIONS.map((s) => {
+                  const checked = profile.portfolio_sections.includes(s.id);
+                  return (
+                    <button key={s.id} onClick={() => toggleSectionAndSave(s.id)}
+                      className={`flex w-full items-center gap-2.5 rounded-md border px-3 py-2 text-left text-sm transition-colors ${
+                        checked ? "border-accent/30 bg-accent/5 text-text-primary" : "border-border text-text-secondary hover:border-border-focus hover:bg-surface-hover"
+                      }`}>
+                      <span className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border ${checked ? "border-accent bg-accent text-accent-fg" : "border-border"}`}>
+                        {checked && <CheckIcon size={11} />}
+                      </span>
+                      <GameIcon id={s.icon} size={14} />
+                      <span className="min-w-0 truncate">{isRu ? s.labelRu : s.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="rounded-lg border border-border bg-surface p-5 space-y-2.5">
+              <h2 className="text-sm font-semibold text-text-primary">
+                {isRu ? "Экспорт" : "Export"}
+              </h2>
+              {!profile.username && (
+                <p className="text-xs text-text-muted">
+                  {isRu ? "Сначала задай username во вкладке Настройки." : "Set a username in the Settings tab first."}
+                </p>
+              )}
+              <button onClick={downloadPortfolioPng} disabled={!profile.username || exportingPng}
+                className="w-full rounded bg-accent px-4 py-2 text-sm font-medium text-accent-fg transition-opacity hover:opacity-90 disabled:opacity-50">
+                {exportingPng ? (isRu ? "Собираем…" : "Building…") : (isRu ? "Скачать PNG" : "Download PNG")}
+              </button>
+              <button onClick={downloadPortfolioPdf} disabled={!profile.username || exportingPdf}
+                className="w-full rounded border border-border px-4 py-2 text-sm font-medium text-text-primary transition-colors hover:border-border-focus hover:bg-surface-hover disabled:opacity-50">
+                {exportingPdf ? (isRu ? "Собираем…" : "Building…") : (isRu ? "Скачать PDF" : "Download PDF")}
+              </button>
+              {exportError && <p className="text-xs text-error">{exportError}</p>}
+            </div>
+          </div>
+
+          <div className="flex items-start justify-center rounded-lg border border-border bg-canvas p-6">
+            <PortfolioPreview
+              isRu={isRu}
+              profileUserId={user.id}
+              username={profile.username}
+              displayName={profile.display_name}
+              tagline={profile.tagline}
+              bio={profile.bio}
+              avatarColor={profile.avatar_color}
+              avatarEmblem={profile.avatar_emblem}
+              roleLabel={role ? (isRu ? role.labelRu : role.label) : null}
+              location={profile.location}
+              bannerCss={banner?.css ?? "var(--accent)"}
+              links={[
+                profile.github_url   && { url: profile.github_url,   label: "GitHub" },
+                profile.linkedin_url && { url: profile.linkedin_url, label: "LinkedIn" },
+                profile.website_url  && { url: profile.website_url,  label: isRu ? "Сайт" : "Website" },
+              ].filter((l): l is { url: string; label: string } => Boolean(l))}
+              techStack={profile.tech_stack}
+              score={score}
+              level={level}
+              badgeIds={badges}
+              pinnedChallenges={profile.pinned_challenge_ids
+                .map((id) => solvedChallenges.find((c) => c.id === id))
+                .filter((c): c is SolvedChallenge => Boolean(c))}
+              enabledSections={profile.portfolio_sections}
+            />
+          </div>
         </div>
       )}
 
