@@ -267,6 +267,44 @@ export function removeProjectEntry(entries: readonly PortfolioProjectEntry[], id
   return entries.filter((e) => e.id !== id);
 }
 
+// Автоподстановка проекта из решённой задачи (roadmap: "кнопка 'подтянуть
+// из пройденных челленджей' при добавлении проекта, чтобы не переписывать
+// вручную то, что уже есть в профиле") — только те поля решённой задачи,
+// которых достаточно для одной карточки проекта: не весь SolvedChallenge
+// (app/[locale]/profile/page.tsx), а уже готовые текстовые метки
+// роли/сложности (ROLE_META/DIFFICULTY_META, lib/challenges/types.ts),
+// чтобы этот файл не тянул за собой ещё один модуль ради двух строк.
+export interface PortfolioChallengeSource {
+  title:           string;
+  titleRu:         string | null;
+  roleLabel:       string;
+  difficultyLabel: string;
+  points:          number;
+}
+
+// Без id — id для новой записи генерируется на клиенте (crypto.randomUUID(),
+// тот же приём, что уже применён к addExperience/addProject в
+// app/[locale]/profile/page.tsx), эта функция только собирает содержимое.
+//
+// Сознательно НЕ заполняет:
+// — tech: роль задачи ("QA-инженер") — это не стек технологий, а
+//   категория задачи, подставлять её в поле "Стек, напр. React, TS" было
+//   бы больше похоже на догадку, чем на подстановку; проще оставить
+//   пустым и дать заполнить вручную, чем писать туда что-то неверное.
+// — url: у отдельной решённой задачи нет своей постоянной страницы
+//   (/challenges/[role] — общий список по роли, не карточка одной
+//   задачи), ссылку класть некуда — тоже оставляем пустым.
+export function projectEntryFromChallenge(
+  source: PortfolioChallengeSource,
+  isRu: boolean
+): Omit<PortfolioProjectEntry, "id"> {
+  const name = isRu && source.titleRu ? source.titleRu : source.title;
+  const description = isRu
+    ? `Решённая задача Wrench-Branch: ${source.roleLabel}, уровень «${source.difficultyLabel}» (${source.points} баллов).`
+    : `Solved Wrench-Branch challenge: ${source.roleLabel}, ${source.difficultyLabel} difficulty (${source.points} points).`;
+  return { name, description, tech: "", url: null };
+}
+
 // ═══════════════════════════════════════════════════════════════
 // Темы оформления
 // ═══════════════════════════════════════════════════════════════

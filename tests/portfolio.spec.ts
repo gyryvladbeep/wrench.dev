@@ -27,6 +27,7 @@ import {
   removePortfolioPreset,
   renamePortfolioPreset,
   updatePortfolioPresetSnapshot,
+  projectEntryFromChallenge,
 } from "@/lib/portfolio";
 
 function makeExperience(id: string): PortfolioExperienceEntry {
@@ -325,5 +326,36 @@ test.describe("updatePortfolioPresetSnapshot", () => {
     expect(updatePortfolioPresetSnapshot(original, "not-real", {
       sections: [], sectionOrder: [], theme: "classic", title: null, tagline: null, bio: null, footer: null,
     })).toEqual(original);
+  });
+});
+
+test.describe("projectEntryFromChallenge", () => {
+  const base = { title: "Fix the off-by-one bug", titleRu: "Исправь ошибку смещения", roleLabel: "QA Engineer", difficultyLabel: "Hard", points: 50 };
+
+  test("uses the Russian title and description when isRu is true", () => {
+    const result = projectEntryFromChallenge({ ...base, roleLabel: "QA-инженер", difficultyLabel: "Сложный" }, true);
+    expect(result.name).toBe("Исправь ошибку смещения");
+    expect(result.description).toContain("QA-инженер");
+    expect(result.description).toContain("Сложный");
+    expect(result.description).toContain("50");
+  });
+
+  test("uses the English title and description when isRu is false", () => {
+    const result = projectEntryFromChallenge(base, false);
+    expect(result.name).toBe("Fix the off-by-one bug");
+    expect(result.description).toContain("QA Engineer");
+    expect(result.description).toContain("Hard");
+    expect(result.description).toContain("50");
+  });
+
+  test("falls back to the English title when isRu is true but titleRu is null", () => {
+    const result = projectEntryFromChallenge({ ...base, titleRu: null }, true);
+    expect(result.name).toBe("Fix the off-by-one bug");
+  });
+
+  test("leaves tech and url empty for the user to fill in", () => {
+    const result = projectEntryFromChallenge(base, false);
+    expect(result.tech).toBe("");
+    expect(result.url).toBeNull();
   });
 });

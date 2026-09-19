@@ -36,6 +36,7 @@ import {
   fullSectionOrder, moveSectionOrder,
   PortfolioPreset, MAX_PORTFOLIO_PRESETS, addPortfolioPreset, removePortfolioPreset,
   renamePortfolioPreset, updatePortfolioPresetSnapshot,
+  projectEntryFromChallenge,
 } from "@/lib/portfolio";
 
 interface Profile {
@@ -221,6 +222,10 @@ export default function ProfilePage() {
   // загрузке страницы.
   const [saveError, setSaveError] = useState<string | null>(null);
   const [tab,      setTab]      = useState<"overview"|"history"|"badges"|"favorites"|"portfolio"|"settings">("overview");
+  // Показан ли список решённых задач для подстановки в "Проекты"
+  // (roadmap: "подтянуть из пройденных челленджей") — чисто локальный
+  // тумблер видимости, ничего не сохраняет сам по себе.
+  const [showChallengeImport, setShowChallengeImport] = useState(false);
   // Экспорт PNG/PDF (вкладка Портфолио) — отдельные булевы вместо
   // переиспользования saving/saved выше: это скачивание файла, а не
   // сохранение профиля, и обе операции не должны блокировать друг
@@ -658,6 +663,31 @@ export default function ProfilePage() {
     setProfile((p) => ({
       ...p,
       portfolio_projects: p.portfolio_projects.map((e) => (e.id === id ? { ...e, ...patch } : e)),
+    }));
+  }
+  // Подтянуть уже решённую задачу как черновик проекта (roadmap: "чтобы
+  // не переписывать вручную то, что уже есть в профиле") — тот же
+  // локальный addProjectEntry, что и у addProject() выше, просто с
+  // предзаполненными name/description вместо пустых полей; tech/url
+  // пользователь при желании дозаполняет сам (см. комментарий у
+  // projectEntryFromChallenge в lib/portfolio.ts, почему их нельзя
+  // подставить надёжно). Ничего не пишет в БД — как и addProject(),
+  // попадает туда только по нажатию общей кнопки "Сохранить".
+  function importProjectFromChallenge(c: SolvedChallenge) {
+    const roleMeta = ROLE_META[c.role];
+    const diffMeta = DIFFICULTY_META[c.difficulty];
+    setProfile((p) => ({
+      ...p,
+      portfolio_projects: addProjectEntry(p.portfolio_projects, {
+        id: crypto.randomUUID(),
+        ...projectEntryFromChallenge({
+          title: c.title,
+          titleRu: c.title_ru,
+          roleLabel: isRu ? roleMeta.labelRu : roleMeta.label,
+          difficultyLabel: isRu ? diffMeta.labelRu : diffMeta.label,
+          points: c.points,
+        }, isRu),
+      }),
     }));
   }
 
@@ -1492,6 +1522,41 @@ export default function ProfilePage() {
                 className="w-full rounded border border-border px-4 py-2 text-sm font-medium text-text-primary transition-colors hover:border-border-focus hover:bg-surface-hover disabled:opacity-50">
                 {isRu ? "Добавить проект" : "Add project"}
               </button>
+              {/* Подтянуть из пройденных челленджей (roadmap item 7) —
+                  список показывается только если есть хоть одна решённая
+                  задача, свёрнут по умолчанию, чтобы не занимать место в
+                  карточке, когда им не пользуются. */}
+              {solvedChallenges.length > 0 && (
+                <div className="space-y-1.5">
+                  <button onClick={() => setShowChallengeImport((v) => !v)}
+                    className="w-full rounded border border-dashed border-border px-4 py-2 text-sm font-medium text-text-secondary transition-colors hover:border-border-focus hover:bg-surface-hover">
+                    {showChallengeImport
+                      ? (isRu ? "Скрыть список решённых задач" : "Hide solved challenges")
+                      : (isRu ? "Подтянуть из пройденных" : "Import from solved challenges")}
+                  </button>
+                  {showChallengeImport && (
+                    <div className="max-h-56 space-y-1.5 overflow-y-auto rounded-lg border border-border p-2">
+                      {solvedChallenges.map((c) => {
+                        const atLimit = profile.portfolio_projects.length >= MAX_PROJECT_ENTRIES;
+                        const roleMeta = ROLE_META[c.role];
+                        const diffMeta = DIFFICULTY_META[c.difficulty];
+                        return (
+                          <button key={c.id} onClick={() => importProjectFromChallenge(c)} disabled={atLimit}
+                            className="flex w-full items-center justify-between gap-3 rounded-md border border-border bg-canvas px-3 py-2 text-left transition-colors hover:bg-surface-hover disabled:cursor-not-allowed disabled:opacity-40">
+                            <span className="min-w-0 truncate text-sm text-text-primary">
+                              {isRu && c.title_ru ? c.title_ru : c.title}
+                            </span>
+                            <span className="flex shrink-0 items-center gap-2 text-xs">
+                              <span className="text-text-muted">{isRu ? roleMeta.labelRu : roleMeta.label}</span>
+                              <span className={diffMeta.colorClass}>{isRu ? diffMeta.labelRu : diffMeta.label}</span>
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
               <button onClick={saveProfile} disabled={saving}
                 className="w-full rounded bg-accent px-4 py-2 text-sm font-medium text-accent-fg transition-opacity hover:opacity-90 disabled:opacity-50">
                 {saving ? (isRu ? "Сохраняем…" : "Saving…") : saved ? (isRu ? "Сохранено" : "Saved") : (isRu ? "Сохранить" : "Save")}
