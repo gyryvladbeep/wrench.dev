@@ -12,9 +12,10 @@
 -- ВАЖНО, если более ранняя версия уже выполнялась: у DEFAULT колонки
 -- меняется только значение для НОВЫХ строк — у уже существующих
 -- профилей portfolio_sections не пересчитывается задним числом, так что
--- "Фон" и "Аватар" (новые переключаемые разделы, добавленные этой
--- версией) там просто окажутся выключены. Достаточно один раз включить
--- обе галочки во вкладке Портфолио — там же они и сохранятся.
+-- новый раздел, добавленный очередной версией этого файла ("Фон" и
+-- "Аватар" изначально, теперь ещё и "QR-код"), там просто окажется
+-- выключен. Достаточно один раз включить нужную галочку во вкладке
+-- Портфолио — там же она и сохранится.
 
 -- portfolio_sections — какие необязательные разделы пользователь включил
 -- в экспортируемое портфолио (фон/аватар/слоган/о себе/ссылки/стек/
@@ -32,7 +33,7 @@
 -- миграцию — lib/portfolio.ts только клиентский фолбэк на случай
 -- null/undefined с сервера).
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS portfolio_sections text[] NOT NULL DEFAULT
-  ARRAY['banner','avatar','tagline','bio','links','tech_stack','experience','projects','score','badges','pinned_challenges','endorsements'];
+  ARRAY['banner','avatar','tagline','bio','links','tech_stack','experience','projects','score','badges','pinned_challenges','endorsements','qr_code'];
 
 -- Опыт работы и проекты — "классические" резюме-разделы (roadmap:
 -- "добавить классические поля, как опыт работы, свои проекты"). Списки
@@ -82,6 +83,50 @@ ALTER TABLE profiles ADD COLUMN IF NOT EXISTS portfolio_tagline text;
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS portfolio_bio     text;
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS portfolio_footer  text;
 
+-- Счётчики просмотров/скачиваний (roadmap: "счётчик просмотров портфолио
+-- — обратная связь во время поиска работы"). Два разных числа, а не одно
+-- "взаимодействий", потому что у них разный смысл и разный посетитель:
+--
+-- portfolio_view_count — сколько раз ОТКРЫВАЛИ веб-версию портфолио
+-- (/u/[username]/portfolio) КЕМ УГОДНО по ссылке, без входа в аккаунт —
+-- собственно тот сигнал "интересуются ли ссылкой", ради которого эта
+-- фича вообще нужна.
+--
+-- portfolio_download_count — сколько раз ты сам скачал PNG/PDF из
+-- вкладки Портфолио. Это НЕ "сколько раз портфолио скачали другие" —
+-- сам экспорт (/api/portfolio/[username]) доступен только владельцу (см.
+-- комментарий у него самого и в route.tsx), анонимный посетитель может
+-- только открыть веб-страницу, не сгенерировать себе картинку/PDF с
+-- чужого аккаунта. Так что это скорее личный счётчик "сколько раз я
+-- обновлял/пересобирал файл", а не метрика чужого интереса — так и
+-- показывается в редакторе.
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS portfolio_view_count     integer NOT NULL DEFAULT 0;
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS portfolio_download_count integer NOT NULL DEFAULT 0;
+
+-- portfolio_download_count инкрементится обычным UPDATE от владельца —
+-- он трогает свою же строку, это уже разрешено политикой
+-- profiles_update_own, отдельная функция не нужна.
+--
+-- portfolio_view_count, наоборот, должен уметь инкрементить АНОНИМНЫЙ
+-- посетитель чужой (публичной) страницы — обычный UPDATE тут не пройдёт
+-- (и не должен: ослаблять profiles_update_own ради одной колонки значило
+-- бы разрешить анониму переписывать любое поле чужого профиля). Та же
+-- узкая SECURITY DEFINER функция, что уже применена для
+-- increment_workbench_clone_count (supabase/workbench-gallery-migration.sql)
+-- — трогает ровно одну колонку и только у строки с is_public = true.
+CREATE OR REPLACE FUNCTION increment_portfolio_view_count(p_id uuid)
+RETURNS void
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  UPDATE profiles
+  SET portfolio_view_count = portfolio_view_count + 1
+  WHERE id = p_id AND is_public = true;
+$$;
+
+GRANT EXECUTE ON FUNCTION increment_portfolio_view_count(uuid) TO anon, authenticated;
+
 -- profiles_select_own / profiles_select_public (см. supabase/profile-schema.sql
 -- и supabase/profile-public-migration.sql) уже покрывают ЛЮБую колонку
 -- этой строки, включая все новые — RLS работает на уровне строк, не
@@ -99,4 +144,7 @@ ALTER TABLE profiles ADD COLUMN IF NOT EXISTS portfolio_footer  text;
 -- по прямой ссылке" (profiles.is_public) во вкладке Настройки —
 -- отдельного тумблера специально под портфолио не заводили, чтобы не
 -- плодить два разных выключателя видимости для одного и того же
--- профиля.
+-- профиля. Та же страница вызывает increment_portfolio_view_count() один
+-- раз при открытии — раздел "QR-код" (см. lib/portfolio.ts) ведёт именно
+-- на неё, так что счётчик учитывает и переходы по ссылке, и сканирование
+-- QR-кода с распечатанной/показанной карточки одним и тем же числом.

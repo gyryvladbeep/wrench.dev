@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/lib/auth/auth-context";
@@ -66,10 +66,17 @@ export function PublicPortfolioView({ locale, username }: PublicPortfolioViewPro
   const isRu = locale === "ru";
   const { user } = useAuth();
   const [state, setState] = useState<ViewState>({ kind: "loading" });
+  // Счётчик просмотров (roadmap: "счётчик просмотров/скачиваний
+  // портфолио") — инкрементим ровно один раз за открытие страницы, не на
+  // каждый ре-рендер: ref, а не просто вызов внутри .then() ниже,
+  // потому что тот же эффект перезапускается при смене username (переход
+  // между чужими портфолио без размонтирования компонента).
+  const viewCountedRef = useRef(false);
 
   useEffect(() => {
     let cancelled = false;
     setState({ kind: "loading" });
+    viewCountedRef.current = false;
 
     const supabase = createClient();
 
@@ -86,6 +93,21 @@ export function PublicPortfolioView({ locale, username }: PublicPortfolioViewPro
       .then(async ({ data: profile, error }: { data: PublicPortfolioProfile | null; error: unknown }) => {
         if (cancelled) return;
         if (error || !profile) { setState({ kind: "not-found" }); return; }
+
+        // Fire-and-forget — та же узкая SECURITY DEFINER функция
+        // (increment_portfolio_view_count, supabase/portfolio-migration.sql),
+        // что и у increment_workbench_clone_count в useWorkbenches.ts:
+        // трогает ровно одну колонку и только у публичной строки, так
+        // что анонимный вызов ничего, кроме счётчика, изменить не может.
+        // Ошибка тут не критична для самой страницы — не блокируем
+        // рендер и не показываем её посетителю.
+        if (!viewCountedRef.current) {
+          viewCountedRef.current = true;
+          supabase.rpc("increment_portfolio_view_count", { p_id: profile.id })
+            .then(({ error: rpcError }: { error: unknown }) => {
+              if (rpcError) console.error("PublicPortfolioView: view count increment failed", rpcError);
+            });
+        }
 
         const [{ data: streak }, { count: toolsUsed }, pinnedResult] = await Promise.all([
           supabase.from("user_streaks").select("total_solved, total_points, current_streak, longest_streak").eq("user_id", profile.id).single(),
@@ -184,6 +206,7 @@ export function PublicPortfolioView({ locale, username }: PublicPortfolioViewPro
         enabledSections={profile.portfolio_sections}
         sectionOrder={profile.portfolio_section_order}
         themeId={profile.portfolio_theme as PortfolioThemeId}
+        isPublic
       />
 
       {/* Та же ссылка на обычный публичный профиль и то же приглашение

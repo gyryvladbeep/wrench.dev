@@ -90,6 +90,13 @@ interface Profile {
   // PortfolioExperienceEntry/PortfolioProjectEntry в lib/portfolio.ts.
   portfolio_experience: PortfolioExperienceEntry[];
   portfolio_projects:   PortfolioProjectEntry[];
+  // Счётчики (roadmap: "счётчик просмотров/скачиваний портфолио") — см.
+  // подробный комментарий про их разный смысл в
+  // supabase/portfolio-migration.sql: view_count считает чужие открытия
+  // веб-версии, download_count — твои собственные скачивания PNG/PDF
+  // (экспорт доступен только владельцу, см. route.tsx).
+  portfolio_view_count:     number;
+  portfolio_download_count: number;
 }
 
 // Решённая задача, доступная для закрепления на публичном профиле (см.
@@ -180,6 +187,7 @@ export default function ProfilePage() {
     portfolio_sections: DEFAULT_PORTFOLIO_SECTIONS, portfolio_section_order: [],
     portfolio_title: null, portfolio_tagline: null, portfolio_bio: null, portfolio_footer: null,
     portfolio_theme: DEFAULT_PORTFOLIO_THEME, portfolio_experience: [], portfolio_projects: [],
+    portfolio_view_count: 0, portfolio_download_count: 0,
   });
   const [stats,    setStats]    = useState<Stats | null>(null);
   const [history,  setHistory]  = useState<ToolHistory[]>([]);
@@ -281,6 +289,10 @@ export default function ProfilePage() {
           ? (prof as Record<string, unknown>).portfolio_experience as PortfolioExperienceEntry[] : [],
         portfolio_projects: Array.isArray((prof as Record<string, unknown>).portfolio_projects)
           ? (prof as Record<string, unknown>).portfolio_projects as PortfolioProjectEntry[] : [],
+        // Number(...) || 0 — та же защита от "колонки ещё нет" (undefined
+        // до миграции), что у остальных полей выше.
+        portfolio_view_count: Number((prof as Record<string, unknown>).portfolio_view_count) || 0,
+        portfolio_download_count: Number((prof as Record<string, unknown>).portfolio_download_count) || 0,
       });
     }
     if (streak) setStats(streak as Stats);
@@ -562,9 +574,19 @@ export default function ProfilePage() {
     // код всё равно шёл дальше и показывал "Сохранено", как будто всё
     // записалось. Теперь ошибка проверяется и показывается — молчаливого
     // "сохранения в никуда" больше нет.
+    // portfolio_view_count исключаем из общего upsert намеренно: его
+    // может в любой момент увеличить чужой анонимный визит веб-версии
+    // портфолио (increment_portfolio_view_count, см. миграцию), пока эта
+    // вкладка открыта со своим локальным состоянием — бланковый upsert
+    // всего объекта profile иначе откатывал бы счётчик назад к тому,
+    // что было в момент открытия страницы. portfolio_download_count
+    // сюда же — он и так пишется отдельно, в bumpDownloadCount() выше,
+    // общий save ему не нужен.
+    const { portfolio_view_count, portfolio_download_count, ...profileToSave } = profile;
+    void portfolio_view_count; void portfolio_download_count;
     const { error } = await supabase.from("profiles").upsert({
       id: user.id,
-      ...profile,
+      ...profileToSave,
       updated_at: new Date().toISOString(),
     }, { onConflict: "id" });
     setSaving(false);
@@ -607,6 +629,21 @@ export default function ProfilePage() {
     return `/api/portfolio/${encodeURIComponent(profile.username)}?${params.toString()}`;
   }
 
+  // Счётчик собственных скачиваний (см. комментарий у portfolio_download_count
+  // в интерфейсе Profile выше и подробное объяснение в
+  // supabase/portfolio-migration.sql) — обычный update своей же строки,
+  // не отдельная RPC-функция: владелец меняет свою собственную строку,
+  // это уже разрешено profiles_update_own. Не блокирует и не отменяет
+  // сам download при сбое — счётчик необязателен, файл важнее.
+  async function bumpDownloadCount() {
+    if (!user) return;
+    const next = profile.portfolio_download_count + 1;
+    setProfile((p) => ({ ...p, portfolio_download_count: next }));
+    const supabase = createClient();
+    const { error } = await supabase.from("profiles").update({ portfolio_download_count: next }).eq("id", user.id);
+    if (error) console.error("bumpDownloadCount: update failed", error);
+  }
+
   async function downloadPortfolioPng() {
     const src = portfolioImageUrl();
     if (!src) return;
@@ -622,6 +659,7 @@ export default function ProfilePage() {
       a.download = buildPortfolioFileName(profile.username, "png");
       a.click();
       URL.revokeObjectURL(objectUrl);
+      bumpDownloadCount();
     } catch (e) {
       console.error("downloadPortfolioPng: failed", e);
       setExportError(isRu ? "Не удалось собрать картинку. Попробуй ещё раз." : "Couldn't build the image. Try again.");
@@ -664,6 +702,7 @@ export default function ProfilePage() {
       const doc = new jsPDF({ orientation: width > height ? "landscape" : "portrait", unit: "pt", format: [widthPt, heightPt] });
       doc.addImage(dataUrl, "PNG", 0, 0, widthPt, heightPt);
       doc.save(buildPortfolioFileName(profile.username, "pdf"));
+      bumpDownloadCount();
     } catch (e) {
       console.error("downloadPortfolioPdf: failed", e);
       setExportError(isRu ? "Не удалось собрать PDF. Попробуй ещё раз." : "Couldn't build the PDF. Try again.");
@@ -1315,10 +1354,20 @@ export default function ProfilePage() {
                     : "Turn on \"Show profile at a direct link\" in the Settings tab to make the link live."}
                 </p>
               ) : (
-                <div className="flex items-center gap-1.5 rounded-lg border border-border bg-canvas px-2.5 py-1.5">
-                  <span className="min-w-0 flex-1 truncate font-mono text-xs text-text-secondary">{portfolioPageUrl}</span>
-                  <CopyButton value={portfolioPageUrl} iconOnly />
-                </div>
+                <>
+                  <div className="flex items-center gap-1.5 rounded-lg border border-border bg-canvas px-2.5 py-1.5">
+                    <span className="min-w-0 flex-1 truncate font-mono text-xs text-text-secondary">{portfolioPageUrl}</span>
+                    <CopyButton value={portfolioPageUrl} iconOnly />
+                  </div>
+                  {/* Счётчик просмотров — только чужие открытия веб-версии
+                      по ссылке/QR, см. комментарий у portfolio_view_count
+                      в интерфейсе Profile выше. */}
+                  <p className="text-xs text-text-muted">
+                    {isRu
+                      ? `Просмотров: ${profile.portfolio_view_count}`
+                      : `Views: ${profile.portfolio_view_count}`}
+                  </p>
+                </>
               )}
             </div>
 
@@ -1340,6 +1389,16 @@ export default function ProfilePage() {
                 {exportingPdf ? (isRu ? "Собираем…" : "Building…") : (isRu ? "Скачать PDF" : "Download PDF")}
               </button>
               {exportError && <p className="text-xs text-error">{exportError}</p>}
+              {/* "Ты" — не "у тебя скачали": экспорт доступен только
+                  владельцу, см. комментарий у portfolio_download_count в
+                  интерфейсе Profile выше. */}
+              {profile.portfolio_download_count > 0 && (
+                <p className="text-xs text-text-muted">
+                  {isRu
+                    ? `Ты скачивал это ${profile.portfolio_download_count} раз(а)`
+                    : `You've downloaded this ${profile.portfolio_download_count} time(s)`}
+                </p>
+              )}
             </div>
           </div>
 
@@ -1377,6 +1436,7 @@ export default function ProfilePage() {
               enabledSections={profile.portfolio_sections}
               sectionOrder={profile.portfolio_section_order}
               themeId={getPortfolioTheme(profile.portfolio_theme).id}
+              isPublic={profile.is_public}
             />
           </div>
         </div>

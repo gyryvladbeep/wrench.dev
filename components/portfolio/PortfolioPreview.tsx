@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import QRCode from "qrcode";
 import { createClient } from "@/lib/supabase/client";
 import { Locale } from "@/lib/i18n/config";
 import { getStackTag } from "@/lib/profile-stack";
@@ -58,6 +59,11 @@ interface PortfolioPreviewProps {
   // orderedEnabledSections в lib/portfolio.ts).
   sectionOrder?: string[];
   themeId: PortfolioThemeId;
+  // Публичен ли профиль (profiles.is_public) — раздел "QR-код" сам себя
+  // прячет, если false: QR вёл бы на мёртвую ссылку (веб-версия
+  // портфолио видна ровно тем же посетителям, что и обычный публичный
+  // профиль, см. комментарий в supabase/portfolio-migration.sql).
+  isPublic: boolean;
 }
 
 // Максимум топ-тегов по эндорсементам, показанных в компактном
@@ -86,9 +92,10 @@ const MAX_BADGES_SHOWN = 6;
 export function PortfolioPreview(props: PortfolioPreviewProps) {
   const { isRu, profileUserId, username, displayName, tagline, bio, titleOverride, taglineOverride, bioOverride, footerOverride,
     avatarColor, avatarEmblem, roleLabel, location, bannerCss, links, techStack, score, level, badgeIds, pinnedChallenges,
-    experience, projects, enabledSections, sectionOrder, themeId } = props;
+    experience, projects, enabledSections, sectionOrder, themeId, isPublic } = props;
 
   const [endorsementRows, setEndorsementRows] = useState<EndorsementRow[]>([]);
+  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
   const theme = getPortfolioTheme(themeId);
   const sections = orderedEnabledSections(enabledSections, sectionOrder);
   const label = (id: string) => {
@@ -99,6 +106,14 @@ export function PortfolioPreview(props: PortfolioPreviewProps) {
   const showEndorsements = sections.some((s) => s.id === "endorsements") && techStack.length > 0;
   const showBanner = sections.some((s) => s.id === "banner");
   const showAvatar = sections.some((s) => s.id === "avatar");
+  // QR только если раздел включён И профиль публичный — иначе повёл бы
+  // на страницу, которая для всех, кроме владельца, отдаёт "не найдено".
+  // Всегда ссылается на английскую (беспрефиксную) версию ссылки — та же
+  // логика, что у badgeUrl в app/[locale]/profile/page.tsx: у QR нет
+  // "текущей локали" запроса, а голый путь работает всегда, независимо
+  // от языка браузера того, кто его сканирует.
+  const showQr = sections.some((s) => s.id === "qr_code") && isPublic;
+  const portfolioPageUrl = typeof window !== "undefined" ? `${window.location.origin}/u/${username}/portfolio` : "";
 
   const resolvedTitle   = resolvePortfolioText(titleOverride, displayName || `@${username}`);
   const resolvedTagline = resolvePortfolioText(taglineOverride, tagline ?? "");
@@ -120,6 +135,21 @@ export function PortfolioPreview(props: PortfolioPreviewProps) {
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profileUserId, showEndorsements]);
+
+  // Генерируем QR как data URL один раз, когда раздел реально нужен —
+  // QRCode.toDataURL работает и в браузере (через canvas под капотом), и
+  // в Node (route.tsx, для экспортированного PNG) одним и тем же вызовом,
+  // тот же пакет "qrcode", что уже используется в components/tools/
+  // QrCodeGeneratorTool.tsx.
+  useEffect(() => {
+    if (!showQr || !portfolioPageUrl) { setQrDataUrl(null); return; }
+    let cancelled = false;
+    QRCode.toDataURL(portfolioPageUrl, { margin: 1, width: 200, color: { dark: theme.textPrimary, light: "#00000000" } })
+      .then((url) => { if (!cancelled) setQrDataUrl(url); })
+      .catch((e) => console.error("PortfolioPreview: QR generation failed", e));
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showQr, portfolioPageUrl, theme.textPrimary]);
 
   const initials = (displayName || username || "?")[0]?.toUpperCase() ?? "?";
   const stackTags = techStack.map(getStackTag).filter((t): t is NonNullable<typeof t> => Boolean(t));
@@ -316,6 +346,18 @@ export function PortfolioPreview(props: PortfolioPreviewProps) {
                       </span>
                     ))}
                   </div>
+                </div>
+              ) : null;
+
+            case "qr_code":
+              return qrDataUrl ? (
+                <div key="qr_code" className="mt-3 flex flex-col items-center gap-1.5 rounded-md px-3 py-3"
+                  style={{ border: `1px solid ${theme.border}` }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={qrDataUrl} alt="" width={96} height={96} className="shrink-0" />
+                  <p className="text-[10px]" style={{ color: theme.textMuted }}>
+                    {isRu ? "Отсканируй, чтобы открыть веб-версию" : "Scan to open the web version"}
+                  </p>
                 </div>
               ) : null;
 

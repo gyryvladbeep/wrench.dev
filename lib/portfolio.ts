@@ -47,6 +47,13 @@ export const PORTFOLIO_SECTIONS: PortfolioSectionMeta[] = [
   { id: "badges",             label: "Badges",              labelRu: "Награды",               icon: "trophy" },
   { id: "pinned_challenges",  label: "Pinned solutions",    labelRu: "Закреплённые решения",  icon: "target" },
   { id: "endorsements",       label: "Skill endorsements",  labelRu: "Эндорсементы навыков",  icon: "medal" },
+  // QR-код на веб-версию портфолио (/u/[username]/portfolio) — виден
+  // только если профиль публичный (иначе ссылка мёртвая), см.
+  // isPublic в PortfolioPreview.tsx/route.tsx: раздел молча ничего не
+  // рисует, если он включён, но профиль не публичный — тот же принцип
+  // "нет данных для раздела — раздел не рисуется", что у tech_stack/
+  // links при пустом списке.
+  { id: "qr_code",            label: "QR code",             labelRu: "QR-код",                icon: "qr" },
 ];
 
 const KNOWN_SECTION_IDS = new Set(PORTFOLIO_SECTIONS.map((s) => s.id));

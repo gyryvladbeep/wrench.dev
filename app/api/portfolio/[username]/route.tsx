@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ImageResponse } from "next/og";
+import QRCode from "qrcode";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { calcWrenchScore, getLevel } from "@/lib/wrench-score";
 import { BADGES, Badge } from "@/lib/achievements";
@@ -153,6 +154,20 @@ export async function GET(req: NextRequest, props: RouteParams) {
   const footer  = resolvePortfolioText(profile.portfolio_footer, "wrench-branch.vercel.app");
   const showBanner = sectionIds.has("banner");
   const showAvatar = sectionIds.has("avatar");
+
+  // QR — только если раздел включён И профиль публичный (иначе вёл бы на
+  // страницу, которая для всех остальных отдаёт "не найдено"). Голый
+  // (беспрефиксный, английский) путь — тот же выбор, что и у showQr в
+  // PortfolioPreview.tsx: у экспорта нет понятия "текущей локали запроса".
+  // QRCode.toDataURL в Node (этот роут — export const runtime = "nodejs")
+  // отдаёт PNG data URL синхронно относительно await, который Satori
+  // потом рисует обычным <img src>. url — та же переменная, что уже
+  // объявлена выше для ?sections=/?theme=/?order=.
+  const qrDataUrl = sectionIds.has("qr_code") && profile.is_public
+    ? await QRCode.toDataURL(`${url.protocol}//${url.host}/u/${profile.username}/portfolio`, {
+        margin: 1, width: 300, color: { dark: theme.textPrimary, light: "#00000000" },
+      })
+    : null;
 
   function Chip({ children, filled }: { children: string; filled?: boolean }) {
     return (
@@ -333,6 +348,23 @@ export async function GET(req: NextRequest, props: RouteParams) {
                   <SectionHeading>{label("endorsements")}</SectionHeading>
                   <div style={{ display: "flex", flexWrap: "wrap" }}>
                     {topEndorsedTags.map(({ tag, count }) => <Chip key={tag.id}>{`${tag.labelRu} · ${count}`}</Chip>)}
+                  </div>
+                </div>
+              );
+            }
+            if (section.id === "qr_code" && qrDataUrl) {
+              return (
+                <div key="qr_code" style={{
+                  display: "flex", flexDirection: "column", alignItems: "center", marginTop: 28,
+                  padding: "20px", borderRadius: theme.radius, border: `1px solid ${theme.border}`,
+                }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={qrDataUrl} width={140} height={140} alt="" />
+                  {/* Экспортированная карточка целиком на русском (см.
+                      комментарий у runtime/label() выше в этом файле) —
+                      без условного isRu, которого здесь и нет. */}
+                  <div style={{ display: "flex", fontSize: 16, color: theme.textMuted, marginTop: 10 }}>
+                    Отсканируй, чтобы открыть веб-версию
                   </div>
                 </div>
               );

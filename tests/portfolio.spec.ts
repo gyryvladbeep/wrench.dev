@@ -47,6 +47,15 @@ test.describe("normalizePortfolioSections", () => {
   });
 });
 
+test.describe("qr_code section", () => {
+  test("is part of the catalog and the default set", () => {
+    const qr = PORTFOLIO_SECTIONS.find((s) => s.id === "qr_code");
+    expect(qr).toBeTruthy();
+    expect(qr?.icon).toBe("qr");
+    expect(DEFAULT_PORTFOLIO_SECTIONS).toContain("qr_code");
+  });
+});
+
 test.describe("togglePortfolioSection", () => {
   test("adds a section that isn't present", () => {
     expect(togglePortfolioSection([], "bio")).toEqual(["bio"]);
