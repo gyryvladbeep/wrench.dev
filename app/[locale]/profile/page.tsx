@@ -37,6 +37,7 @@ import {
   PortfolioPreset, MAX_PORTFOLIO_PRESETS, addPortfolioPreset, removePortfolioPreset,
   renamePortfolioPreset, updatePortfolioPresetSnapshot,
   projectEntryFromChallenge,
+  orderedEnabledSections, paginatePortfolioSections,
 } from "@/lib/portfolio";
 
 interface Profile {
@@ -797,40 +798,93 @@ export default function ProfilePage() {
     }
   }
 
-  // PDF собирается на клиенте вокруг той же самой PNG, что отдаёт
+  // Скачивает картинку по URL и возвращает и её data URL (нужен jsPDF), и
+  // реальные пиксельные размеры (для точного размера страницы PDF без
+  // белых полей и без обрезки). Общий помощник для обеих веток
+  // downloadPortfolioPdf() ниже — и для одной "карточки", и для
+  // многостраничной печатной раскладки.
+  async function fetchPortfolioImage(src: string): Promise<{ dataUrl: string; width: number; height: number } | null> {
+    const res = await fetch(src);
+    if (!res.ok) return null;
+    const blob = await res.blob();
+    const dataUrl: string = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+    const { width, height } = await new Promise<{ width: number; height: number }>((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve({ width: img.naturalWidth, height: img.naturalHeight });
+      img.onerror = reject;
+      img.src = dataUrl;
+    });
+    return { dataUrl, width, height };
+  }
+
+  // Сколько печатных страниц потребуется при текущих настройках портфолио
+  // (roadmap item 8, "многостраничный PDF под печать... если включено
+  // много разделов") — та же чистая функция и те же счётчики, что и на
+  // сервере (см. paginatePortfolioSections в lib/portfolio.ts), поэтому
+  // клиент и сервер режут на страницы одинаково без сверки друг с другом.
+  function portfolioPrintPages() {
+    return paginatePortfolioSections(
+      orderedEnabledSections(profile.portfolio_sections, profile.portfolio_section_order),
+      {
+        experience: profile.portfolio_experience.length,
+        projects: profile.portfolio_projects.length,
+        pinnedChallenges: profile.pinned_challenge_ids.length,
+      }
+    );
+  }
+
+  // PDF собирается на клиенте вокруг PNG, которые отдаёт
   // /api/portfolio/[username] — отдельного серверного PDF-роута
   // (Puppeteer/Chromium) нет, см. комментарий в самом роуте экспорта.
   // Размер страницы PDF подгоняется под реальные пиксели картинки
   // (px → pt через 0.75, стандартный коэффициент при 96 DPI), а не под
   // готовый формат A4/Letter — тогда картинка всегда заполняет страницу
   // целиком, без белых полей или обрезки с любой стороны.
+  //
+  // Мало включённых разделов — прежнее поведение без изменений: одна
+  // PNG-карточка, обёрнутая в один PDF-лист её собственного размера.
+  // Много разделов — вместо неё многостраничный PDF под печать: страницы
+  // запрашиваются по одной (?layout=print&page=N) и добавляются в тот же
+  // документ jsPDF, пока сервер не ответит не-ok (страниц больше нет).
   async function downloadPortfolioPdf() {
     const src = portfolioImageUrl();
     if (!src) return;
     setExportError(null);
     setExportingPdf(true);
     try {
-      const res = await fetch(src);
-      if (!res.ok) throw new Error(String(res.status));
-      const blob = await res.blob();
-      const dataUrl: string = await new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = reject;
-        reader.readAsDataURL(blob);
-      });
-      const { width, height } = await new Promise<{ width: number; height: number }>((resolve, reject) => {
-        const img = new Image();
-        img.onload = () => resolve({ width: img.naturalWidth, height: img.naturalHeight });
-        img.onerror = reject;
-        img.src = dataUrl;
-      });
       const { jsPDF } = await import("jspdf");
-      const widthPt = width * 0.75;
-      const heightPt = height * 0.75;
-      const doc = new jsPDF({ orientation: width > height ? "landscape" : "portrait", unit: "pt", format: [widthPt, heightPt] });
-      doc.addImage(dataUrl, "PNG", 0, 0, widthPt, heightPt);
-      doc.save(buildPortfolioFileName(profile.username, "pdf"));
+      const totalPrintPages = portfolioPrintPages().length;
+      if (totalPrintPages > 1) {
+        const sep = src.includes("?") ? "&" : "?";
+        let doc: InstanceType<typeof jsPDF> | null = null;
+        for (let page = 1; page <= totalPrintPages; page++) {
+          const result = await fetchPortfolioImage(`${src}${sep}layout=print&page=${page}`);
+          if (!result) break;
+          const widthPt = result.width * 0.75;
+          const heightPt = result.height * 0.75;
+          if (!doc) {
+            doc = new jsPDF({ orientation: "portrait", unit: "pt", format: [widthPt, heightPt] });
+          } else {
+            doc.addPage([widthPt, heightPt], "portrait");
+          }
+          doc.addImage(result.dataUrl, "PNG", 0, 0, widthPt, heightPt);
+        }
+        if (!doc) throw new Error("no print pages");
+        doc.save(buildPortfolioFileName(profile.username, "pdf"));
+      } else {
+        const result = await fetchPortfolioImage(src);
+        if (!result) throw new Error("failed to fetch portfolio image");
+        const widthPt = result.width * 0.75;
+        const heightPt = result.height * 0.75;
+        const doc = new jsPDF({ orientation: result.width > result.height ? "landscape" : "portrait", unit: "pt", format: [widthPt, heightPt] });
+        doc.addImage(result.dataUrl, "PNG", 0, 0, widthPt, heightPt);
+        doc.save(buildPortfolioFileName(profile.username, "pdf"));
+      }
       bumpDownloadCount();
     } catch (e) {
       console.error("downloadPortfolioPdf: failed", e);
@@ -1622,6 +1676,19 @@ export default function ProfilePage() {
                 className="w-full rounded border border-border px-4 py-2 text-sm font-medium text-text-primary transition-colors hover:border-border-focus hover:bg-surface-hover disabled:opacity-50">
                 {exportingPdf ? (isRu ? "Собираем…" : "Building…") : (isRu ? "Скачать PDF" : "Download PDF")}
               </button>
+              {/* Многостраничный PDF под печать (roadmap item 8) — та же
+                  paginatePortfolioSections(), что решает разбивку и на
+                  сервере при самом экспорте, здесь просто заранее
+                  показывает результат, чтобы не удивлять числом страниц
+                  уже после скачивания. При одной странице ничего не
+                  показываем — это прежнее, привычное поведение. */}
+              {portfolioPrintPages().length > 1 && (
+                <p className="text-xs text-text-muted">
+                  {isRu
+                    ? `Много разделов — PDF будет на ${portfolioPrintPages().length} страницах (печатная раскладка A4).`
+                    : `Lots of sections enabled — the PDF will span ${portfolioPrintPages().length} A4 pages (print layout).`}
+                </p>
+              )}
               {exportError && <p className="text-xs text-error">{exportError}</p>}
               {/* "Ты" — не "у тебя скачали": экспорт доступен только
                   владельцу, см. комментарий у portfolio_download_count в

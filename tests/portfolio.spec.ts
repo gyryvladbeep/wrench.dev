@@ -28,6 +28,8 @@ import {
   renamePortfolioPreset,
   updatePortfolioPresetSnapshot,
   projectEntryFromChallenge,
+  paginatePortfolioSections,
+  PortfolioSectionMeta,
 } from "@/lib/portfolio";
 
 function makeExperience(id: string): PortfolioExperienceEntry {
@@ -357,5 +359,66 @@ test.describe("projectEntryFromChallenge", () => {
     const result = projectEntryFromChallenge(base, false);
     expect(result.tech).toBe("");
     expect(result.url).toBeNull();
+  });
+});
+
+function sec(id: string): PortfolioSectionMeta {
+  const found = PORTFOLIO_SECTIONS.find((s) => s.id === id);
+  if (!found) throw new Error(`unknown test section id: ${id}`);
+  return found;
+}
+const NO_COUNTS = { experience: 0, projects: 0, pinnedChallenges: 0 };
+
+test.describe("paginatePortfolioSections", () => {
+  test("header sections always land on the first page, even alone", () => {
+    const pages = paginatePortfolioSections([sec("tagline"), sec("bio"), sec("links")], NO_COUNTS);
+    expect(pages).toHaveLength(1);
+    expect(pages[0].map((s) => s.id)).toEqual(["tagline", "bio", "links"]);
+  });
+
+  test("empty input still yields exactly one (empty) page", () => {
+    expect(paginatePortfolioSections([], NO_COUNTS)).toEqual([[]]);
+  });
+
+  test("a handful of light content sections fits on one page with the header", () => {
+    const pages = paginatePortfolioSections(
+      [sec("tagline"), sec("score"), sec("badges"), sec("endorsements")],
+      NO_COUNTS
+    );
+    expect(pages).toHaveLength(1);
+  });
+
+  test("content sections overflow onto a new page once the budget runs out", () => {
+    const pages = paginatePortfolioSections(
+      [sec("score"), sec("badges"), sec("endorsements"), sec("qr_code"), sec("pinned_challenges")],
+      { ...NO_COUNTS, pinnedChallenges: 3 }
+    );
+    expect(pages).toHaveLength(2);
+    expect(pages[0].map((s) => s.id)).toEqual(["score", "badges", "endorsements", "qr_code"]);
+    expect(pages[1].map((s) => s.id)).toEqual(["pinned_challenges"]);
+  });
+
+  test("a single section heavier than the whole page budget still gets its own page instead of splitting", () => {
+    const pages = paginatePortfolioSections([sec("experience")], { ...NO_COUNTS, experience: 10 });
+    expect(pages).toHaveLength(1);
+    expect(pages[0].map((s) => s.id)).toEqual(["experience"]);
+  });
+
+  test("a section after an over-budget one starts a fresh page rather than being dropped", () => {
+    const pages = paginatePortfolioSections(
+      [sec("experience"), sec("score")],
+      { ...NO_COUNTS, experience: 10 }
+    );
+    expect(pages).toHaveLength(2);
+    expect(pages[0].map((s) => s.id)).toEqual(["experience"]);
+    expect(pages[1].map((s) => s.id)).toEqual(["score"]);
+  });
+
+  test("weight scales with entry count: more experience entries push later sections to a new page sooner", () => {
+    const sections = [sec("experience"), sec("projects"), sec("score")];
+    const small = paginatePortfolioSections(sections, { experience: 2, projects: 2, pinnedChallenges: 0 });
+    const large = paginatePortfolioSections(sections, { experience: 6, projects: 6, pinnedChallenges: 0 });
+    expect(small.length).toBeLessThanOrEqual(large.length);
+    expect(large.length).toBeGreaterThan(1);
   });
 });

@@ -12,6 +12,8 @@ import { groupEndorsementsByTag, EndorsementRow } from "@/lib/skill-endorsements
 import {
   normalizePortfolioSections, orderedEnabledSections, resolvePortfolioText,
   getPortfolioTheme, themeSectionLabel, PortfolioExperienceEntry, PortfolioProjectEntry,
+  MAX_EXPERIENCE_ENTRIES, MAX_PROJECT_ENTRIES,
+  paginatePortfolioSections, PORTFOLIO_PRINT_HEADER_SECTIONS,
 } from "@/lib/portfolio";
 
 // ═══════════════════════════════════════════════════════════════
@@ -48,6 +50,12 @@ interface RouteParams {
 
 const CARD_WIDTH = 1200;
 const CARD_HEIGHT = 1600;
+
+// Печатная раскладка (roadmap item 8, "многостраничный PDF под печать") —
+// пропорции настоящего листа A4 при ~150dpi (1240×1754 ≈ 210×297мм), а не
+// портретная карточка под соцсети, как CARD_WIDTH/CARD_HEIGHT выше.
+const PRINT_WIDTH  = 1240;
+const PRINT_HEIGHT = 1754;
 
 interface PinnedChallengeRow {
   id: string; title: string; title_ru: string | null;
@@ -92,6 +100,14 @@ export async function GET(req: NextRequest, props: RouteParams) {
   const sectionOrder = orderParam ? orderParam.split(",") : (profile.portfolio_section_order ?? []);
   const sections = orderedEnabledSections(enabledSections, sectionOrder);
   const sectionIds = new Set(sections.map((s) => s.id));
+
+  // Печатная раскладка — ?layout=print переключает эту ручку с одной
+  // картинки-карточки (поведение по умолчанию, не меняется) на одну
+  // страницу A4 из нескольких (см. paginatePortfolioSections в
+  // lib/portfolio.ts); ?page= — 1-индексация (человеко-читаемая: первая
+  // страница — page=1), тогда как массив pages ниже 0-индексирован.
+  const isPrintLayout = url.searchParams.get("layout") === "print";
+  const pageParam = Math.max(1, Number(url.searchParams.get("page")) || 1);
 
   const themeParam = url.searchParams.get("theme");
   const theme = getPortfolioTheme(themeParam || profile.portfolio_theme);
@@ -143,6 +159,12 @@ export async function GET(req: NextRequest, props: RouteParams) {
   const initials = (profile.display_name || profile.username || "?")[0].toUpperCase();
   const experience = ((profile.portfolio_experience ?? []) as PortfolioExperienceEntry[]).slice(0, 4);
   const projects   = ((profile.portfolio_projects ?? [])   as PortfolioProjectEntry[]).slice(0, 4);
+  // Некапнутые версии — только для печатной раскладки ниже: там разделу
+  // выделяется отдельная "строка веса" под каждую запись (см.
+  // paginatePortfolioSections), а не фиксированные 4 карточки, как в
+  // единой картинке-карточке фиксированной высоты для соцсетей выше.
+  const experienceAll = ((profile.portfolio_experience ?? []) as PortfolioExperienceEntry[]).slice(0, MAX_EXPERIENCE_ENTRIES);
+  const projectsAll   = ((profile.portfolio_projects ?? [])   as PortfolioProjectEntry[]).slice(0, MAX_PROJECT_ENTRIES);
 
   // Ручной редактор (Profile → Портфолио) — те же переопределения и та же
   // resolvePortfolioText(), что и в живом предпросмотре
@@ -168,6 +190,227 @@ export async function GET(req: NextRequest, props: RouteParams) {
         margin: 1, width: 300, color: { dark: theme.textPrimary, light: "#00000000" },
       })
     : null;
+
+  // ═══════════════════════════════════════════════════════════════
+  // Печатная раскладка — ?layout=print (roadmap item 8)
+  // ═══════════════════════════════════════════════════════════════
+  // Отдельная ветка, а не переиспользование JSX карточки ниже: печатная
+  // страница — светлая (текст/линии, без тёмного фона темы) намеренно, не
+  // ради экономии тонера при печати чёрно-белым принтером в первую
+  // очередь, а потому что "печатная раскладка" (roadmap-формулировка) и
+  // "карточка под соцсети" — разные жанры документа с разной задачей;
+  // акцентный цвет выбранной темы (theme.accent) всё равно используется
+  // точечно — для заголовков и слогана, — чтобы страница не была
+  // полностью безликой.
+  if (isPrintLayout) {
+    const printPages = paginatePortfolioSections(sections, {
+      experience: experienceAll.length,
+      projects: projectsAll.length,
+      pinnedChallenges: pinnedChallenges.length,
+    });
+    const pageIndex = pageParam - 1;
+    // За пределами реального числа страниц — 404, а не пустая картинка:
+    // клиент (downloadPortfolioPdfPrint в app/[locale]/profile/page.tsx)
+    // запрашивает страницы по одной, пока не получит НЕ-ok ответ, это и
+    // есть сигнал "страниц больше нет, шить PDF готово".
+    if (pageIndex < 0 || pageIndex >= printPages.length) {
+      return NextResponse.json({ error: "page out of range", totalPages: printPages.length }, { status: 404 });
+    }
+    const pageSections   = printPages[pageIndex];
+    const pageSectionIds = new Set(pageSections.map((s) => s.id));
+    const isFirstPage    = pageIndex === 0;
+    const totalPages     = printPages.length;
+
+    function PrintChip({ children }: { children: string }) {
+      return (
+        <div style={{
+          display: "flex", padding: "5px 12px", borderRadius: 6,
+          border: "1px solid #d4d4d8", color: "#3f3f46", fontSize: 16,
+          marginRight: 8, marginBottom: 8,
+        }}>
+          {children}
+        </div>
+      );
+    }
+    function PrintHeading({ children }: { children: string }) {
+      return (
+        <div style={{ display: "flex", fontSize: 15, letterSpacing: 1, textTransform: "uppercase", color: "#71717a", fontWeight: 700, marginBottom: 8 }}>
+          {children}
+        </div>
+      );
+    }
+
+    return new ImageResponse(
+      (
+        <div style={{
+          display: "flex", flexDirection: "column", width: PRINT_WIDTH, height: PRINT_HEIGHT,
+          background: "#ffffff", fontFamily: "sans-serif", padding: "56px 60px",
+        }}>
+          {isFirstPage ? (
+            <>
+              {pageSectionIds.has("banner") && (
+                <div style={{ display: "flex", width: "100%", height: 8, borderRadius: 4, background: banner?.css ?? theme.accent, marginBottom: 28 }} />
+              )}
+              <div style={{ display: "flex", alignItems: "center" }}>
+                {pageSectionIds.has("avatar") && (
+                  <div style={{
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    width: 96, height: 96, borderRadius: "50%", marginRight: 24,
+                    background: profile.avatar_color, border: `3px solid ${theme.accent}`,
+                    fontSize: 38, fontWeight: 700, color: "#ffffff",
+                  }}>
+                    {initials}
+                  </div>
+                )}
+                <div style={{ display: "flex", flexDirection: "column" }}>
+                  <div style={{ display: "flex", fontSize: 34, fontWeight: 700, color: "#18181b" }}>{title}</div>
+                  <div style={{ display: "flex", fontSize: 18, color: "#71717a", marginTop: 4 }}>
+                    {[`@${profile.username}`, role ? role.labelRu : null, profile.location].filter(Boolean).join("  ·  ")}
+                  </div>
+                </div>
+              </div>
+              {pageSectionIds.has("tagline") && tagline && (
+                <div style={{ display: "flex", fontSize: 22, fontWeight: 600, color: theme.accent, marginTop: 20 }}>{tagline}</div>
+              )}
+              {pageSectionIds.has("bio") && bio && (
+                <div style={{ display: "flex", fontSize: 18, color: "#3f3f46", marginTop: 14, lineHeight: 1.4 }}>{bio}</div>
+              )}
+              {pageSectionIds.has("links") && (() => {
+                const links = [profile.github_url && "GitHub", profile.linkedin_url && "LinkedIn", profile.website_url && "Website"].filter(Boolean) as string[];
+                return links.length > 0 ? (
+                  <div style={{ display: "flex", flexWrap: "wrap", marginTop: 18 }}>
+                    {links.map((l) => <PrintChip key={l}>{l}</PrintChip>)}
+                  </div>
+                ) : null;
+              })()}
+              {pageSectionIds.has("tech_stack") && stackTags.length > 0 && (
+                <div style={{ display: "flex", flexWrap: "wrap", marginTop: 18 }}>
+                  {stackTags.map((t) => <PrintChip key={t.id}>{t.labelRu}</PrintChip>)}
+                </div>
+              )}
+            </>
+          ) : (
+            // Компактная "шапка" на второй и последующих страницах — чтобы
+            // распечатанные и разложенные по столу листы не теряли, чьё
+            // это портфолио, без необходимости повторять весь блок имени.
+            <div style={{
+              display: "flex", justifyContent: "space-between", paddingBottom: 16, marginBottom: 24,
+              borderBottom: "1px solid #e4e4e7", fontSize: 15, color: "#71717a",
+            }}>
+              <span>{title} · @{profile.username}</span>
+              <span>Портфолио</span>
+            </div>
+          )}
+
+          {pageSections.filter((s) => !PORTFOLIO_PRINT_HEADER_SECTIONS.includes(s.id)).map((section) => {
+            if (section.id === "score") {
+              return (
+                <div key="score" style={{ display: "flex", flexDirection: "column", marginTop: 26 }}>
+                  <PrintHeading>{label("score")}</PrintHeading>
+                  <div style={{ display: "flex", fontSize: 20, color: "#18181b" }}>{level.labelRu} · {score} pts</div>
+                </div>
+              );
+            }
+            if (section.id === "experience" && experienceAll.length > 0) {
+              return (
+                <div key="experience" style={{ display: "flex", flexDirection: "column", marginTop: 26 }}>
+                  <PrintHeading>{label("experience")}</PrintHeading>
+                  {experienceAll.map((e) => (
+                    <div key={e.id} style={{ display: "flex", flexDirection: "column", padding: "14px 0", borderBottom: "1px solid #e4e4e7" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 19, color: "#18181b", fontWeight: 700 }}>
+                        <span>{e.position}{e.company ? ` · ${e.company}` : ""}</span>
+                        <span style={{ display: "flex", fontSize: 15, color: "#71717a", fontWeight: 400 }}>{e.period}</span>
+                      </div>
+                      {e.description && (
+                        <div style={{ display: "flex", fontSize: 16, color: "#3f3f46", marginTop: 4, lineHeight: 1.4 }}>{e.description}</div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              );
+            }
+            if (section.id === "projects" && projectsAll.length > 0) {
+              return (
+                <div key="projects" style={{ display: "flex", flexDirection: "column", marginTop: 26 }}>
+                  <PrintHeading>{label("projects")}</PrintHeading>
+                  {projectsAll.map((p) => (
+                    <div key={p.id} style={{ display: "flex", flexDirection: "column", padding: "14px 0", borderBottom: "1px solid #e4e4e7" }}>
+                      <div style={{ display: "flex", fontSize: 19, color: "#18181b", fontWeight: 700 }}>{p.name}</div>
+                      {p.description && (
+                        <div style={{ display: "flex", fontSize: 16, color: "#3f3f46", marginTop: 4, lineHeight: 1.4 }}>{p.description}</div>
+                      )}
+                      {p.tech && (
+                        <div style={{ display: "flex", fontSize: 15, color: theme.accent, marginTop: 6 }}>{p.tech}</div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              );
+            }
+            if (section.id === "badges" && badges.length > 0) {
+              return (
+                <div key="badges" style={{ display: "flex", flexDirection: "column", marginTop: 26 }}>
+                  <PrintHeading>{`${label("badges")} · ${badges.length}`}</PrintHeading>
+                  <div style={{ display: "flex", flexWrap: "wrap" }}>
+                    {badges.map((b: Badge) => <PrintChip key={b.id}>{b.labelRu}</PrintChip>)}
+                  </div>
+                </div>
+              );
+            }
+            if (section.id === "pinned_challenges" && pinnedChallenges.length > 0) {
+              return (
+                <div key="pinned_challenges" style={{ display: "flex", flexDirection: "column", marginTop: 26 }}>
+                  <PrintHeading>{label("pinned_challenges")}</PrintHeading>
+                  {pinnedChallenges.map((c: PinnedChallengeRow) => (
+                    <div key={c.id} style={{
+                      display: "flex", justifyContent: "space-between", alignItems: "center",
+                      padding: "12px 0", borderBottom: "1px solid #e4e4e7",
+                    }}>
+                      <div style={{ display: "flex", fontSize: 18, color: "#18181b" }}>{c.title_ru || c.title}</div>
+                      <div style={{ display: "flex", fontSize: 15, color: "#71717a" }}>
+                        {ROLE_META[c.role].labelRu} · {DIFFICULTY_META[c.difficulty].labelRu} · +{c.points}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              );
+            }
+            if (section.id === "endorsements" && topEndorsedTags.length > 0) {
+              return (
+                <div key="endorsements" style={{ display: "flex", flexDirection: "column", marginTop: 26 }}>
+                  <PrintHeading>{label("endorsements")}</PrintHeading>
+                  <div style={{ display: "flex", flexWrap: "wrap" }}>
+                    {topEndorsedTags.map(({ tag, count }) => <PrintChip key={tag.id}>{`${tag.labelRu} · ${count}`}</PrintChip>)}
+                  </div>
+                </div>
+              );
+            }
+            if (section.id === "qr_code" && qrDataUrl) {
+              return (
+                <div key="qr_code" style={{ display: "flex", flexDirection: "column", alignItems: "center", marginTop: 26 }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={qrDataUrl} width={120} height={120} alt="" />
+                  <div style={{ display: "flex", fontSize: 14, color: "#71717a", marginTop: 8 }}>
+                    Отсканируй, чтобы открыть веб-версию
+                  </div>
+                </div>
+              );
+            }
+            return null;
+          })}
+
+          <div style={{
+            display: "flex", justifyContent: "space-between", marginTop: "auto", paddingTop: 20,
+            borderTop: "1px solid #e4e4e7", fontSize: 14, color: "#a1a1aa",
+          }}>
+            <span>{footer}</span>
+            <span>Страница {pageIndex + 1} из {totalPages}</span>
+          </div>
+        </div>
+      ),
+      { width: PRINT_WIDTH, height: PRINT_HEIGHT }
+    );
+  }
 
   function Chip({ children, filled }: { children: string; filled?: boolean }) {
     return (

@@ -648,3 +648,88 @@ export function updatePortfolioPresetSnapshot(
 ): PortfolioPreset[] {
   return presets.map((p) => (p.id === id ? { ...p, ...snapshot } : p));
 }
+
+// ═══════════════════════════════════════════════════════════════
+// Печатная раскладка — разбивка на страницы A4 (roadmap item 8)
+// ═══════════════════════════════════════════════════════════════
+// "Многостраничный PDF под печать — отдельная раскладка A4 с разбивкой на
+// страницы, если включено много разделов, вместо одной длинной картинки."
+// Раньше единственный экспорт — одна картинка фиксированного размера
+// (CARD_WIDTH×CARD_HEIGHT в route.tsx), и всё, что не поместилось по
+// высоте, просто обрезалось за пределами холста. Эта функция решает,
+// сколько печатных страниц нужно и какие разделы на какой странице — то
+// же решение переиспользуется и сервером (что рендерить в картинку
+// текущей страницы, см. route.tsx), и клиентом (сколько страниц
+// запросить и сшить в один PDF, см. downloadPortfolioPdfPrint в
+// app/[locale]/profile/page.tsx) — те же исходные данные (список
+// включённых разделов + количество записей в опыте/проектах/закреплённых
+// решениях) доступны в обоих местах, так что расхождения между ними
+// быть не может.
+
+// Разделы "шапки" — фон/аватар/имя/слоган/о себе/ссылки/стек — всегда
+// целиком на первой странице и не участвуют в бюджете ниже: сами по себе
+// они компактны, даже включённые все разом.
+export const PORTFOLIO_PRINT_HEADER_SECTIONS: readonly string[] =
+  ["banner", "avatar", "tagline", "bio", "links", "tech_stack"];
+
+// Бюджет "веса" на страницу для всех остальных разделов — у первой
+// страницы он меньше (место уже частично занято шапкой). Числа подобраны
+// с запасом (лучше лишний разрыв страницы, чем обрезанный на печати
+// текст) — это оценка по количеству карточек/чипов в разделе, а не
+// измеренная высота отрисовки: Satori (движок next/og ImageResponse,
+// которым рисуется картинка каждой страницы) не даёт узнать итоговую
+// высоту дерева заранее, только нарисовать в готовый холст фиксированного
+// размера.
+const PORTFOLIO_PRINT_FIRST_PAGE_BUDGET = 5;
+const PORTFOLIO_PRINT_PAGE_BUDGET       = 9;
+
+export interface PortfolioPrintCounts {
+  experience:       number;
+  projects:         number;
+  pinnedChallenges: number;
+}
+
+// Опыт/проекты/закреплённые решения весят пропорционально числу записей
+// (1 проект и 6 проектов не должны ломать разрыв страницы одинаково),
+// у остальных разделов вес фиксирован — одна строка/полоска чипов/QR.
+function portfolioPrintSectionWeight(id: string, counts: PortfolioPrintCounts): number {
+  if (id === "experience") return Math.max(1, counts.experience);
+  if (id === "projects") return Math.max(1, counts.projects);
+  if (id === "pinned_challenges") return Math.max(1, counts.pinnedChallenges);
+  return 1;
+}
+
+// Раскладывает уже упорядоченный список включённых разделов
+// (orderedEnabledSections) по печатным страницам. Раздел никогда не
+// разрезается пополам между страницами, даже если один превышает бюджет
+// целиком — проще и надёжнее, чем резать список карточек внутри самого
+// раздела. Пустой вход всё равно даёт одну (пустую) страницу — печатать
+// вообще ничего вместо хотя бы одной страницы было бы хуже.
+export function paginatePortfolioSections(
+  sections: readonly PortfolioSectionMeta[],
+  counts: PortfolioPrintCounts
+): PortfolioSectionMeta[][] {
+  const header  = sections.filter((s) => PORTFOLIO_PRINT_HEADER_SECTIONS.includes(s.id));
+  const content = sections.filter((s) => !PORTFOLIO_PRINT_HEADER_SECTIONS.includes(s.id));
+
+  const pages: PortfolioSectionMeta[][] = [[...header]];
+  let pageIndex   = 0;
+  let budgetLeft  = PORTFOLIO_PRINT_FIRST_PAGE_BUDGET;
+
+  for (const section of content) {
+    const weight = portfolioPrintSectionWeight(section.id, counts);
+    const pageHasContent = pages[pageIndex].length > (pageIndex === 0 ? header.length : 0);
+    // Начинаем новую страницу, только если текущая уже что-то содержит —
+    // иначе первый же тяжёлый раздел плодил бы пустые страницы перед
+    // собой вместо того, чтобы просто занять страницу целиком один.
+    if (pageHasContent && weight > budgetLeft) {
+      pageIndex += 1;
+      pages.push([]);
+      budgetLeft = PORTFOLIO_PRINT_PAGE_BUDGET;
+    }
+    pages[pageIndex].push(section);
+    budgetLeft -= weight;
+  }
+
+  return pages;
+}
