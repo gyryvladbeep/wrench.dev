@@ -8,7 +8,10 @@ import { getBannerGradient } from "@/lib/profile-banners";
 import { ROLE_TAGS } from "@/lib/profile-roles";
 import { ROLE_META, DIFFICULTY_META, ChallengeRole, ChallengeDifficulty } from "@/lib/challenges/types";
 import { groupEndorsementsByTag, EndorsementRow } from "@/lib/skill-endorsements";
-import { normalizePortfolioSections, orderedEnabledSections, resolvePortfolioText } from "@/lib/portfolio";
+import {
+  normalizePortfolioSections, orderedEnabledSections, resolvePortfolioText,
+  getPortfolioTheme, themeSectionLabel, PortfolioExperienceEntry, PortfolioProjectEntry,
+} from "@/lib/portfolio";
 
 // ═══════════════════════════════════════════════════════════════
 // Экспорт портфолио в PNG (Profile → Портфолио → Скачать PNG/PDF) —
@@ -21,9 +24,21 @@ import { normalizePortfolioSections, orderedEnabledSections, resolvePortfolioTex
 // В отличие от /api/badge/[username] (публичный, анонимный, отдаёт
 // маленький SVG-бейдж для чужого README) этот роут — ТОЛЬКО для
 // владельца профиля и требует сессию: портфолио может включать разделы
-// (закреплённые решения, награды), которые сам пользователь хочет
-// собрать в файл ещё до того, как решит сделать профиль публичным, а
-// открывать под это отдельную анонимную RLS-политику не нужно.
+// (закреплённые решения, награды, опыт работы), которые сам пользователь
+// хочет собрать в файл ещё до того, как решит сделать профиль публичным,
+// а открывать под это отдельную анонимную RLS-политику не нужно.
+//
+// Тема оформления (fantasy/space/matrix/...) влияет здесь только на
+// палитру, обводку, радиус углов и угловой символ — НЕ на шрифт. Satori
+// (движок next/og ImageResponse) рисует текст только теми шрифтами, чьи
+// файлы ему явно передали байтами через опцию fonts, а не по названию
+// семейства из style.fontFamily; грузить десяток Google Fonts на каждый
+// запрос — лишняя сетевая зависимость serverless-функции ради разницы,
+// которая на статичном постере всё равно менее заметна, чем в
+// интерактивном превью (там это обычный <link>, см.
+// PortfolioPreview.tsx). Если платный шрифт на экспорте станет важен —
+// можно позже подгрузить .ttf через fs.readFile из /public и передать в
+// ImageResponse({ fonts: [...] }), но это отдельная задача.
 export const runtime = "nodejs";
 
 interface RouteParams {
@@ -31,39 +46,11 @@ interface RouteParams {
 }
 
 const CARD_WIDTH = 1200;
-const CARD_HEIGHT = 1500;
-
-// Литералы вместо CSS-переменных из app/globals.css — Satori (на нём
-// работает next/og ImageResponse) рендерит это дерево отдельно от
-// страницы сайта и не видит ни один :root { --accent: ... }, поэтому
-// значения продублированы буквально. При смене палитры сайта эти три
-// константы тоже нужно поправить руками — см. тот же компромисс,
-// описанный в components/portfolio/PortfolioPreview.tsx про два разных
-// дерева для одного и того же контента.
-const CANVAS   = "#0a0a10";
-const SURFACE  = "#131319";
-const BORDER   = "#232330";
-const TEXT_PRIMARY   = "#f8f8fb";
-const TEXT_SECONDARY = "#a4a4b1";
-const TEXT_MUTED     = "#76767f";
-const ACCENT   = "#f59e0b";
+const CARD_HEIGHT = 1600;
 
 interface PinnedChallengeRow {
   id: string; title: string; title_ru: string | null;
   role: ChallengeRole; difficulty: ChallengeDifficulty; points: number;
-}
-
-function Chip({ children, color }: { children: string; color?: string }) {
-  return (
-    <div style={{
-      display: "flex", padding: "6px 14px", borderRadius: 999,
-      border: `1px solid ${color ? color + "40" : BORDER}`,
-      background: color ? color + "15" : "transparent",
-      color: color ?? TEXT_SECONDARY, fontSize: 22, marginRight: 10, marginBottom: 10,
-    }}>
-      {children}
-    </div>
-  );
 }
 
 export async function GET(req: NextRequest, props: RouteParams) {
@@ -96,6 +83,13 @@ export async function GET(req: NextRequest, props: RouteParams) {
     : normalizePortfolioSections(profile.portfolio_sections);
   const sections = orderedEnabledSections(enabledSections);
   const sectionIds = new Set(sections.map((s) => s.id));
+
+  const themeParam = url.searchParams.get("theme");
+  const theme = getPortfolioTheme(themeParam || profile.portfolio_theme);
+  const label = (id: string) => {
+    const meta = sections.find((s) => s.id === id);
+    return meta ? themeSectionLabel(theme.id, meta, true) : "";
+  };
 
   const [{ data: streak }, { count: toolsUsed }, { data: earnedRows }, pinnedResult, endorsementResult] = await Promise.all([
     supabase.from("user_streaks").select("total_points, total_solved, current_streak, longest_streak").eq("user_id", user.id).single(),
@@ -138,6 +132,8 @@ export async function GET(req: NextRequest, props: RouteParams) {
   const banner = getBannerGradient(profile.banner_gradient);
   const stackTags = (profile.tech_stack as string[]).map(getStackTag).filter((t): t is NonNullable<typeof t> => Boolean(t));
   const initials = (profile.display_name || profile.username || "?")[0].toUpperCase();
+  const experience = ((profile.portfolio_experience ?? []) as PortfolioExperienceEntry[]).slice(0, 4);
+  const projects   = ((profile.portfolio_projects ?? [])   as PortfolioProjectEntry[]).slice(0, 4);
 
   // Ручной редактор (Profile → Портфолио) — те же переопределения и та же
   // resolvePortfolioText(), что и в живом предпросмотре
@@ -150,15 +146,49 @@ export async function GET(req: NextRequest, props: RouteParams) {
   const showBanner = sectionIds.has("banner");
   const showAvatar = sectionIds.has("avatar");
 
+  function Chip({ children, filled }: { children: string; filled?: boolean }) {
+    return (
+      <div style={{
+        display: "flex", padding: "6px 14px", borderRadius: Math.min(theme.radius + 6, 999),
+        border: `1px solid ${filled ? theme.accent + "40" : theme.border}`,
+        background: filled ? theme.accent + "15" : "transparent",
+        color: filled ? theme.accent : theme.textSecondary, fontSize: 22, marginRight: 10, marginBottom: 10,
+      }}>
+        {children}
+      </div>
+    );
+  }
+
+  function SectionHeading({ children }: { children: string }) {
+    return (
+      <div style={{ display: "flex", fontSize: 18, letterSpacing: 1, textTransform: "uppercase", color: theme.textMuted, marginBottom: 10 }}>
+        {children}
+      </div>
+    );
+  }
+
   return new ImageResponse(
     (
       <div style={{
         display: "flex", flexDirection: "column", width: CARD_WIDTH, height: CARD_HEIGHT,
-        background: CANVAS, fontFamily: "sans-serif",
+        background: theme.bg, fontFamily: "sans-serif", position: "relative",
+        border: `2px solid ${theme.border}`,
       }}>
+        {/* Угловой символ темы — один и тот же текстовый глиф в двух
+            верхних углах, самый дешёвый способ дать карточке узнаваемую
+            деталь без SVG/иконок, которые Satori рисует не всегда
+            предсказуемо. Пустая строка (classic/minimal) — просто ничего
+            не рендерим. */}
+        {theme.cornerGlyph && (
+          <>
+            <div style={{ display: "flex", position: "absolute", top: 28, left: 28, fontSize: 30, color: theme.accent }}>{theme.cornerGlyph}</div>
+            <div style={{ display: "flex", position: "absolute", top: 28, right: 28, fontSize: 30, color: theme.accent }}>{theme.cornerGlyph}</div>
+          </>
+        )}
+
         {/* Баннер — переключаемый раздел, как и всё остальное (см.
             комментарий у PORTFOLIO_SECTIONS в lib/portfolio.ts). */}
-        {showBanner && <div style={{ display: "flex", width: "100%", height: 140, background: banner?.css ?? ACCENT }} />}
+        {showBanner && <div style={{ display: "flex", width: "100%", height: 140, background: banner?.css ?? theme.accent }} />}
 
         <div style={{ display: "flex", flexDirection: "column", flex: 1, padding: `${showBanner ? 0 : 64}px 64px 48px 64px` }}>
           {/* Аватар — тоже переключаемый; без баннера сверху инициалу
@@ -167,26 +197,26 @@ export async function GET(req: NextRequest, props: RouteParams) {
             <div style={{
               display: "flex", alignItems: "center", justifyContent: "center",
               width: 130, height: 130, borderRadius: "50%", marginTop: showBanner ? -65 : 0,
-              background: profile.avatar_color, border: `6px solid ${CANVAS}`,
-              fontSize: 52, fontWeight: 700, color: CANVAS,
+              background: profile.avatar_color, border: `6px solid ${theme.bg}`,
+              fontSize: 52, fontWeight: 700, color: theme.bg,
             }}>
               {initials}
             </div>
           )}
 
-          <div style={{ display: "flex", fontSize: 44, fontWeight: 700, color: TEXT_PRIMARY, marginTop: 24 }}>
+          <div style={{ display: "flex", fontSize: 44, fontWeight: 700, color: theme.textPrimary, marginTop: 24 }}>
             {title}
           </div>
-          <div style={{ display: "flex", fontSize: 24, color: TEXT_MUTED, marginTop: 8 }}>
+          <div style={{ display: "flex", fontSize: 24, color: theme.textMuted, marginTop: 8 }}>
             {[`@${profile.username}`, role ? role.labelRu : null, profile.location].filter(Boolean).join("  ·  ")}
           </div>
 
           {sections.map((section) => {
             if (section.id === "tagline" && tagline) {
-              return <div key="tagline" style={{ display: "flex", fontSize: 28, fontWeight: 600, color: ACCENT, marginTop: 28 }}>{tagline}</div>;
+              return <div key="tagline" style={{ display: "flex", fontSize: 28, fontWeight: 600, color: theme.accent, marginTop: 28 }}>{tagline}</div>;
             }
             if (section.id === "bio" && bio) {
-              return <div key="bio" style={{ display: "flex", fontSize: 24, color: TEXT_SECONDARY, marginTop: 16, lineHeight: 1.4 }}>{bio}</div>;
+              return <div key="bio" style={{ display: "flex", fontSize: 24, color: theme.textSecondary, marginTop: 16, lineHeight: 1.4 }}>{bio}</div>;
             }
             if (section.id === "links") {
               const links = [profile.github_url && "GitHub", profile.linkedin_url && "LinkedIn", profile.website_url && "Website"].filter(Boolean) as string[];
@@ -198,8 +228,53 @@ export async function GET(req: NextRequest, props: RouteParams) {
             }
             if (section.id === "tech_stack" && stackTags.length > 0) {
               return (
-                <div key="tech_stack" style={{ display: "flex", flexWrap: "wrap", marginTop: 24 }}>
-                  {stackTags.map((t) => <Chip key={t.id} color={ACCENT}>{t.labelRu}</Chip>)}
+                <div key="tech_stack" style={{ display: "flex", flexDirection: "column", marginTop: 28 }}>
+                  <SectionHeading>{label("tech_stack")}</SectionHeading>
+                  <div style={{ display: "flex", flexWrap: "wrap" }}>
+                    {stackTags.map((t) => <Chip key={t.id} filled>{t.labelRu}</Chip>)}
+                  </div>
+                </div>
+              );
+            }
+            if (section.id === "experience" && experience.length > 0) {
+              return (
+                <div key="experience" style={{ display: "flex", flexDirection: "column", marginTop: 28 }}>
+                  <SectionHeading>{label("experience")}</SectionHeading>
+                  {experience.map((e) => (
+                    <div key={e.id} style={{
+                      display: "flex", flexDirection: "column", padding: "16px 20px", borderRadius: theme.radius,
+                      border: `1px solid ${theme.border}`, background: theme.surface, marginBottom: 10,
+                    }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 22, color: theme.textPrimary, fontWeight: 700 }}>
+                        <span>{e.position}{e.company ? ` · ${e.company}` : ""}</span>
+                        <span style={{ display: "flex", fontSize: 17, color: theme.textMuted, fontWeight: 400 }}>{e.period}</span>
+                      </div>
+                      {e.description && (
+                        <div style={{ display: "flex", fontSize: 18, color: theme.textSecondary, marginTop: 6, lineHeight: 1.4 }}>{e.description}</div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              );
+            }
+            if (section.id === "projects" && projects.length > 0) {
+              return (
+                <div key="projects" style={{ display: "flex", flexDirection: "column", marginTop: 28 }}>
+                  <SectionHeading>{label("projects")}</SectionHeading>
+                  {projects.map((p) => (
+                    <div key={p.id} style={{
+                      display: "flex", flexDirection: "column", padding: "16px 20px", borderRadius: theme.radius,
+                      border: `1px solid ${theme.border}`, background: theme.surface, marginBottom: 10,
+                    }}>
+                      <div style={{ display: "flex", fontSize: 22, color: theme.textPrimary, fontWeight: 700 }}>{p.name}</div>
+                      {p.description && (
+                        <div style={{ display: "flex", fontSize: 18, color: theme.textSecondary, marginTop: 4, lineHeight: 1.4 }}>{p.description}</div>
+                      )}
+                      {p.tech && (
+                        <div style={{ display: "flex", fontSize: 16, color: theme.accent, marginTop: 6 }}>{p.tech}</div>
+                      )}
+                    </div>
+                  ))}
                 </div>
               );
             }
@@ -207,11 +282,11 @@ export async function GET(req: NextRequest, props: RouteParams) {
               return (
                 <div key="score" style={{
                   display: "flex", alignItems: "center", marginTop: 28, padding: "18px 26px",
-                  borderRadius: 14, border: `1px solid ${level.color}40`, background: `${level.color}15`,
+                  borderRadius: theme.radius, border: `1px solid ${level.color}40`, background: `${level.color}15`,
                 }}>
                   <div style={{ display: "flex", flexDirection: "column" }}>
                     <div style={{ display: "flex", fontSize: 26, fontWeight: 700, color: level.color }}>{level.labelRu}</div>
-                    <div style={{ display: "flex", fontSize: 20, color: TEXT_MUTED, marginTop: 4 }}>{score} pts · Wrench Score</div>
+                    <div style={{ display: "flex", fontSize: 20, color: theme.textMuted, marginTop: 4 }}>{score} pts · {label("score")}</div>
                   </div>
                 </div>
               );
@@ -219,11 +294,9 @@ export async function GET(req: NextRequest, props: RouteParams) {
             if (section.id === "badges" && badges.length > 0) {
               return (
                 <div key="badges" style={{ display: "flex", flexDirection: "column", marginTop: 28 }}>
-                  <div style={{ display: "flex", fontSize: 18, letterSpacing: 1, textTransform: "uppercase", color: TEXT_MUTED, marginBottom: 10 }}>
-                    Награды · {badges.length}
-                  </div>
+                  <SectionHeading>{`${label("badges")} · ${badges.length}`}</SectionHeading>
                   <div style={{ display: "flex", flexWrap: "wrap" }}>
-                    {badges.slice(0, 8).map((b: Badge) => <Chip key={b.id} color={ACCENT}>{b.labelRu}</Chip>)}
+                    {badges.slice(0, 8).map((b: Badge) => <Chip key={b.id} filled>{b.labelRu}</Chip>)}
                   </div>
                 </div>
               );
@@ -231,16 +304,14 @@ export async function GET(req: NextRequest, props: RouteParams) {
             if (section.id === "pinned_challenges" && pinnedChallenges.length > 0) {
               return (
                 <div key="pinned_challenges" style={{ display: "flex", flexDirection: "column", marginTop: 28 }}>
-                  <div style={{ display: "flex", fontSize: 18, letterSpacing: 1, textTransform: "uppercase", color: TEXT_MUTED, marginBottom: 10 }}>
-                    Закреплённые решения
-                  </div>
+                  <SectionHeading>{label("pinned_challenges")}</SectionHeading>
                   {pinnedChallenges.slice(0, 4).map((c: PinnedChallengeRow) => (
                     <div key={c.id} style={{
                       display: "flex", justifyContent: "space-between", alignItems: "center",
-                      padding: "14px 20px", borderRadius: 10, border: `1px solid ${BORDER}`, background: SURFACE, marginBottom: 10,
+                      padding: "14px 20px", borderRadius: theme.radius, border: `1px solid ${theme.border}`, background: theme.surface, marginBottom: 10,
                     }}>
-                      <div style={{ display: "flex", fontSize: 22, color: TEXT_PRIMARY }}>{c.title_ru || c.title}</div>
-                      <div style={{ display: "flex", fontSize: 18, color: TEXT_MUTED }}>
+                      <div style={{ display: "flex", fontSize: 22, color: theme.textPrimary }}>{c.title_ru || c.title}</div>
+                      <div style={{ display: "flex", fontSize: 18, color: theme.textMuted }}>
                         {ROLE_META[c.role].labelRu} · {DIFFICULTY_META[c.difficulty].labelRu} · +{c.points}
                       </div>
                     </div>
@@ -251,9 +322,7 @@ export async function GET(req: NextRequest, props: RouteParams) {
             if (section.id === "endorsements" && topEndorsedTags.length > 0) {
               return (
                 <div key="endorsements" style={{ display: "flex", flexDirection: "column", marginTop: 28 }}>
-                  <div style={{ display: "flex", fontSize: 18, letterSpacing: 1, textTransform: "uppercase", color: TEXT_MUTED, marginBottom: 10 }}>
-                    Эндорсементы навыков
-                  </div>
+                  <SectionHeading>{label("endorsements")}</SectionHeading>
                   <div style={{ display: "flex", flexWrap: "wrap" }}>
                     {topEndorsedTags.map(({ tag, count }) => <Chip key={tag.id}>{`${tag.labelRu} · ${count}`}</Chip>)}
                   </div>
@@ -269,7 +338,7 @@ export async function GET(req: NextRequest, props: RouteParams) {
               разделов включено выше. */}
           <div style={{
             display: "flex", justifyContent: "center", marginTop: "auto", paddingTop: 32,
-            borderTop: `1px solid ${BORDER}`, fontSize: 18, color: TEXT_MUTED, letterSpacing: 1,
+            borderTop: `1px solid ${theme.border}`, fontSize: 18, color: theme.textMuted, letterSpacing: 1,
           }}>
             {footer}
           </div>

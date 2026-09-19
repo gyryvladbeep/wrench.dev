@@ -28,7 +28,12 @@ import { CopyButton } from "@/components/CopyButton";
 import { ApiTokensPanel } from "@/components/profile/ApiTokensPanel";
 import { SkillEndorsements } from "@/components/profile/SkillEndorsements";
 import { PortfolioPreview } from "@/components/portfolio/PortfolioPreview";
-import { PORTFOLIO_SECTIONS, DEFAULT_PORTFOLIO_SECTIONS, normalizePortfolioSections, togglePortfolioSection, buildPortfolioFileName } from "@/lib/portfolio";
+import {
+  PORTFOLIO_SECTIONS, DEFAULT_PORTFOLIO_SECTIONS, normalizePortfolioSections, togglePortfolioSection, buildPortfolioFileName,
+  PORTFOLIO_THEMES, DEFAULT_PORTFOLIO_THEME, getPortfolioTheme, PortfolioThemeId,
+  PortfolioExperienceEntry, PortfolioProjectEntry, MAX_EXPERIENCE_ENTRIES, MAX_PROJECT_ENTRIES,
+  addExperienceEntry, removeExperienceEntry, addProjectEntry, removeProjectEntry,
+} from "@/lib/portfolio";
 
 interface Profile {
   username: string;
@@ -73,6 +78,12 @@ interface Profile {
   portfolio_tagline:    string | null;
   portfolio_bio:        string | null;
   portfolio_footer:     string | null;
+  // Тема оформления портфолио — id из lib/portfolio.ts PORTFOLIO_THEMES.
+  portfolio_theme:      string;
+  // Опыт работы и проекты — списки записей, не простой текст, см.
+  // PortfolioExperienceEntry/PortfolioProjectEntry в lib/portfolio.ts.
+  portfolio_experience: PortfolioExperienceEntry[];
+  portfolio_projects:   PortfolioProjectEntry[];
 }
 
 // Решённая задача, доступная для закрепления на публичном профиле (см.
@@ -162,6 +173,7 @@ export default function ProfilePage() {
     tech_stack: [], location: null, equipped_badge_id: null,
     portfolio_sections: DEFAULT_PORTFOLIO_SECTIONS,
     portfolio_title: null, portfolio_tagline: null, portfolio_bio: null, portfolio_footer: null,
+    portfolio_theme: DEFAULT_PORTFOLIO_THEME, portfolio_experience: [], portfolio_projects: [],
   });
   const [stats,    setStats]    = useState<Stats | null>(null);
   const [history,  setHistory]  = useState<ToolHistory[]>([]);
@@ -245,6 +257,19 @@ export default function ProfilePage() {
         // supabase/portfolio-migration.sql, но могла накопить
         // неизвестные id при будущих изменениях каталога.
         portfolio_sections: normalizePortfolioSections((prof as Record<string, unknown>).portfolio_sections as string[] | undefined),
+        // getPortfolioTheme() сам откатывается на 'classic' при
+        // неизвестном id — id тут же и нормализуем, чтобы дальше по
+        // коду всегда можно было доверять profile.portfolio_theme как
+        // валидному значению из каталога.
+        portfolio_theme: getPortfolioTheme((prof as Record<string, unknown>).portfolio_theme as string | undefined).id,
+        // Array.isArray-проверка — та же защита от "колонки ещё нет"
+        // (миграция не выполнена → undefined), что и у portfolio_sections
+        // выше; jsonb-колонка с DEFAULT '[]' не может быть null после
+        // миграции, но undefined до неё — вполне.
+        portfolio_experience: Array.isArray((prof as Record<string, unknown>).portfolio_experience)
+          ? (prof as Record<string, unknown>).portfolio_experience as PortfolioExperienceEntry[] : [],
+        portfolio_projects: Array.isArray((prof as Record<string, unknown>).portfolio_projects)
+          ? (prof as Record<string, unknown>).portfolio_projects as PortfolioProjectEntry[] : [],
       });
     }
     if (streak) setStats(streak as Stats);
@@ -443,6 +468,61 @@ export default function ProfilePage() {
     if (error) console.error("toggleSectionAndSave: update failed", error);
   }
 
+  // Сменить тему оформления портфолио — тот же принцип мгновенного
+  // сохранения, что и у toggleSectionAndSave/equipBadge выше: выбор темы
+  // из выпадающего списка — это один клик, а не текст, который стоит
+  // довести до ума перед сохранением.
+  async function changeThemeAndSave(themeId: PortfolioThemeId) {
+    if (!user) return;
+    setProfile((p) => ({ ...p, portfolio_theme: themeId }));
+    const supabase = createClient();
+    const { error } = await supabase.from("profiles").update({ portfolio_theme: themeId }).eq("id", user.id);
+    if (error) console.error("changeThemeAndSave: update failed", error);
+  }
+
+  // Опыт работы и проекты — добавление/удаление записи меняет только
+  // локальный profile-стейт (как и ручной редактор title/tagline/bio/
+  // footer чуть выше по коду): у одной записи несколько текстовых полей,
+  // и сохранять на каждое нажатие "плюсик"/каждую букву в описании было
+  // бы и лишними запросами, и риском отправить наполовину заполненную
+  // запись. Реально попадает в БД по нажатию общей кнопки "Сохранить"
+  // во вкладке Портфолио (saveProfile() ниже, тот же upsert всего
+  // profile целиком).
+  function addExperience() {
+    setProfile((p) => ({
+      ...p,
+      portfolio_experience: addExperienceEntry(p.portfolio_experience, {
+        id: crypto.randomUUID(), company: "", position: "", period: "", description: "",
+      }),
+    }));
+  }
+  function removeExperience(id: string) {
+    setProfile((p) => ({ ...p, portfolio_experience: removeExperienceEntry(p.portfolio_experience, id) }));
+  }
+  function updateExperience(id: string, patch: Partial<PortfolioExperienceEntry>) {
+    setProfile((p) => ({
+      ...p,
+      portfolio_experience: p.portfolio_experience.map((e) => (e.id === id ? { ...e, ...patch } : e)),
+    }));
+  }
+  function addProject() {
+    setProfile((p) => ({
+      ...p,
+      portfolio_projects: addProjectEntry(p.portfolio_projects, {
+        id: crypto.randomUUID(), name: "", description: "", tech: "", url: null,
+      }),
+    }));
+  }
+  function removeProject(id: string) {
+    setProfile((p) => ({ ...p, portfolio_projects: removeProjectEntry(p.portfolio_projects, id) }));
+  }
+  function updateProject(id: string, patch: Partial<PortfolioProjectEntry>) {
+    setProfile((p) => ({
+      ...p,
+      portfolio_projects: p.portfolio_projects.map((e) => (e.id === id ? { ...e, ...patch } : e)),
+    }));
+  }
+
   async function saveProfile() {
     if (!user) return;
     setSaving(true);
@@ -490,7 +570,8 @@ export default function ProfilePage() {
   function portfolioImageUrl(): string | null {
     if (!profile.username) return null;
     const sections = profile.portfolio_sections.join(",");
-    return `/api/portfolio/${encodeURIComponent(profile.username)}?sections=${encodeURIComponent(sections)}`;
+    const params = new URLSearchParams({ sections, theme: profile.portfolio_theme });
+    return `/api/portfolio/${encodeURIComponent(profile.username)}?${params.toString()}`;
   }
 
   async function downloadPortfolioPng() {
@@ -991,6 +1072,28 @@ export default function ProfilePage() {
               </div>
             </div>
 
+            {/* Тема оформления — своя палитра/шрифты/подписи разделов у
+                каждой темы (см. PORTFOLIO_THEMES в lib/portfolio.ts),
+                независимо от темы самого сайта. Мгновенное сохранение,
+                тот же принцип, что у чекбоксов разделов выше. */}
+            <div className="rounded-lg border border-border bg-surface p-5">
+              <h2 className="mb-1 text-sm font-semibold text-text-primary">
+                {isRu ? "Тема оформления" : "Theme"}
+              </h2>
+              <p className="mb-3 text-xs text-text-muted">
+                {isRu
+                  ? "Своя палитра, шрифты и названия разделов под каждую тему."
+                  : "Its own palette, fonts and section names per theme."}
+              </p>
+              <select value={profile.portfolio_theme}
+                onChange={(e) => changeThemeAndSave(e.target.value as PortfolioThemeId)}
+                className="w-full rounded border border-border bg-canvas px-3 py-2 text-sm text-text-primary focus:border-border-focus focus:outline-none">
+                {PORTFOLIO_THEMES.map((t) => (
+                  <option key={t.id} value={t.id}>{isRu ? t.nameRu : t.name}</option>
+                ))}
+              </select>
+            </div>
+
             {/* Ручной редактор — переопределяет текст только в портфолио,
                 не трогая настоящие display_name/tagline/bio (те остаются
                 как есть и на публичном профиле, и во вкладке Настройки).
@@ -1045,6 +1148,89 @@ export default function ProfilePage() {
               {saveError && <p className="text-xs text-error">{saveError}</p>}
             </div>
 
+            {/* Опыт работы — список записей вместо текста, добавление/
+                удаление локальное (см. addExperience/removeExperience
+                выше), реально сохраняется той же кнопкой "Сохранить
+                текст" — держим весь контент портфолио на одном
+                сохранении, а не на разных кнопках для разных полей. */}
+            <div className="rounded-lg border border-border bg-surface p-5 space-y-3">
+              <div className="flex items-center justify-between">
+                <h2 className="text-sm font-semibold text-text-primary">{isRu ? "Опыт работы" : "Work experience"}</h2>
+                <span className="text-xs text-text-muted">{profile.portfolio_experience.length}/{MAX_EXPERIENCE_ENTRIES}</span>
+              </div>
+              <div className="space-y-3">
+                {profile.portfolio_experience.map((e) => (
+                  <div key={e.id} className="space-y-1.5 rounded-md border border-border bg-canvas p-3">
+                    <div className="grid grid-cols-2 gap-1.5">
+                      <input value={e.position} onChange={(ev) => updateExperience(e.id, { position: ev.target.value })}
+                        placeholder={isRu ? "Должность" : "Position"}
+                        className="rounded border border-border bg-surface px-2 py-1.5 text-xs text-text-primary placeholder:text-text-muted focus:border-border-focus focus:outline-none" />
+                      <input value={e.company} onChange={(ev) => updateExperience(e.id, { company: ev.target.value })}
+                        placeholder={isRu ? "Компания" : "Company"}
+                        className="rounded border border-border bg-surface px-2 py-1.5 text-xs text-text-primary placeholder:text-text-muted focus:border-border-focus focus:outline-none" />
+                    </div>
+                    <input value={e.period} onChange={(ev) => updateExperience(e.id, { period: ev.target.value })}
+                      placeholder={isRu ? "Период, напр. 2023 — настоящее время" : "Period, e.g. 2023 — present"}
+                      className="w-full rounded border border-border bg-surface px-2 py-1.5 text-xs text-text-primary placeholder:text-text-muted focus:border-border-focus focus:outline-none" />
+                    <textarea value={e.description} rows={2} onChange={(ev) => updateExperience(e.id, { description: ev.target.value })}
+                      placeholder={isRu ? "Чем занимался" : "What you did"}
+                      className="w-full resize-none rounded border border-border bg-surface px-2 py-1.5 text-xs text-text-primary placeholder:text-text-muted focus:border-border-focus focus:outline-none" />
+                    <button onClick={() => removeExperience(e.id)} className="text-xs text-text-muted transition-colors hover:text-error">
+                      {isRu ? "Удалить" : "Remove"}
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <button onClick={addExperience} disabled={profile.portfolio_experience.length >= MAX_EXPERIENCE_ENTRIES}
+                className="w-full rounded border border-border px-4 py-2 text-sm font-medium text-text-primary transition-colors hover:border-border-focus hover:bg-surface-hover disabled:opacity-50">
+                {isRu ? "Добавить запись" : "Add entry"}
+              </button>
+              <button onClick={saveProfile} disabled={saving}
+                className="w-full rounded bg-accent px-4 py-2 text-sm font-medium text-accent-fg transition-opacity hover:opacity-90 disabled:opacity-50">
+                {saving ? (isRu ? "Сохраняем…" : "Saving…") : saved ? (isRu ? "Сохранено" : "Saved") : (isRu ? "Сохранить" : "Save")}
+              </button>
+            </div>
+
+            {/* Проекты — тот же принцип, что и опыт работы выше. */}
+            <div className="rounded-lg border border-border bg-surface p-5 space-y-3">
+              <div className="flex items-center justify-between">
+                <h2 className="text-sm font-semibold text-text-primary">{isRu ? "Проекты" : "Projects"}</h2>
+                <span className="text-xs text-text-muted">{profile.portfolio_projects.length}/{MAX_PROJECT_ENTRIES}</span>
+              </div>
+              <div className="space-y-3">
+                {profile.portfolio_projects.map((p) => (
+                  <div key={p.id} className="space-y-1.5 rounded-md border border-border bg-canvas p-3">
+                    <input value={p.name} onChange={(ev) => updateProject(p.id, { name: ev.target.value })}
+                      placeholder={isRu ? "Название проекта" : "Project name"}
+                      className="w-full rounded border border-border bg-surface px-2 py-1.5 text-xs text-text-primary placeholder:text-text-muted focus:border-border-focus focus:outline-none" />
+                    <textarea value={p.description} rows={2} onChange={(ev) => updateProject(p.id, { description: ev.target.value })}
+                      placeholder={isRu ? "Что это и что ты сделал" : "What it is and what you did"}
+                      className="w-full resize-none rounded border border-border bg-surface px-2 py-1.5 text-xs text-text-primary placeholder:text-text-muted focus:border-border-focus focus:outline-none" />
+                    <div className="grid grid-cols-2 gap-1.5">
+                      <input value={p.tech} onChange={(ev) => updateProject(p.id, { tech: ev.target.value })}
+                        placeholder={isRu ? "Стек, напр. React, TS" : "Tech, e.g. React, TS"}
+                        className="rounded border border-border bg-surface px-2 py-1.5 text-xs text-text-primary placeholder:text-text-muted focus:border-border-focus focus:outline-none" />
+                      <input value={p.url ?? ""} onChange={(ev) => updateProject(p.id, { url: ev.target.value || null })}
+                        placeholder="URL"
+                        className="rounded border border-border bg-surface px-2 py-1.5 text-xs text-text-primary placeholder:text-text-muted focus:border-border-focus focus:outline-none" />
+                    </div>
+                    <button onClick={() => removeProject(p.id)} className="text-xs text-text-muted transition-colors hover:text-error">
+                      {isRu ? "Удалить" : "Remove"}
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <button onClick={addProject} disabled={profile.portfolio_projects.length >= MAX_PROJECT_ENTRIES}
+                className="w-full rounded border border-border px-4 py-2 text-sm font-medium text-text-primary transition-colors hover:border-border-focus hover:bg-surface-hover disabled:opacity-50">
+                {isRu ? "Добавить проект" : "Add project"}
+              </button>
+              <button onClick={saveProfile} disabled={saving}
+                className="w-full rounded bg-accent px-4 py-2 text-sm font-medium text-accent-fg transition-opacity hover:opacity-90 disabled:opacity-50">
+                {saving ? (isRu ? "Сохраняем…" : "Saving…") : saved ? (isRu ? "Сохранено" : "Saved") : (isRu ? "Сохранить" : "Save")}
+              </button>
+              {saveError && <p className="text-xs text-error">{saveError}</p>}
+            </div>
+
             <div className="rounded-lg border border-border bg-surface p-5 space-y-2.5">
               <h2 className="text-sm font-semibold text-text-primary">
                 {isRu ? "Экспорт" : "Export"}
@@ -1082,7 +1268,7 @@ export default function ProfilePage() {
               avatarEmblem={profile.avatar_emblem}
               roleLabel={role ? (isRu ? role.labelRu : role.label) : null}
               location={profile.location}
-              bannerCss={banner?.css ?? "var(--accent)"}
+              bannerCss={banner?.css ?? getPortfolioTheme(profile.portfolio_theme).accent}
               links={[
                 profile.github_url   && { url: profile.github_url,   label: "GitHub" },
                 profile.linkedin_url && { url: profile.linkedin_url, label: "LinkedIn" },
@@ -1095,7 +1281,10 @@ export default function ProfilePage() {
               pinnedChallenges={profile.pinned_challenge_ids
                 .map((id) => solvedChallenges.find((c) => c.id === id))
                 .filter((c): c is SolvedChallenge => Boolean(c))}
+              experience={profile.portfolio_experience}
+              projects={profile.portfolio_projects}
               enabledSections={profile.portfolio_sections}
+              themeId={getPortfolioTheme(profile.portfolio_theme).id}
             />
           </div>
         </div>

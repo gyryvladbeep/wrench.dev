@@ -8,7 +8,10 @@ import { WrenchLevel } from "@/lib/wrench-score";
 import { ROLE_META, DIFFICULTY_META, ChallengeRole, ChallengeDifficulty } from "@/lib/challenges/types";
 import { GameIcon, ExternalLinkIcon } from "@/components/icons/GameIcons";
 import { AvatarGlyph } from "@/components/profile/AvatarGlyph";
-import { orderedEnabledSections, resolvePortfolioText } from "@/lib/portfolio";
+import {
+  orderedEnabledSections, resolvePortfolioText, getPortfolioTheme, themeSectionLabel,
+  PortfolioThemeId, PortfolioExperienceEntry, PortfolioProjectEntry, PORTFOLIO_GOOGLE_FONTS_HREF,
+} from "@/lib/portfolio";
 import { groupEndorsementsByTag, EndorsementRow } from "@/lib/skill-endorsements";
 
 export interface PortfolioPinnedChallenge {
@@ -45,7 +48,10 @@ interface PortfolioPreviewProps {
   level: WrenchLevel;
   badgeIds: string[];
   pinnedChallenges: PortfolioPinnedChallenge[];
+  experience: PortfolioExperienceEntry[];
+  projects: PortfolioProjectEntry[];
   enabledSections: string[];
+  themeId: PortfolioThemeId;
 }
 
 // Максимум топ-тегов по эндорсементам, показанных в компактном
@@ -59,20 +65,31 @@ const MAX_ENDORSED_TAGS_SHOWN = 3;
 const MAX_BADGES_SHOWN = 6;
 
 // Живой предпросмотр того же самого набора разделов, что уходит в
-// экспорт (app/api/portfolio/[username]/route.ts) — Tailwind-разметка
+// экспорт (app/api/portfolio/[username]/route.tsx) — Tailwind-разметка
 // здесь и inline-стили в серверном роуте физически не могут быть одним
 // деревом (Satori, на котором работает next/og ImageResponse, понимает
 // только ограниченное подмножество inline flexbox-стилей, без
-// Tailwind-классов), поэтому это НАМЕРЕННО два разных дерева, которые
-// нужно вручную держать визуально согласованными — см. комментарий в
-// самом роуте экспорта.
+// Tailwind-классов и без пользовательских шрифтов по названию — см.
+// комментарий в route.tsx), поэтому это НАМЕРЕННО два разных дерева,
+// которые нужно вручную держать визуально согласованными.
+//
+// Цвет/шрифт/радиус здесь берутся из темы (getPortfolioTheme) через
+// inline style, а не через сайтовые Tailwind-классы вроде text-accent —
+// тема портфолио умышленно независима от темы самого сайта (ThemeProvider),
+// у карточки своя, отдельно выбираемая палитра.
 export function PortfolioPreview(props: PortfolioPreviewProps) {
   const { isRu, profileUserId, username, displayName, tagline, bio, titleOverride, taglineOverride, bioOverride, footerOverride,
-    avatarColor, avatarEmblem, roleLabel, location, bannerCss, links, techStack, score, level, badgeIds, pinnedChallenges, enabledSections } = props;
+    avatarColor, avatarEmblem, roleLabel, location, bannerCss, links, techStack, score, level, badgeIds, pinnedChallenges,
+    experience, projects, enabledSections, themeId } = props;
 
   const [endorsementRows, setEndorsementRows] = useState<EndorsementRow[]>([]);
-
+  const theme = getPortfolioTheme(themeId);
   const sections = orderedEnabledSections(enabledSections);
+  const label = (id: string) => {
+    const meta = sections.find((s) => s.id === id);
+    return meta ? themeSectionLabel(theme.id, meta, isRu) : "";
+  };
+
   const showEndorsements = sections.some((s) => s.id === "endorsements") && techStack.length > 0;
   const showBanner = sections.some((s) => s.id === "banner");
   const showAvatar = sections.some((s) => s.id === "avatar");
@@ -108,22 +125,44 @@ export function PortfolioPreview(props: PortfolioPreviewProps) {
     .map(([tag, rows]) => ({ tag: getStackTag(tag), count: rows.length }))
     .filter((t): t is { tag: NonNullable<ReturnType<typeof getStackTag>>; count: number } => Boolean(t.tag));
 
+  const headingClass = "mb-1.5 text-[11px] font-medium uppercase tracking-wide";
+
   return (
-    <div className="mx-auto w-full max-w-sm overflow-hidden rounded-2xl border border-border bg-surface shadow-lg">
+    <div
+      className="mx-auto w-full max-w-sm overflow-hidden shadow-lg"
+      style={{
+        background: theme.surface, border: `1px solid ${theme.border}`, borderRadius: theme.radius,
+        fontFamily: `'${theme.bodyFont}', sans-serif`, position: "relative",
+      }}
+    >
+      {/* Один общий <link> на все десять тем сразу — React 19 хостит и
+          дедуплицирует <link rel="stylesheet"> сам, так что переключение
+          темы не делает новый сетевой запрос. */}
+      <link rel="stylesheet" href={PORTFOLIO_GOOGLE_FONTS_HREF} precedence="default" />
+
+      {theme.cornerGlyph && (
+        <>
+          <span className="absolute left-3 top-3 text-lg" style={{ color: theme.accent }}>{theme.cornerGlyph}</span>
+          <span className="absolute right-3 top-3 text-lg" style={{ color: theme.accent }}>{theme.cornerGlyph}</span>
+        </>
+      )}
+
       {/* Имя/юзернейм/роль/локация — единственное, что остаётся
           обязательным (см. комментарий у PORTFOLIO_SECTIONS в
-          lib/portfolio.ts); фон и аватар теперь такие же переключаемые
+          lib/portfolio.ts); фон и аватар — такие же переключаемые
           разделы, как и всё остальное. */}
       {showBanner && <div className="h-20 w-full" style={{ background: bannerCss }} />}
       <div className={`px-5 pb-5 ${showBanner ? "" : "pt-5"}`}>
         {showAvatar && (
           <div className={`flex items-end gap-3 ${showBanner ? "-mt-8" : ""}`}>
             <AvatarGlyph color={avatarColor} emblemId={avatarEmblem} initials={initials}
-              sizeClass="h-16 w-16 text-2xl" className="shrink-0 border-4 border-surface" />
+              sizeClass="h-16 w-16 text-2xl" className="shrink-0" />
           </div>
         )}
-        <h3 className="mt-2 text-lg font-bold text-text-primary">{resolvedTitle}</h3>
-        <p className="flex flex-wrap items-center gap-1 text-xs text-text-muted">
+        <h3 className="mt-2 text-lg font-bold" style={{ color: theme.textPrimary, fontFamily: `'${theme.displayFont}', sans-serif` }}>
+          {resolvedTitle}
+        </h3>
+        <p className="flex flex-wrap items-center gap-1 text-xs" style={{ color: theme.textMuted }}>
           <span>@{username}</span>
           {roleLabel && (<><span aria-hidden="true">·</span><span>{roleLabel}</span></>)}
           {location && (<><span aria-hidden="true">·</span><span>{location}</span></>)}
@@ -132,16 +171,21 @@ export function PortfolioPreview(props: PortfolioPreviewProps) {
         {sections.map((section) => {
           switch (section.id) {
             case "tagline":
-              return resolvedTagline ? <p key="tagline" className="mt-3 text-sm font-medium text-accent">{resolvedTagline}</p> : null;
+              return resolvedTagline ? (
+                <p key="tagline" className="mt-3 text-sm font-medium" style={{ color: theme.accent }}>{resolvedTagline}</p>
+              ) : null;
 
             case "bio":
-              return resolvedBio ? <p key="bio" className="mt-2 text-sm text-text-secondary">{resolvedBio}</p> : null;
+              return resolvedBio ? (
+                <p key="bio" className="mt-2 text-sm" style={{ color: theme.textSecondary }}>{resolvedBio}</p>
+              ) : null;
 
             case "links":
               return links.length > 0 ? (
                 <div key="links" className="mt-3 flex flex-wrap gap-1.5">
                   {links.map((l) => (
-                    <span key={l.label} className="flex items-center gap-1 rounded border border-border px-2 py-0.5 text-xs text-text-muted">
+                    <span key={l.label} className="flex items-center gap-1 rounded px-2 py-0.5 text-xs"
+                      style={{ border: `1px solid ${theme.border}`, color: theme.textMuted }}>
                       <ExternalLinkIcon size={10} /> {l.label}
                     </span>
                   ))}
@@ -150,23 +194,63 @@ export function PortfolioPreview(props: PortfolioPreviewProps) {
 
             case "tech_stack":
               return stackTags.length > 0 ? (
-                <div key="tech_stack" className="mt-3 flex flex-wrap gap-1.5">
-                  {stackTags.map((t) => (
-                    <span key={t.id} className="rounded border border-accent/20 bg-accent/5 px-2 py-0.5 text-xs text-accent">
-                      {isRu ? t.labelRu : t.label}
-                    </span>
-                  ))}
+                <div key="tech_stack" className="mt-3">
+                  <p className={headingClass} style={{ color: theme.textMuted }}>{label("tech_stack")}</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {stackTags.map((t) => (
+                      <span key={t.id} className="rounded px-2 py-0.5 text-xs"
+                        style={{ border: `1px solid ${theme.accent}30`, background: `${theme.accent}12`, color: theme.accent }}>
+                        {isRu ? t.labelRu : t.label}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              ) : null;
+
+            case "experience":
+              return experience.length > 0 ? (
+                <div key="experience" className="mt-3">
+                  <p className={headingClass} style={{ color: theme.textMuted }}>{label("experience")}</p>
+                  <div className="space-y-1.5">
+                    {experience.map((e) => (
+                      <div key={e.id} className="rounded-md px-2.5 py-1.5" style={{ border: `1px solid ${theme.border}`, background: theme.bg }}>
+                        <div className="flex items-baseline justify-between gap-2">
+                          <span className="min-w-0 truncate text-xs font-semibold" style={{ color: theme.textPrimary }}>
+                            {e.position}{e.company ? ` · ${e.company}` : ""}
+                          </span>
+                          <span className="shrink-0 text-[10px]" style={{ color: theme.textMuted }}>{e.period}</span>
+                        </div>
+                        {e.description && <p className="mt-0.5 text-[11px]" style={{ color: theme.textSecondary }}>{e.description}</p>}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : null;
+
+            case "projects":
+              return projects.length > 0 ? (
+                <div key="projects" className="mt-3">
+                  <p className={headingClass} style={{ color: theme.textMuted }}>{label("projects")}</p>
+                  <div className="space-y-1.5">
+                    {projects.map((p) => (
+                      <div key={p.id} className="rounded-md px-2.5 py-1.5" style={{ border: `1px solid ${theme.border}`, background: theme.bg }}>
+                        <span className="text-xs font-semibold" style={{ color: theme.textPrimary }}>{p.name}</span>
+                        {p.description && <p className="mt-0.5 text-[11px]" style={{ color: theme.textSecondary }}>{p.description}</p>}
+                        {p.tech && <p className="mt-0.5 text-[10px]" style={{ color: theme.accent }}>{p.tech}</p>}
+                      </div>
+                    ))}
+                  </div>
                 </div>
               ) : null;
 
             case "score":
               return (
-                <div key="score" className="mt-3 flex items-center gap-2 rounded-lg border px-3 py-2"
-                  style={{ borderColor: level.color + "40", background: level.color + "10" }}>
+                <div key="score" className="mt-3 flex items-center gap-2 rounded-lg px-3 py-2"
+                  style={{ border: `1px solid ${level.color}40`, background: level.color + "10" }}>
                   <GameIcon id={level.icon} size={16} />
                   <div className="min-w-0">
                     <p className="text-sm font-semibold" style={{ color: level.color }}>{isRu ? level.labelRu : level.label}</p>
-                    <p className="text-[11px] text-text-muted">{score} pts</p>
+                    <p className="text-[11px]" style={{ color: theme.textMuted }}>{score} pts · {label("score")}</p>
                   </div>
                 </div>
               );
@@ -174,9 +258,7 @@ export function PortfolioPreview(props: PortfolioPreviewProps) {
             case "badges":
               return earnedBadges.length > 0 ? (
                 <div key="badges" className="mt-3">
-                  <p className="mb-1.5 text-[11px] font-medium uppercase tracking-wide text-text-muted">
-                    {isRu ? "Награды" : "Badges"} · {earnedBadges.length}
-                  </p>
+                  <p className={headingClass} style={{ color: theme.textMuted }}>{label("badges")} · {earnedBadges.length}</p>
                   <div className="flex flex-wrap gap-1.5">
                     {earnedBadges.slice(0, MAX_BADGES_SHOWN).map((b) => (
                       <span key={b.id} title={isRu ? b.descriptionRu : b.description}
@@ -185,7 +267,7 @@ export function PortfolioPreview(props: PortfolioPreviewProps) {
                       </span>
                     ))}
                     {earnedBadges.length > MAX_BADGES_SHOWN && (
-                      <span className="rounded-full border border-border px-2 py-0.5 text-[11px] text-text-muted">
+                      <span className="rounded-full px-2 py-0.5 text-[11px]" style={{ border: `1px solid ${theme.border}`, color: theme.textMuted }}>
                         +{earnedBadges.length - MAX_BADGES_SHOWN}
                       </span>
                     )}
@@ -196,18 +278,17 @@ export function PortfolioPreview(props: PortfolioPreviewProps) {
             case "pinned_challenges":
               return pinnedChallenges.length > 0 ? (
                 <div key="pinned_challenges" className="mt-3">
-                  <p className="mb-1.5 text-[11px] font-medium uppercase tracking-wide text-text-muted">
-                    {isRu ? "Закреплённые решения" : "Pinned solutions"}
-                  </p>
+                  <p className={headingClass} style={{ color: theme.textMuted }}>{label("pinned_challenges")}</p>
                   <div className="space-y-1">
                     {pinnedChallenges.map((c) => {
                       const roleMeta = ROLE_META[c.role];
                       const diffMeta = DIFFICULTY_META[c.difficulty];
                       return (
-                        <div key={c.id} className="flex items-center justify-between gap-2 rounded-md border border-border bg-canvas px-2.5 py-1.5">
-                          <span className="min-w-0 truncate text-xs text-text-primary">{isRu && c.title_ru ? c.title_ru : c.title}</span>
+                        <div key={c.id} className="flex items-center justify-between gap-2 rounded-md px-2.5 py-1.5"
+                          style={{ border: `1px solid ${theme.border}`, background: theme.bg }}>
+                          <span className="min-w-0 truncate text-xs" style={{ color: theme.textPrimary }}>{isRu && c.title_ru ? c.title_ru : c.title}</span>
                           <span className="flex shrink-0 items-center gap-1.5 text-[10px]">
-                            <span className="text-text-muted">{isRu ? roleMeta.labelRu : roleMeta.label}</span>
+                            <span style={{ color: theme.textMuted }}>{isRu ? roleMeta.labelRu : roleMeta.label}</span>
                             <span className={diffMeta.colorClass}>{isRu ? diffMeta.labelRu : diffMeta.label}</span>
                           </span>
                         </div>
@@ -220,13 +301,12 @@ export function PortfolioPreview(props: PortfolioPreviewProps) {
             case "endorsements":
               return topEndorsedTags.length > 0 ? (
                 <div key="endorsements" className="mt-3">
-                  <p className="mb-1.5 text-[11px] font-medium uppercase tracking-wide text-text-muted">
-                    {isRu ? "Эндорсементы навыков" : "Skill endorsements"}
-                  </p>
+                  <p className={headingClass} style={{ color: theme.textMuted }}>{label("endorsements")}</p>
                   <div className="flex flex-wrap gap-1.5">
                     {topEndorsedTags.map(({ tag, count }) => (
-                      <span key={tag.id} className="flex items-center gap-1 rounded-full border border-border px-2 py-0.5 text-[11px] text-text-secondary">
-                        {isRu ? tag.labelRu : tag.label} <span className="font-mono text-text-muted">·{count}</span>
+                      <span key={tag.id} className="flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px]"
+                        style={{ border: `1px solid ${theme.border}`, color: theme.textSecondary }}>
+                        {isRu ? tag.labelRu : tag.label} <span className="font-mono" style={{ color: theme.textMuted }}>·{count}</span>
                       </span>
                     ))}
                   </div>
@@ -238,7 +318,7 @@ export function PortfolioPreview(props: PortfolioPreviewProps) {
           }
         })}
 
-        <p className="mt-4 border-t border-border pt-3 text-center text-[10px] tracking-wide text-text-muted">
+        <p className="mt-4 pt-3 text-center text-[10px] tracking-wide" style={{ borderTop: `1px solid ${theme.border}`, color: theme.textMuted }}>
           {resolvedFooter}
         </p>
       </div>

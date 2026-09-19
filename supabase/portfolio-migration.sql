@@ -32,7 +32,29 @@
 -- миграцию — lib/portfolio.ts только клиентский фолбэк на случай
 -- null/undefined с сервера).
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS portfolio_sections text[] NOT NULL DEFAULT
-  ARRAY['banner','avatar','tagline','bio','links','tech_stack','score','badges','pinned_challenges','endorsements'];
+  ARRAY['banner','avatar','tagline','bio','links','tech_stack','experience','projects','score','badges','pinned_challenges','endorsements'];
+
+-- Опыт работы и проекты — "классические" резюме-разделы (roadmap:
+-- "добавить классические поля, как опыт работы, свои проекты"). Списки
+-- записей, а не простой текст, поэтому jsonb, а не text[] — каждая
+-- запись это объект с несколькими полями (см. PortfolioExperienceEntry/
+-- PortfolioProjectEntry в lib/portfolio.ts). Отдельная SQL-таблица с
+-- FK на profiles тут была бы избыточна: id записи нужен только для
+-- React key и удаления одной конкретной записи на клиенте, никакие
+-- другие таблицы на эти записи не ссылаются — тот же случай, что и у
+-- text[]-полей вроде tech_stack, просто с более сложным элементом
+-- массива. Порядок в массиве — порядок добавления, менять местами пока
+-- нельзя (можно удалить и добавить заново в нужном порядке).
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS portfolio_experience jsonb NOT NULL DEFAULT '[]'::jsonb;
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS portfolio_projects   jsonb NOT NULL DEFAULT '[]'::jsonb;
+
+-- Тема оформления — id из lib/portfolio.ts PORTFOLIO_THEMES (classic,
+-- fantasy, space, anime, matrix, medieval, minimal, nature, conspiracy,
+-- horror). Тот же принцип конечного справочника без CHECK на уровне БД,
+-- что и у portfolio_sections/tech_stack/role_tag — getPortfolioTheme()
+-- в lib/portfolio.ts откатывается на 'classic' при неизвестном/битом
+-- значении, так что даже руками испорченная колонка не ломает страницу.
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS portfolio_theme text NOT NULL DEFAULT 'classic';
 
 -- Ручной редактор содержимого портфолио — четыре необязательных
 -- переопределения, независимых от "настоящих" profile.tagline/
