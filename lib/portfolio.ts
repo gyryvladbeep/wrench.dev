@@ -19,22 +19,29 @@ export interface PortfolioSectionMeta {
 
 // Порядок в этом массиве — порядок отрисовки и в живом превью
 // (components/portfolio/PortfolioPreview.tsx), и в экспортированной
-// картинке (app/api/portfolio/[username]/route.ts): пользователь может
+// картинке (app/api/portfolio/[username]/route.tsx): пользователь может
 // только включить/выключить раздел, не переставить его местами — тот же
 // принцип "включаемого, но не перетаскиваемого" набора, что уже есть у
 // tech_stack/pinned_challenge_ids в app/[locale]/profile/page.tsx.
-// "Шапка" (аватар/имя/юзернейм/роль/локация) в каталог не входит —
-// она есть в портфолио всегда, отключить её нельзя, иначе экспорт мог
-// бы превратиться в пустую картинку без единой опознавательной детали.
+//
+// "avatar" и "banner" — тоже переключаемые разделы, не отдельные булевы
+// поля в БД: пользователь явно попросил "выбор показывать ли фон и
+// аватар" тем же самым списком галочек, что и остальные разделы, а не
+// отдельным блоком настроек. Единственное, что остаётся обязательным
+// (не входит в каталог, отключить нельзя) — сама строка имя/юзернейм/
+// роль/локация: без неё портфолио превратилось бы в карточку без
+// единой опознавательной детали, чьё это портфолио вообще.
 export const PORTFOLIO_SECTIONS: PortfolioSectionMeta[] = [
-  { id: "tagline",          label: "Tagline",            labelRu: "Слоган",                icon: "sparkle" },
-  { id: "bio",               label: "Bio",                 labelRu: "О себе",                icon: "wrench" },
-  { id: "links",             label: "Links",               labelRu: "Ссылки",                icon: "flag" },
-  { id: "tech_stack",        label: "Tech stack",          labelRu: "Технологии",            icon: "brackets" },
-  { id: "score",             label: "Wrench Score",        labelRu: "Wrench Score",          icon: "star" },
-  { id: "badges",            label: "Badges",              labelRu: "Награды",               icon: "trophy" },
-  { id: "pinned_challenges", label: "Pinned solutions",    labelRu: "Закреплённые решения",  icon: "target" },
-  { id: "endorsements",      label: "Skill endorsements",  labelRu: "Эндорсементы навыков",  icon: "medal" },
+  { id: "banner",            label: "Background banner",  labelRu: "Фон (баннер)",          icon: "palette" },
+  { id: "avatar",            label: "Avatar",              labelRu: "Аватар",                icon: "diamond" },
+  { id: "tagline",           label: "Tagline",             labelRu: "Слоган",                icon: "sparkle" },
+  { id: "bio",                label: "Bio",                 labelRu: "О себе",                icon: "wrench" },
+  { id: "links",              label: "Links",               labelRu: "Ссылки",                icon: "flag" },
+  { id: "tech_stack",         label: "Tech stack",          labelRu: "Технологии",            icon: "brackets" },
+  { id: "score",              label: "Wrench Score",        labelRu: "Wrench Score",          icon: "star" },
+  { id: "badges",             label: "Badges",              labelRu: "Награды",               icon: "trophy" },
+  { id: "pinned_challenges",  label: "Pinned solutions",    labelRu: "Закреплённые решения",  icon: "target" },
+  { id: "endorsements",       label: "Skill endorsements",  labelRu: "Эндорсементы навыков",  icon: "medal" },
 ];
 
 const KNOWN_SECTION_IDS = new Set(PORTFOLIO_SECTIONS.map((s) => s.id));
@@ -100,4 +107,27 @@ export function buildPortfolioFileName(username: string, ext: "png" | "pdf"): st
     .replace(/-+/g, "-")
     .replace(/^-|-$/g, "");
   return `wrench-branch-portfolio-${safe || "profile"}.${ext}`;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Ручной редактор — текстовые переопределения только для портфолио
+// ═══════════════════════════════════════════════════════════════
+// portfolio_title/tagline/bio/footer в БД (supabase/portfolio-migration.sql)
+// — необязательные text-поля, независимые от настоящих profile.tagline/
+// profile.bio: пустое/null поле = "показывать как в самом профиле",
+// заполненное = "показывать вот это вместо него". Так portfolio-вкладка
+// становится настоящим ручным редактором содержимого карточки, а не
+// просто переключателем видимости уже существующих полей профиля —
+// можно, например, написать для портфолио более "продающий" слоган, не
+// трогая тот, что видят посетители обычного публичного профиля.
+//
+// resolvePortfolioText — единственное место, которое решает "что реально
+// показать": и живой предпросмотр (PortfolioPreview.tsx), и серверный
+// рендер PNG (route.tsx) вызывают ровно эту функцию с одинаковыми
+// аргументами, чтобы предпросмотр не мог разойтись с экспортом. Пустая
+// строка/только пробелы в override считаются "не задано" — иначе случайно
+// стёртый пробелами текст молча скрывал бы реальные данные профиля.
+export function resolvePortfolioText(override: string | null | undefined, fallback: string): string {
+  const trimmed = override?.trim();
+  return trimmed ? trimmed : fallback;
 }

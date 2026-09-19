@@ -8,7 +8,7 @@ import { getBannerGradient } from "@/lib/profile-banners";
 import { ROLE_TAGS } from "@/lib/profile-roles";
 import { ROLE_META, DIFFICULTY_META, ChallengeRole, ChallengeDifficulty } from "@/lib/challenges/types";
 import { groupEndorsementsByTag, EndorsementRow } from "@/lib/skill-endorsements";
-import { normalizePortfolioSections, orderedEnabledSections } from "@/lib/portfolio";
+import { normalizePortfolioSections, orderedEnabledSections, resolvePortfolioText } from "@/lib/portfolio";
 
 // ═══════════════════════════════════════════════════════════════
 // Экспорт портфолио в PNG (Profile → Портфолио → Скачать PNG/PDF) —
@@ -139,39 +139,54 @@ export async function GET(req: NextRequest, props: RouteParams) {
   const stackTags = (profile.tech_stack as string[]).map(getStackTag).filter((t): t is NonNullable<typeof t> => Boolean(t));
   const initials = (profile.display_name || profile.username || "?")[0].toUpperCase();
 
+  // Ручной редактор (Profile → Портфолио) — те же переопределения и та же
+  // resolvePortfolioText(), что и в живом предпросмотре
+  // (components/portfolio/PortfolioPreview.tsx), чтобы экспорт никогда не
+  // мог показать текст, которого не было в предпросмотре.
+  const title   = resolvePortfolioText(profile.portfolio_title, profile.display_name || `@${profile.username}`);
+  const tagline = resolvePortfolioText(profile.portfolio_tagline, profile.tagline ?? "");
+  const bio     = resolvePortfolioText(profile.portfolio_bio, profile.bio ?? "");
+  const footer  = resolvePortfolioText(profile.portfolio_footer, "wrench-branch.vercel.app");
+  const showBanner = sectionIds.has("banner");
+  const showAvatar = sectionIds.has("avatar");
+
   return new ImageResponse(
     (
       <div style={{
         display: "flex", flexDirection: "column", width: CARD_WIDTH, height: CARD_HEIGHT,
         background: CANVAS, fontFamily: "sans-serif",
       }}>
-        {/* Баннер */}
-        <div style={{ display: "flex", width: "100%", height: 140, background: banner?.css ?? ACCENT }} />
+        {/* Баннер — переключаемый раздел, как и всё остальное (см.
+            комментарий у PORTFOLIO_SECTIONS в lib/portfolio.ts). */}
+        {showBanner && <div style={{ display: "flex", width: "100%", height: 140, background: banner?.css ?? ACCENT }} />}
 
-        <div style={{ display: "flex", flexDirection: "column", flex: 1, padding: "0 64px 48px 64px" }}>
-          {/* Аватар */}
-          <div style={{
-            display: "flex", alignItems: "center", justifyContent: "center",
-            width: 130, height: 130, borderRadius: "50%", marginTop: -65,
-            background: profile.avatar_color, border: `6px solid ${CANVAS}`,
-            fontSize: 52, fontWeight: 700, color: CANVAS,
-          }}>
-            {initials}
-          </div>
+        <div style={{ display: "flex", flexDirection: "column", flex: 1, padding: `${showBanner ? 0 : 64}px 64px 48px 64px` }}>
+          {/* Аватар — тоже переключаемый; без баннера сверху инициалу
+              незачем наезжать отрицательным отступом на пустое место. */}
+          {showAvatar && (
+            <div style={{
+              display: "flex", alignItems: "center", justifyContent: "center",
+              width: 130, height: 130, borderRadius: "50%", marginTop: showBanner ? -65 : 0,
+              background: profile.avatar_color, border: `6px solid ${CANVAS}`,
+              fontSize: 52, fontWeight: 700, color: CANVAS,
+            }}>
+              {initials}
+            </div>
+          )}
 
           <div style={{ display: "flex", fontSize: 44, fontWeight: 700, color: TEXT_PRIMARY, marginTop: 24 }}>
-            {profile.display_name || `@${profile.username}`}
+            {title}
           </div>
           <div style={{ display: "flex", fontSize: 24, color: TEXT_MUTED, marginTop: 8 }}>
             {[`@${profile.username}`, role ? role.labelRu : null, profile.location].filter(Boolean).join("  ·  ")}
           </div>
 
           {sections.map((section) => {
-            if (section.id === "tagline" && profile.tagline) {
-              return <div key="tagline" style={{ display: "flex", fontSize: 28, fontWeight: 600, color: ACCENT, marginTop: 28 }}>{profile.tagline}</div>;
+            if (section.id === "tagline" && tagline) {
+              return <div key="tagline" style={{ display: "flex", fontSize: 28, fontWeight: 600, color: ACCENT, marginTop: 28 }}>{tagline}</div>;
             }
-            if (section.id === "bio" && profile.bio) {
-              return <div key="bio" style={{ display: "flex", fontSize: 24, color: TEXT_SECONDARY, marginTop: 16, lineHeight: 1.4 }}>{profile.bio}</div>;
+            if (section.id === "bio" && bio) {
+              return <div key="bio" style={{ display: "flex", fontSize: 24, color: TEXT_SECONDARY, marginTop: 16, lineHeight: 1.4 }}>{bio}</div>;
             }
             if (section.id === "links") {
               const links = [profile.github_url && "GitHub", profile.linkedin_url && "LinkedIn", profile.website_url && "Website"].filter(Boolean) as string[];
@@ -256,7 +271,7 @@ export async function GET(req: NextRequest, props: RouteParams) {
             display: "flex", justifyContent: "center", marginTop: "auto", paddingTop: 32,
             borderTop: `1px solid ${BORDER}`, fontSize: 18, color: TEXT_MUTED, letterSpacing: 1,
           }}>
-            wrench-branch.vercel.app
+            {footer}
           </div>
         </div>
       </div>

@@ -6,6 +6,7 @@ import {
   togglePortfolioSection,
   orderedEnabledSections,
   buildPortfolioFileName,
+  resolvePortfolioText,
 } from "@/lib/portfolio";
 
 test.describe("normalizePortfolioSections", () => {
@@ -67,5 +68,25 @@ test.describe("buildPortfolioFileName", () => {
 
   test("falls back to 'profile' when nothing safe remains", () => {
     expect(buildPortfolioFileName("!!!", "png")).toBe("wrench-branch-portfolio-profile.png");
+  });
+});
+
+test.describe("resolvePortfolioText", () => {
+  test("uses the override when it's non-empty", () => {
+    expect(resolvePortfolioText("Custom headline", "Fallback")).toBe("Custom headline");
+  });
+
+  test("falls back when override is null/undefined", () => {
+    expect(resolvePortfolioText(null, "Fallback")).toBe("Fallback");
+    expect(resolvePortfolioText(undefined, "Fallback")).toBe("Fallback");
+  });
+
+  test("falls back when override is empty or whitespace-only", () => {
+    expect(resolvePortfolioText("", "Fallback")).toBe("Fallback");
+    expect(resolvePortfolioText("   ", "Fallback")).toBe("Fallback");
+  });
+
+  test("trims surrounding whitespace from a real override", () => {
+    expect(resolvePortfolioText("  Custom  ", "Fallback")).toBe("Custom");
   });
 });

@@ -8,7 +8,7 @@ import { WrenchLevel } from "@/lib/wrench-score";
 import { ROLE_META, DIFFICULTY_META, ChallengeRole, ChallengeDifficulty } from "@/lib/challenges/types";
 import { GameIcon, ExternalLinkIcon } from "@/components/icons/GameIcons";
 import { AvatarGlyph } from "@/components/profile/AvatarGlyph";
-import { orderedEnabledSections } from "@/lib/portfolio";
+import { orderedEnabledSections, resolvePortfolioText } from "@/lib/portfolio";
 import { groupEndorsementsByTag, EndorsementRow } from "@/lib/skill-endorsements";
 
 export interface PortfolioPinnedChallenge {
@@ -27,6 +27,13 @@ interface PortfolioPreviewProps {
   displayName: string;
   tagline: string | null;
   bio: string;
+  // Ручной редактор (Profile → Портфолио) — переопределения, независимые
+  // от "настоящих" profile.display_name/tagline/bio, см. resolvePortfolioText
+  // в lib/portfolio.ts. null/пусто = использовать значение выше как есть.
+  titleOverride: string | null;
+  taglineOverride: string | null;
+  bioOverride: string | null;
+  footerOverride: string | null;
   avatarColor: string;
   avatarEmblem: string | null;
   roleLabel: string | null;
@@ -60,13 +67,20 @@ const MAX_BADGES_SHOWN = 6;
 // нужно вручную держать визуально согласованными — см. комментарий в
 // самом роуте экспорта.
 export function PortfolioPreview(props: PortfolioPreviewProps) {
-  const { isRu, profileUserId, username, displayName, tagline, bio, avatarColor, avatarEmblem,
-    roleLabel, location, bannerCss, links, techStack, score, level, badgeIds, pinnedChallenges, enabledSections } = props;
+  const { isRu, profileUserId, username, displayName, tagline, bio, titleOverride, taglineOverride, bioOverride, footerOverride,
+    avatarColor, avatarEmblem, roleLabel, location, bannerCss, links, techStack, score, level, badgeIds, pinnedChallenges, enabledSections } = props;
 
   const [endorsementRows, setEndorsementRows] = useState<EndorsementRow[]>([]);
 
   const sections = orderedEnabledSections(enabledSections);
   const showEndorsements = sections.some((s) => s.id === "endorsements") && techStack.length > 0;
+  const showBanner = sections.some((s) => s.id === "banner");
+  const showAvatar = sections.some((s) => s.id === "avatar");
+
+  const resolvedTitle   = resolvePortfolioText(titleOverride, displayName || `@${username}`);
+  const resolvedTagline = resolvePortfolioText(taglineOverride, tagline ?? "");
+  const resolvedBio     = resolvePortfolioText(bioOverride, bio);
+  const resolvedFooter  = resolvePortfolioText(footerOverride, "wrench-branch.vercel.app");
 
   useEffect(() => {
     if (!showEndorsements) { setEndorsementRows([]); return; }
@@ -96,15 +110,19 @@ export function PortfolioPreview(props: PortfolioPreviewProps) {
 
   return (
     <div className="mx-auto w-full max-w-sm overflow-hidden rounded-2xl border border-border bg-surface shadow-lg">
-      {/* Шапка — всегда видна, не входит в переключаемые разделы (см.
-          комментарий в lib/portfolio.ts). */}
-      <div className="h-20 w-full" style={{ background: bannerCss }} />
-      <div className="px-5 pb-5">
-        <div className="-mt-8 flex items-end gap-3">
-          <AvatarGlyph color={avatarColor} emblemId={avatarEmblem} initials={initials}
-            sizeClass="h-16 w-16 text-2xl" className="shrink-0 border-4 border-surface" />
-        </div>
-        <h3 className="mt-2 text-lg font-bold text-text-primary">{displayName || `@${username}`}</h3>
+      {/* Имя/юзернейм/роль/локация — единственное, что остаётся
+          обязательным (см. комментарий у PORTFOLIO_SECTIONS в
+          lib/portfolio.ts); фон и аватар теперь такие же переключаемые
+          разделы, как и всё остальное. */}
+      {showBanner && <div className="h-20 w-full" style={{ background: bannerCss }} />}
+      <div className={`px-5 pb-5 ${showBanner ? "" : "pt-5"}`}>
+        {showAvatar && (
+          <div className={`flex items-end gap-3 ${showBanner ? "-mt-8" : ""}`}>
+            <AvatarGlyph color={avatarColor} emblemId={avatarEmblem} initials={initials}
+              sizeClass="h-16 w-16 text-2xl" className="shrink-0 border-4 border-surface" />
+          </div>
+        )}
+        <h3 className="mt-2 text-lg font-bold text-text-primary">{resolvedTitle}</h3>
         <p className="flex flex-wrap items-center gap-1 text-xs text-text-muted">
           <span>@{username}</span>
           {roleLabel && (<><span aria-hidden="true">·</span><span>{roleLabel}</span></>)}
@@ -114,10 +132,10 @@ export function PortfolioPreview(props: PortfolioPreviewProps) {
         {sections.map((section) => {
           switch (section.id) {
             case "tagline":
-              return tagline ? <p key="tagline" className="mt-3 text-sm font-medium text-accent">{tagline}</p> : null;
+              return resolvedTagline ? <p key="tagline" className="mt-3 text-sm font-medium text-accent">{resolvedTagline}</p> : null;
 
             case "bio":
-              return bio ? <p key="bio" className="mt-2 text-sm text-text-secondary">{bio}</p> : null;
+              return resolvedBio ? <p key="bio" className="mt-2 text-sm text-text-secondary">{resolvedBio}</p> : null;
 
             case "links":
               return links.length > 0 ? (
@@ -221,7 +239,7 @@ export function PortfolioPreview(props: PortfolioPreviewProps) {
         })}
 
         <p className="mt-4 border-t border-border pt-3 text-center text-[10px] tracking-wide text-text-muted">
-          wrench-branch.vercel.app
+          {resolvedFooter}
         </p>
       </div>
     </div>

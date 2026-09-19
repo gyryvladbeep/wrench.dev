@@ -63,8 +63,16 @@ interface Profile {
   equipped_badge_id:    string | null;
   // Конструктор портфолио (Profile → Портфолио) — какие необязательные
   // разделы включены в экспортируемую карточку, id из lib/portfolio.ts
-  // PORTFOLIO_SECTIONS. supabase/portfolio-migration.sql.
+  // PORTFOLIO_SECTIONS (включает "avatar"/"banner" — теперь тоже
+  // переключаемые, а не всегда обязательные). supabase/portfolio-migration.sql.
   portfolio_sections:   string[];
+  // Ручной редактор портфолио — необязательные переопределения текста,
+  // независимые от display_name/tagline/bio выше: null = показать как в
+  // самом профиле. См. resolvePortfolioText() в lib/portfolio.ts.
+  portfolio_title:      string | null;
+  portfolio_tagline:    string | null;
+  portfolio_bio:        string | null;
+  portfolio_footer:     string | null;
 }
 
 // Решённая задача, доступная для закрепления на публичном профиле (см.
@@ -153,6 +161,7 @@ export default function ProfilePage() {
     github_url: null, linkedin_url: null, website_url: null, pinned_challenge_ids: [],
     tech_stack: [], location: null, equipped_badge_id: null,
     portfolio_sections: DEFAULT_PORTFOLIO_SECTIONS,
+    portfolio_title: null, portfolio_tagline: null, portfolio_bio: null, portfolio_footer: null,
   });
   const [stats,    setStats]    = useState<Stats | null>(null);
   const [history,  setHistory]  = useState<ToolHistory[]>([]);
@@ -960,8 +969,8 @@ export default function ProfilePage() {
               </h2>
               <p className="mb-4 text-xs text-text-muted">
                 {isRu
-                  ? "Шапка (аватар, имя, роль, локация) есть в экспорте всегда. Остальное — по выбору."
-                  : "The header (avatar, name, role, location) is always included. Everything else is optional."}
+                  ? "Имя, юзернейм, роль и локация есть в экспорте всегда. Остальное — по выбору, включая фон и аватар."
+                  : "Name, username, role and location are always included. Everything else is optional, including the background and avatar."}
               </p>
               <div className="space-y-1.5">
                 {PORTFOLIO_SECTIONS.map((s) => {
@@ -980,6 +989,60 @@ export default function ProfilePage() {
                   );
                 })}
               </div>
+            </div>
+
+            {/* Ручной редактор — переопределяет текст только в портфолио,
+                не трогая настоящие display_name/tagline/bio (те остаются
+                как есть и на публичном профиле, и во вкладке Настройки).
+                Пусто = использовать значение из профиля — placeholder
+                каждого поля показывает, что именно подставится, если
+                оставить поле пустым. Сохраняется той же кнопкой/функцией
+                saveProfile(), что и вкладка Настройки — отдельного API
+                под четыре текстовых поля заводить незачем. */}
+            <div className="rounded-lg border border-border bg-surface p-5 space-y-3">
+              <div>
+                <h2 className="text-sm font-semibold text-text-primary">
+                  {isRu ? "Ручной редактор" : "Manual editor"}
+                </h2>
+                <p className="mt-0.5 text-xs text-text-muted">
+                  {isRu
+                    ? "Свой текст только для портфолио, отдельно от профиля. Пусто — берём из профиля."
+                    : "Custom text for the portfolio only, separate from your profile. Leave blank to use the profile's own text."}
+                </p>
+              </div>
+              <div>
+                <label className="mb-1 block text-xs text-text-muted">{isRu ? "Заголовок" : "Title"}</label>
+                <input value={profile.portfolio_title ?? ""}
+                  onChange={(e) => setProfile(p => ({ ...p, portfolio_title: e.target.value || null }))}
+                  placeholder={profile.display_name || `@${profile.username}`}
+                  className="w-full rounded border border-border bg-canvas px-3 py-2 text-sm text-text-primary placeholder:text-text-muted focus:border-border-focus focus:outline-none" />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs text-text-muted">{isRu ? "Слоган" : "Tagline"}</label>
+                <input value={profile.portfolio_tagline ?? ""}
+                  onChange={(e) => setProfile(p => ({ ...p, portfolio_tagline: e.target.value || null }))}
+                  placeholder={profile.tagline || (isRu ? "не задан в профиле" : "not set in profile")}
+                  className="w-full rounded border border-border bg-canvas px-3 py-2 text-sm text-text-primary placeholder:text-text-muted focus:border-border-focus focus:outline-none" />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs text-text-muted">{isRu ? "О себе" : "Bio"}</label>
+                <textarea value={profile.portfolio_bio ?? ""} rows={3}
+                  onChange={(e) => setProfile(p => ({ ...p, portfolio_bio: e.target.value || null }))}
+                  placeholder={profile.bio || (isRu ? "не задано в профиле" : "not set in profile")}
+                  className="w-full resize-none rounded border border-border bg-canvas px-3 py-2 text-sm text-text-primary placeholder:text-text-muted focus:border-border-focus focus:outline-none" />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs text-text-muted">{isRu ? "Подпись внизу" : "Footer"}</label>
+                <input value={profile.portfolio_footer ?? ""}
+                  onChange={(e) => setProfile(p => ({ ...p, portfolio_footer: e.target.value || null }))}
+                  placeholder="wrench-branch.vercel.app"
+                  className="w-full rounded border border-border bg-canvas px-3 py-2 text-sm text-text-primary placeholder:text-text-muted focus:border-border-focus focus:outline-none" />
+              </div>
+              <button onClick={saveProfile} disabled={saving}
+                className="w-full rounded bg-accent px-4 py-2 text-sm font-medium text-accent-fg transition-opacity hover:opacity-90 disabled:opacity-50">
+                {saving ? (isRu ? "Сохраняем…" : "Saving…") : saved ? (isRu ? "Сохранено" : "Saved") : (isRu ? "Сохранить текст" : "Save text")}
+              </button>
+              {saveError && <p className="text-xs text-error">{saveError}</p>}
             </div>
 
             <div className="rounded-lg border border-border bg-surface p-5 space-y-2.5">
@@ -1011,6 +1074,10 @@ export default function ProfilePage() {
               displayName={profile.display_name}
               tagline={profile.tagline}
               bio={profile.bio}
+              titleOverride={profile.portfolio_title}
+              taglineOverride={profile.portfolio_tagline}
+              bioOverride={profile.portfolio_bio}
+              footerOverride={profile.portfolio_footer}
               avatarColor={profile.avatar_color}
               avatarEmblem={profile.avatar_emblem}
               roleLabel={role ? (isRu ? role.labelRu : role.label) : null}
