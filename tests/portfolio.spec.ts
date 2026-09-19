@@ -21,6 +21,12 @@ import {
   PortfolioProjectEntry,
   fullSectionOrder,
   moveSectionOrder,
+  PortfolioPreset,
+  MAX_PORTFOLIO_PRESETS,
+  addPortfolioPreset,
+  removePortfolioPreset,
+  renamePortfolioPreset,
+  updatePortfolioPresetSnapshot,
 } from "@/lib/portfolio";
 
 function makeExperience(id: string): PortfolioExperienceEntry {
@@ -28,6 +34,12 @@ function makeExperience(id: string): PortfolioExperienceEntry {
 }
 function makeProject(id: string): PortfolioProjectEntry {
   return { id, name: "Wrench-Branch", description: "", tech: "Next.js", url: null };
+}
+function makePreset(id: string, name = "Preset"): PortfolioPreset {
+  return {
+    id, name, sections: ["bio"], sectionOrder: [], theme: "classic",
+    title: null, tagline: null, bio: null, footer: null,
+  };
 }
 
 test.describe("normalizePortfolioSections", () => {
@@ -254,5 +266,64 @@ test.describe("moveSectionOrder", () => {
   test("does nothing for an unknown id", () => {
     const order = fullSectionOrder([]);
     expect(moveSectionOrder(order, "not-a-real-section", "up")).toEqual(order);
+  });
+});
+
+test.describe("addPortfolioPreset / removePortfolioPreset", () => {
+  test("appends a new preset", () => {
+    const result = addPortfolioPreset([makePreset("1")], makePreset("2"));
+    expect(result.map((p) => p.id)).toEqual(["1", "2"]);
+  });
+
+  test("stops adding once the cap is reached", () => {
+    const full = Array.from({ length: MAX_PORTFOLIO_PRESETS }, (_, i) => makePreset(String(i)));
+    const result = addPortfolioPreset(full, makePreset("overflow"));
+    expect(result).toHaveLength(MAX_PORTFOLIO_PRESETS);
+    expect(result.some((p) => p.id === "overflow")).toBe(false);
+  });
+
+  test("removes only the matching preset", () => {
+    const result = removePortfolioPreset([makePreset("1"), makePreset("2")], "1");
+    expect(result.map((p) => p.id)).toEqual(["2"]);
+  });
+});
+
+test.describe("renamePortfolioPreset", () => {
+  test("renames the matching preset, trimmed", () => {
+    const result = renamePortfolioPreset([makePreset("1", "Old")], "1", "  New name  ");
+    expect(result[0].name).toBe("New name");
+  });
+
+  test("ignores an empty/whitespace-only name", () => {
+    const original = [makePreset("1", "Old")];
+    expect(renamePortfolioPreset(original, "1", "   ")).toEqual(original);
+    expect(renamePortfolioPreset(original, "1", "")).toEqual(original);
+  });
+
+  test("leaves other presets untouched", () => {
+    const result = renamePortfolioPreset([makePreset("1", "A"), makePreset("2", "B")], "1", "A2");
+    expect(result[1].name).toBe("B");
+  });
+});
+
+test.describe("updatePortfolioPresetSnapshot", () => {
+  test("overwrites the snapshot fields but keeps id and name", () => {
+    const original = makePreset("1", "Keep me");
+    const result = updatePortfolioPresetSnapshot([original], "1", {
+      sections: ["score"], sectionOrder: ["score", "bio"], theme: "matrix",
+      title: "T", tagline: "Tag", bio: "Bio", footer: "Foot",
+    });
+    expect(result[0]).toEqual({
+      id: "1", name: "Keep me",
+      sections: ["score"], sectionOrder: ["score", "bio"], theme: "matrix",
+      title: "T", tagline: "Tag", bio: "Bio", footer: "Foot",
+    });
+  });
+
+  test("does nothing for an unknown id", () => {
+    const original = [makePreset("1")];
+    expect(updatePortfolioPresetSnapshot(original, "not-real", {
+      sections: [], sectionOrder: [], theme: "classic", title: null, tagline: null, bio: null, footer: null,
+    })).toEqual(original);
   });
 });

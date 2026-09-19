@@ -34,6 +34,8 @@ import {
   PortfolioExperienceEntry, PortfolioProjectEntry, MAX_EXPERIENCE_ENTRIES, MAX_PROJECT_ENTRIES,
   addExperienceEntry, removeExperienceEntry, addProjectEntry, removeProjectEntry,
   fullSectionOrder, moveSectionOrder,
+  PortfolioPreset, MAX_PORTFOLIO_PRESETS, addPortfolioPreset, removePortfolioPreset,
+  renamePortfolioPreset, updatePortfolioPresetSnapshot,
 } from "@/lib/portfolio";
 
 interface Profile {
@@ -97,6 +99,10 @@ interface Profile {
   // (экспорт доступен только владельцу, см. route.tsx).
   portfolio_view_count:     number;
   portfolio_download_count: number;
+  // Пресеты (roadmap: "несколько сохранённых пресетов портфолио под
+  // разные вакансии") — снимки разделов/порядка/темы/ручного текста, см.
+  // PortfolioPreset в lib/portfolio.ts.
+  portfolio_presets: PortfolioPreset[];
 }
 
 // Решённая задача, доступная для закрепления на публичном профиле (см.
@@ -187,7 +193,7 @@ export default function ProfilePage() {
     portfolio_sections: DEFAULT_PORTFOLIO_SECTIONS, portfolio_section_order: [],
     portfolio_title: null, portfolio_tagline: null, portfolio_bio: null, portfolio_footer: null,
     portfolio_theme: DEFAULT_PORTFOLIO_THEME, portfolio_experience: [], portfolio_projects: [],
-    portfolio_view_count: 0, portfolio_download_count: 0,
+    portfolio_view_count: 0, portfolio_download_count: 0, portfolio_presets: [],
   });
   const [stats,    setStats]    = useState<Stats | null>(null);
   const [history,  setHistory]  = useState<ToolHistory[]>([]);
@@ -222,6 +228,10 @@ export default function ProfilePage() {
   const [exportingPng, setExportingPng] = useState(false);
   const [exportingPdf, setExportingPdf] = useState(false);
   const [exportError,  setExportError]  = useState<string | null>(null);
+
+  // Имя нового пресета — черновик поля ввода, не сохраняется, пока не
+  // нажали "Сохранить как новый пресет" (saveNewPreset ниже).
+  const [newPresetName, setNewPresetName] = useState("");
 
   // Удаление аккаунта — состояние живёт здесь, не в JSX Settings-вкладки,
   // потому что вкладки условно рендерятся (см. {tab === "settings" && ...}
@@ -293,6 +303,10 @@ export default function ProfilePage() {
         // до миграции), что у остальных полей выше.
         portfolio_view_count: Number((prof as Record<string, unknown>).portfolio_view_count) || 0,
         portfolio_download_count: Number((prof as Record<string, unknown>).portfolio_download_count) || 0,
+        // Array.isArray-защита — тот же приём, что у portfolio_experience/
+        // portfolio_projects выше (колонки ещё нет → undefined до миграции).
+        portfolio_presets: Array.isArray((prof as Record<string, unknown>).portfolio_presets)
+          ? (prof as Record<string, unknown>).portfolio_presets as PortfolioPreset[] : [],
       });
     }
     if (streak) setStats(streak as Stats);
@@ -517,6 +531,91 @@ export default function ProfilePage() {
     const supabase = createClient();
     const { error } = await supabase.from("profiles").update({ portfolio_section_order: next }).eq("id", user.id);
     if (error) console.error("moveSectionAndSave: update failed", error);
+  }
+
+  // Снимок текущих активных презентационных настроек — используется и
+  // при создании нового пресета, и при обновлении существующего (кнопка
+  // "Обновить" у пресета), чтобы не дублировать один и тот же список
+  // полей в двух местах.
+  function currentPresetSnapshot() {
+    return {
+      sections: profile.portfolio_sections,
+      sectionOrder: profile.portfolio_section_order,
+      theme: getPortfolioTheme(profile.portfolio_theme).id,
+      title: profile.portfolio_title,
+      tagline: profile.portfolio_tagline,
+      bio: profile.portfolio_bio,
+      footer: profile.portfolio_footer,
+    };
+  }
+
+  // Пресеты — все действия мгновенно сохраняются (тот же принцип, что и
+  // у toggleSectionAndSave/changeThemeAndSave выше): каждое из них —
+  // законченный клик по элементу списка, не черновик текста, который
+  // стоит копить до общего "Сохранить".
+  async function saveNewPreset(name: string) {
+    if (!user) return;
+    const trimmed = name.trim().slice(0, 40);
+    if (!trimmed) return;
+    const next = addPortfolioPreset(profile.portfolio_presets, {
+      id: crypto.randomUUID(), name: trimmed, ...currentPresetSnapshot(),
+    });
+    setProfile((p) => ({ ...p, portfolio_presets: next }));
+    setNewPresetName("");
+    const supabase = createClient();
+    const { error } = await supabase.from("profiles").update({ portfolio_presets: next }).eq("id", user.id);
+    if (error) console.error("saveNewPreset: update failed", error);
+  }
+
+  // Применить пресет — копирует его настройки в активные колонки (те же,
+  // что использует живой предпросмотр/экспорт/веб-версия портфолио),
+  // одним запросом сразу по всем полям, а не по одной инстант-сейв
+  // функции на поле — иначе применение одного пресета выглядело бы как
+  // семь отдельных сохранений подряд.
+  async function applyPreset(id: string) {
+    if (!user) return;
+    const preset = profile.portfolio_presets.find((p) => p.id === id);
+    if (!preset) return;
+    const patch = {
+      portfolio_sections: normalizePortfolioSections(preset.sections),
+      portfolio_section_order: normalizePortfolioSections(preset.sectionOrder),
+      portfolio_theme: getPortfolioTheme(preset.theme).id,
+      portfolio_title: preset.title,
+      portfolio_tagline: preset.tagline,
+      portfolio_bio: preset.bio,
+      portfolio_footer: preset.footer,
+    };
+    setProfile((p) => ({ ...p, ...patch }));
+    const supabase = createClient();
+    const { error } = await supabase.from("profiles").update(patch).eq("id", user.id);
+    if (error) console.error("applyPreset: update failed", error);
+  }
+
+  async function updatePresetSnapshotAndSave(id: string) {
+    if (!user) return;
+    const next = updatePortfolioPresetSnapshot(profile.portfolio_presets, id, currentPresetSnapshot());
+    setProfile((p) => ({ ...p, portfolio_presets: next }));
+    const supabase = createClient();
+    const { error } = await supabase.from("profiles").update({ portfolio_presets: next }).eq("id", user.id);
+    if (error) console.error("updatePresetSnapshotAndSave: update failed", error);
+  }
+
+  async function renamePresetAndSave(id: string, name: string) {
+    if (!user) return;
+    const next = renamePortfolioPreset(profile.portfolio_presets, id, name);
+    setProfile((p) => ({ ...p, portfolio_presets: next }));
+    const supabase = createClient();
+    const { error } = await supabase.from("profiles").update({ portfolio_presets: next }).eq("id", user.id);
+    if (error) console.error("renamePresetAndSave: update failed", error);
+  }
+
+  async function removePresetAndSave(id: string) {
+    if (!user) return;
+    const next = removePortfolioPreset(profile.portfolio_presets, id);
+    setProfile((p) => ({ ...p, portfolio_presets: next }));
+    const supabase = createClient();
+    const { error } = await supabase.from("profiles").update({ portfolio_presets: next }).eq("id", user.id);
+    if (error) console.error("removePresetAndSave: update failed", error);
   }
 
   // Опыт работы и проекты — добавление/удаление записи меняет только
@@ -1126,6 +1225,76 @@ export default function ProfilePage() {
       {tab === "portfolio" && (
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,320px)_1fr]">
           <div className="space-y-4">
+            {/* Пресеты — снимки разделов/порядка/темы/ручного текста под
+                конкретную вакансию, см. PortfolioPreset в lib/portfolio.ts.
+                Сверху остального конструктора: это переключатель
+                конфигурации целиком, а не ещё одна настройка внутри неё. */}
+            <div className="rounded-lg border border-border bg-surface p-5 space-y-3">
+              <div>
+                <h2 className="text-sm font-semibold text-text-primary">
+                  {isRu ? "Пресеты" : "Presets"}
+                </h2>
+                <p className="mt-0.5 text-xs text-text-muted">
+                  {isRu
+                    ? "Сохрани текущие разделы, тему и тексты как набор под конкретную вакансию — потом переключишься одним кликом. Опыт работы и проекты общие для всех пресетов."
+                    : "Save the current sections, theme and text as a named set for a specific job — switch back with one click. Work experience and projects are shared across presets."}
+                </p>
+              </div>
+
+              {profile.portfolio_presets.length > 0 && (
+                <div className="space-y-1.5">
+                  {profile.portfolio_presets.map((preset) => (
+                    <div key={preset.id} className="space-y-1.5 rounded-md border border-border bg-canvas p-2.5">
+                      <input defaultValue={preset.name} maxLength={40}
+                        onBlur={(e) => {
+                          const v = e.target.value.trim();
+                          if (v && v !== preset.name) renamePresetAndSave(preset.id, v);
+                          else e.target.value = preset.name;
+                        }}
+                        className="w-full rounded border border-border bg-surface px-2 py-1 text-xs font-medium text-text-primary focus:border-border-focus focus:outline-none" />
+                      <div className="flex flex-wrap gap-1.5">
+                        <button onClick={() => applyPreset(preset.id)}
+                          className="rounded bg-accent px-2.5 py-1 text-[11px] font-medium text-accent-fg transition-opacity hover:opacity-90">
+                          {isRu ? "Применить" : "Apply"}
+                        </button>
+                        <button onClick={() => updatePresetSnapshotAndSave(preset.id)}
+                          className="rounded border border-border px-2.5 py-1 text-[11px] text-text-secondary transition-colors hover:border-border-focus hover:bg-surface-hover">
+                          {isRu ? "Обновить текущими настройками" : "Update with current settings"}
+                        </button>
+                        <button onClick={() => removePresetAndSave(preset.id)}
+                          className="rounded px-2.5 py-1 text-[11px] text-text-muted transition-colors hover:text-error">
+                          {isRu ? "Удалить" : "Remove"}
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div className="space-y-1.5 border-t border-border pt-3">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs text-text-muted">{isRu ? "Новый пресет" : "New preset"}</label>
+                  <span className="text-[11px] text-text-muted">{profile.portfolio_presets.length}/{MAX_PORTFOLIO_PRESETS}</span>
+                </div>
+                <div className="flex gap-1.5">
+                  <input value={newPresetName} onChange={(e) => setNewPresetName(e.target.value)} maxLength={40}
+                    placeholder={isRu ? "Например, «Для Google»" : "E.g. \"For Google\""}
+                    disabled={profile.portfolio_presets.length >= MAX_PORTFOLIO_PRESETS}
+                    className="min-w-0 flex-1 rounded border border-border bg-canvas px-2.5 py-1.5 text-xs text-text-primary placeholder:text-text-muted focus:border-border-focus focus:outline-none disabled:opacity-50" />
+                  <button onClick={() => saveNewPreset(newPresetName)}
+                    disabled={!newPresetName.trim() || profile.portfolio_presets.length >= MAX_PORTFOLIO_PRESETS}
+                    className="shrink-0 rounded bg-accent px-3 py-1.5 text-xs font-medium text-accent-fg transition-opacity hover:opacity-90 disabled:opacity-50">
+                    {isRu ? "Сохранить" : "Save"}
+                  </button>
+                </div>
+                <p className="text-[11px] text-text-muted">
+                  {isRu
+                    ? "Сохраняет текущее состояние конструктора ниже — сначала настрой разделы/тему/тексты, потом сохрани под именем."
+                    : "Saves the constructor's current state below — set up sections/theme/text first, then save it under a name."}
+                </p>
+              </div>
+            </div>
+
             <div className="rounded-lg border border-border bg-surface p-5">
               <h2 className="mb-1 text-sm font-semibold text-text-primary">
                 {isRu ? "Разделы портфолио" : "Portfolio sections"}

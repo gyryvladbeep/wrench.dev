@@ -103,6 +103,16 @@ ALTER TABLE profiles ADD COLUMN IF NOT EXISTS portfolio_footer  text;
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS portfolio_view_count     integer NOT NULL DEFAULT 0;
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS portfolio_download_count integer NOT NULL DEFAULT 0;
 
+-- Пресеты (roadmap: "несколько сохранённых пресетов портфолио под
+-- разные вакансии/компании... с переключением") — снимки "презентационных"
+-- настроек (разделы/порядок/тема/ручной текст), см. PortfolioPreset в
+-- lib/portfolio.ts. Сознательно НЕ включают portfolio_experience/
+-- portfolio_projects — это содержимое резюме, общее для всех пресетов,
+-- не то, как оно показано. jsonb-массив, тот же принцип, что у
+-- portfolio_experience/portfolio_projects выше — id записи нужен только
+-- для React key/удаления на клиенте.
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS portfolio_presets jsonb NOT NULL DEFAULT '[]'::jsonb;
+
 -- portfolio_download_count инкрементится обычным UPDATE от владельца —
 -- он трогает свою же строку, это уже разрешено политикой
 -- profiles_update_own, отдельная функция не нужна.

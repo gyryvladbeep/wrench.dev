@@ -542,3 +542,71 @@ export const PORTFOLIO_GOOGLE_FONTS_HREF = (() => {
     .map((f) => `family=${f.replace(/ /g, "+")}:wght@400;600;700`);
   return `https://fonts.googleapis.com/css2?${families.join("&")}&display=swap`;
 })();
+
+// ═══════════════════════════════════════════════════════════════
+// Пресеты — сохранённые наборы настроек портфолио
+// ═══════════════════════════════════════════════════════════════
+// roadmap: "несколько сохранённых пресетов портфолио под разные вакансии/
+// компании (свой набор разделов, тема, ручные тексты) с переключением".
+// Пресет — снимок "презентационных" настроек: какие разделы включены и в
+// каком порядке, тема оформления и четыре текстовых переопределения из
+// ручного редактора. Сознательно НЕ включает portfolio_experience/
+// portfolio_projects — это содержимое самого резюме, а не то, как оно
+// показано, и оно одно и то же независимо от того, под какую вакансию
+// сейчас настроено портфолио (у presets нет собственного "какие записи
+// опыта показывать" — это была бы отдельная, более крупная фича).
+//
+// Модель — "слоты сохранения", не параллельные публичные ссылки: в любой
+// момент активна ровно ОДНА конфигурация (те же portfolio_sections/
+// portfolio_theme/... колонки, что и раньше), пресет просто позволяет
+// сохранить её под именем и одним кликом вернуться к ней позже,
+// перезаписав текущую активную конфигурацию. lib/portfolio.ts не хранит
+// "какой пресет сейчас применён" — применение пресета копирует его
+// значения в активные колонки и на этом всё, дальнейшее редактирование
+// активной конфигурации никак не помечает исходный пресет как
+// "устаревший" (это сознательное упрощение, не отслеживаем dirty-state).
+export interface PortfolioPreset {
+  id:           string;
+  name:         string;
+  sections:     string[];
+  sectionOrder: string[];
+  theme:        PortfolioThemeId;
+  title:        string | null;
+  tagline:      string | null;
+  bio:          string | null;
+  footer:       string | null;
+}
+
+// Столько пресетов помещается в список без превращения вкладки
+// Портфолио в отдельный экран управления — та же логика конечной
+// витрины, что у MAX_EXPERIENCE_ENTRIES/MAX_PROJECT_ENTRIES выше.
+export const MAX_PORTFOLIO_PRESETS = 5;
+
+export function addPortfolioPreset(presets: readonly PortfolioPreset[], preset: PortfolioPreset): PortfolioPreset[] {
+  if (presets.length >= MAX_PORTFOLIO_PRESETS) return [...presets];
+  return [...presets, preset];
+}
+
+export function removePortfolioPreset(presets: readonly PortfolioPreset[], id: string): PortfolioPreset[] {
+  return presets.filter((p) => p.id !== id);
+}
+
+// Пустое/пробельное имя не сохраняем — тот же принцип, что у
+// resolvePortfolioText: молча ничего не меняем, а не пишем в БД пустую
+// строку, которая потом нечитаемо отображалась бы в списке.
+export function renamePortfolioPreset(presets: readonly PortfolioPreset[], id: string, name: string): PortfolioPreset[] {
+  const trimmed = name.trim();
+  if (!trimmed) return [...presets];
+  return presets.map((p) => (p.id === id ? { ...p, name: trimmed } : p));
+}
+
+// Перезаписать презентационные настройки уже существующего пресета
+// текущими активными (кнопка "Обновить" у пресета в редакторе) — имя и
+// id пресета не трогаем, снимок — всё остальное.
+export function updatePortfolioPresetSnapshot(
+  presets: readonly PortfolioPreset[],
+  id: string,
+  snapshot: Omit<PortfolioPreset, "id" | "name">
+): PortfolioPreset[] {
+  return presets.map((p) => (p.id === id ? { ...p, ...snapshot } : p));
+}
