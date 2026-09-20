@@ -85,6 +85,41 @@ export default async function DocsPage(props: { params: Promise<{ locale: string
         </div>
       </section>
 
+      {/* CLI + VS Code-расширение (roadmap items 8/9) — раньше оба
+          реально существовали в репозитории (cli/, vscode-extension/),
+          CLI даже опубликован на npm, но на самом сайте про них не было
+          ни слова — узнать о них можно было только заглянув в код.
+          Секция сразу после API — тот же принцип, тот же стиль
+          подраздела, что apiWriteHeading внутри apiHeading выше. */}
+      <section id="cli" className="mt-8">
+        <h2 className="text-lg font-medium">{t.cliHeading}</h2>
+        <p className="mt-2 text-sm text-text-muted">{t.cliBody}</p>
+        <pre className="code-surface mt-3 overflow-x-auto rounded-lg p-3 text-xs leading-relaxed text-text-secondary">
+          {`npx wrench-branch json format '{"a":1,"b":2}'\n\nnpm install -g wrench-branch\nwrench uuid\nwrench hash sha256 "hello"\nwrench tools list`}
+        </pre>
+        <div className="mt-2.5 flex flex-wrap gap-x-4 gap-y-1 text-xs">
+          <a href="https://www.npmjs.com/package/wrench-branch" target="_blank" rel="noopener noreferrer" className="text-link hover:underline">
+            {t.cliNpmLinkText} →
+          </a>
+          <a href="https://github.com/gyryvladbeep/wrench.dev/tree/main/cli" target="_blank" rel="noopener noreferrer" className="text-link hover:underline">
+            {t.cliReadmeLinkText} →
+          </a>
+        </div>
+
+        <div className="mt-5 border-t border-border pt-4">
+          <h3 className="text-sm font-semibold text-text-primary">{t.vscodeSubheading}</h3>
+          <p className="mt-2 text-sm text-text-muted">{t.vscodeBody}</p>
+          <pre className="code-surface mt-3 overflow-x-auto rounded-lg p-3 text-xs leading-relaxed text-text-secondary">
+            {`git clone https://github.com/gyryvladbeep/wrench.dev.git\ncd wrench.dev/vscode-extension\nnpm install && npm run compile\nnpx vsce package`}
+          </pre>
+          <div className="mt-2.5 flex flex-wrap gap-x-4 gap-y-1 text-xs">
+            <a href="https://github.com/gyryvladbeep/wrench.dev/tree/main/vscode-extension" target="_blank" rel="noopener noreferrer" className="text-link hover:underline">
+              {t.vscodeReadmeLinkText} →
+            </a>
+          </div>
+        </div>
+      </section>
+
       <section className="mt-8">
         <h2 className="text-lg font-medium">{t.aiHeading}</h2>
         <p className="mt-2 text-sm text-text-muted">

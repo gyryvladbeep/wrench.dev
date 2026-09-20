@@ -387,6 +387,15 @@ export const en: Dictionary = {
         "Create a personal token in Profile -> Settings -> API tokens to create mock endpoints (POST /api/v1/mock-endpoints) and webhook bins (POST /api/v1/webhook-bins) from a script or CI pipeline, without a browser session. Both endpoints are idempotent by name, so rerunning a workflow with the same name reuses the same resource instead of hitting the free-tier limit.",
       apiWriteTokenLinkText: "Create a token",
       apiWriteActionsLinkText: "GitHub Actions for CI",
+      cliHeading: "CLI & VS Code extension",
+      cliBody:
+        "The same JSON/Base64/JWT/UUID/hash/URL/timestamp tools run from your terminal too, entirely offline — plus a few commands that call the public API above (tools, salary, mock, webhook). Package name is wrench-branch; the command itself is wrench.",
+      cliNpmLinkText: "wrench-branch on npm",
+      cliReadmeLinkText: "Full command reference",
+      vscodeSubheading: "VS Code extension",
+      vscodeBody:
+        "The same offline tools, from the command palette (Ctrl/Cmd+Shift+P -> \"Wrench:\"), without leaving the editor. Not on the Marketplace yet — build the .vsix from source and install it via Extensions -> ... -> Install from VSIX.",
+      vscodeReadmeLinkText: "Source & build instructions",
       aiHeading: "AI tools (coming soon)",
       aiBodyPrefix: "See the",
       aiBodyLinkText: "AI-Powered Tools",

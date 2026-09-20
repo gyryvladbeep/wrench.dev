@@ -386,6 +386,13 @@ export interface Dictionary {
       apiWriteBody: string;
       apiWriteTokenLinkText: string;
       apiWriteActionsLinkText: string;
+      cliHeading: string;
+      cliBody: string;
+      cliNpmLinkText: string;
+      cliReadmeLinkText: string;
+      vscodeSubheading: string;
+      vscodeBody: string;
+      vscodeReadmeLinkText: string;
       aiHeading: string;
       aiBodyPrefix: string;
       aiBodyLinkText: string;

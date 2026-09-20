@@ -386,6 +386,15 @@ export const ru: Dictionary = {
         "Создайте личный токен в Профиль -> Настройки -> API-токены, чтобы создавать mock-эндпоинты (POST /api/v1/mock-endpoints) и webhook-бины (POST /api/v1/webhook-bins) из скрипта или CI-пайплайна, без входа в браузере. Оба эндпоинта идемпотентны по имени — повторный запуск workflow с тем же именем переиспользует тот же ресурс, а не упирается в лимит бесплатного тарифа.",
       apiWriteTokenLinkText: "Создать токен",
       apiWriteActionsLinkText: "GitHub Actions для CI",
+      cliHeading: "CLI и VS Code-расширение",
+      cliBody:
+        "Те же инструменты JSON/Base64/JWT/UUID/hash/URL/timestamp работают и из терминала, полностью офлайн — плюс несколько команд поверх публичного API выше (tools, salary, mock, webhook). Пакет называется wrench-branch, сама команда — wrench.",
+      cliNpmLinkText: "wrench-branch на npm",
+      cliReadmeLinkText: "Полный список команд",
+      vscodeSubheading: "VS Code-расширение",
+      vscodeBody:
+        "Те же офлайн-инструменты прямо из command palette (Ctrl/Cmd+Shift+P -> «Wrench:»), не выходя из редактора. В Marketplace пока не опубликовано — соберите .vsix из исходников и установите через Extensions -> ... -> Install from VSIX.",
+      vscodeReadmeLinkText: "Исходники и инструкция по сборке",
       aiHeading: "AI-инструменты (скоро)",
       aiBodyPrefix: "Смотрите раздел",
       aiBodyLinkText: "«Инструменты с AI»",
