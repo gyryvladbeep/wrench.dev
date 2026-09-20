@@ -11,7 +11,7 @@
 // формат теста, а для отправной подборки упражнений на основы это не
 // нужно.
 
-export type TrainerCategory = "fundamentals" | "strings" | "arrays" | "qa-automation";
+export type TrainerCategory = "fundamentals" | "strings" | "arrays" | "qa-automation" | "project";
 export type TrainerDifficulty = "easy" | "medium";
 
 export interface TrainerTestCase {
@@ -39,6 +39,9 @@ export const TRAINER_CATEGORIES: { id: TrainerCategory; label: string; labelRu: 
   { id: "strings",       label: "Strings",        labelRu: "Строки" },
   { id: "arrays",        label: "Arrays",         labelRu: "Массивы" },
   { id: "qa-automation", label: "QA Automation",  labelRu: "QA-автоматизация" },
+  // roadmap item 17 — "в масштабе реального проекта": не отдельная функция,
+  // а целое сломанное мини-приложение, см. lib/trainer/project-exercises.ts
+  { id: "project",       label: "Real project",   labelRu: "Реальный проект" },
 ];
 
 export const TRAINER_EXERCISES: TrainerExercise[] = [
