@@ -49,6 +49,7 @@ export function Footer({ dict, locale }: FooterProps) {
       { label: isRu ? "Лидерборд"       : "Leaderboard",  href: "/leaderboard" },
     ],
     [isRu ? "Компания" : "Company"]: [
+      { label: isRu ? "Что нового"      : "Changelog",    href: "/changelog" },
       { label: isRu ? "Pro план"        : "Pro Plan",     href: "/pro" },
       { label: isRu ? "Конфиденциальность" : "Privacy",  href: "/privacy" },
       { label: isRu ? "Условия"         : "Terms",        href: "/terms" },

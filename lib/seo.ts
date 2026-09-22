@@ -1,6 +1,7 @@
 import { Metadata } from "next";
 import { Tool } from "./types";
 import { Article } from "./knowledge/articles";
+import { ChangelogEntry } from "./changelog";
 import { Locale, localePath } from "./i18n/config";
 
 export const siteConfig = {
@@ -218,6 +219,43 @@ export function buildSalaryReportJsonLd(
         { "@type": "ListItem", position: 1, name: homeLabel, item: homeUrl },
         { "@type": "ListItem", position: 2, name: salaryLabel, item: salaryUrl },
         { "@type": "ListItem", position: 3, name: reportLabel, item: url },
+      ],
+    },
+  ];
+}
+
+// Пункт 24 из ROADMAP-BRAINSTORM.md — тот же двухблочный приём, что у
+// buildLeaderboardJsonLd()/buildSalaryReportJsonLd(): содержимое
+// страницы (тут — реальный список обновлений, поэтому ItemList, как у
+// лидерборда, а не Dataset, как у отчёта по зарплатам) плюс
+// BreadcrumbList. Ограничено первыми 20 записями — ItemList не для
+// того, чтобы дублировать весь HTML-список целиком, а чтобы дать
+// поисковику структурную выжимку самых свежих обновлений.
+export function buildChangelogJsonLd(
+  locale: Locale,
+  homeLabel: string,
+  changelogLabel: string,
+  entries: ChangelogEntry[]
+) {
+  const path = "/changelog";
+  const url  = `${siteConfig.url}${localePath(locale, path)}`;
+  const homeUrl = `${siteConfig.url}${localePath(locale, "/")}`;
+  const isRu = locale === "ru";
+  return [
+    {
+      "@context": "https://schema.org", "@type": "ItemList",
+      name: changelogLabel,
+      url,
+      itemListElement: entries.slice(0, 20).map((e, i) => ({
+        "@type": "ListItem", position: i + 1,
+        name: isRu ? e.titleRu : e.titleEn,
+      })),
+    },
+    {
+      "@context": "https://schema.org", "@type": "BreadcrumbList",
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: homeLabel, item: homeUrl },
+        { "@type": "ListItem", position: 2, name: changelogLabel, item: url },
       ],
     },
   ];
