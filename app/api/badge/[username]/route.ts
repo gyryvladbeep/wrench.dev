@@ -3,6 +3,7 @@ import { makeBadge } from "badge-maker";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { calcWrenchScore, getLevel } from "@/lib/wrench-score";
 import { checkAchievements } from "@/lib/achievements";
+import { EndorsementRow, countDistinctEndorsers, countDistinctEndorsedSkills } from "@/lib/skill-endorsements";
 
 // Публичный, полностью анонимный эндпоинт — отдаёт SVG-бейдж с Wrench
 // Score для вставки в чужой GitHub README (<img src=".../api/badge/username">
@@ -65,6 +66,13 @@ export async function GET(_req: NextRequest, props: RouteParams) {
       .select("id", { count: "exact", head: true })
       .eq("user_id", profile.id);
 
+    // Публично читаемо — тот же RLS (skill_endorsements_select_public), что
+    // и на публичной странице профиля. roadmap item 1 (Skill-badges 2.0).
+    const { data: endorseRows } = await supabase
+      .from("skill_endorsements")
+      .select("skill_tag, endorser_id")
+      .eq("endorsee_id", profile.id);
+
     // badges_count считается той же чистой функцией, что и на публичной
     // странице профиля (PublicProfileView.tsx) — из streak-статистики,
     // без отдельного запроса к таблице achievements.
@@ -73,6 +81,8 @@ export async function GET(_req: NextRequest, props: RouteParams) {
       total_points: streak.total_points ?? 0,
       current_streak: streak.current_streak ?? 0,
       isPro: false,
+      endorsed_by_count: countDistinctEndorsers((endorseRows as EndorsementRow[]) ?? []),
+      endorsed_skills_count: countDistinctEndorsedSkills((endorseRows as EndorsementRow[]) ?? []),
     }).length;
 
     const score = calcWrenchScore({

@@ -27,6 +27,7 @@ import { ROLE_META, DIFFICULTY_META, ChallengeRole, ChallengeDifficulty } from "
 import { CopyButton } from "@/components/CopyButton";
 import { ApiTokensPanel } from "@/components/profile/ApiTokensPanel";
 import { SkillEndorsements } from "@/components/profile/SkillEndorsements";
+import { EndorsementRow, countDistinctEndorsers, countDistinctEndorsedSkills } from "@/lib/skill-endorsements";
 import { PortfolioPreview } from "@/components/portfolio/PortfolioPreview";
 import {
   PORTFOLIO_SECTIONS, DEFAULT_PORTFOLIO_SECTIONS, normalizePortfolioSections, togglePortfolioSection, buildPortfolioFileName,
@@ -207,6 +208,13 @@ export default function ProfilePage() {
   // отдельно, чтобы отличать "уже точно есть в БД" от "видим впервые в
   // этой загрузке" — не переупсертить одно и то же на каждый ре-рендер.
   const [persistedBadgeIds, setPersistedBadgeIds] = useState<string[]>([]);
+  // Peer-эндорсементы, полученные ЭТИМ пользователем (как endorsee) —
+  // roadmap item 1 (Skill-badges 2.0), см. подробный комментарий в
+  // lib/skill-endorsements.ts. Отдельно от того, что показывает сам
+  // компонент SkillEndorsements (тот читает по своему собственному
+  // эффекту для рендера списка) — тут нужны только счётчики для
+  // checkAchievements() ниже, не имена эндорсеров.
+  const [endorsementRows, setEndorsementRows] = useState<EndorsementRow[]>([]);
   // Решённые задачи текущего пользователя — источник для пикера
   // "закрепить на публичном профиле" в Settings. Не все решённые задачи
   // сразу видны там же на странице — их может быть сотни; выбор ниже
@@ -257,7 +265,7 @@ export default function ProfilePage() {
     const supabase = createClient();
     const today    = new Date().toISOString().slice(0, 10);
 
-    const [{ data: prof }, { data: streak }, { data: hist }, { data: usage }, { data: attempts }, { data: earnedRows }] = await Promise.all([
+    const [{ data: prof }, { data: streak }, { data: hist }, { data: usage }, { data: attempts }, { data: earnedRows }, { data: endorseRows }] = await Promise.all([
       supabase.from("profiles").select("*").eq("id", user.id).single(),
       supabase.from("user_streaks").select("*").eq("user_id", user.id).single(),
       supabase.from("tool_history").select("tool_slug, used_at").eq("user_id", user.id).order("used_at", { ascending: false }).limit(50),
@@ -274,6 +282,9 @@ export default function ProfilePage() {
       // supabase/achievements-status-migration.sql и комментарий у
       // useEffect(computeBadges) ниже про объединение с живым пересчётом.
       supabase.from("achievements").select("badge_id").eq("user_id", user.id),
+      // Эндорсементы, полученные этим пользователем — roadmap item 1,
+      // см. комментарий у endorsementRows выше.
+      supabase.from("skill_endorsements").select("skill_tag, endorser_id").eq("endorsee_id", user.id),
     ]);
 
     if (prof) {
@@ -317,6 +328,7 @@ export default function ProfilePage() {
     }
     if (streak) setStats(streak as Stats);
     if (earnedRows) setPersistedBadgeIds((earnedRows as { badge_id: string }[]).map((r) => r.badge_id));
+    if (endorseRows) setEndorsementRows(endorseRows as EndorsementRow[]);
     if (hist) setHistory(hist as ToolHistory[]);
     if (usage) setAiUsed((usage as { count: number }).count ?? 0);
 
@@ -432,6 +444,8 @@ export default function ProfilePage() {
       used_night_hours: usedNightHours,
       used_weekend: usedWeekend,
       account_created_at: user.created_at,
+      endorsed_by_count: countDistinctEndorsers(endorsementRows),
+      endorsed_skills_count: countDistinctEndorsedSkills(endorsementRows),
     });
 
     setBadges(Array.from(new Set([...earned, ...persistedBadgeIds])));
@@ -452,7 +466,7 @@ export default function ProfilePage() {
           setPersistedBadgeIds((prev) => Array.from(new Set([...prev, ...toWrite])));
         });
     }
-  }, [user, stats, history, solvedChallenges, favorites, workbenchList, isPro, persistedBadgeIds]);
+  }, [user, stats, history, solvedChallenges, favorites, workbenchList, isPro, persistedBadgeIds, endorsementRows]);
 
   // Тоггл закрепления задачи на публичном профиле — если задача уже
   // закреплена, снимаем без ограничений; если нет и лимит MAX_PINNED уже

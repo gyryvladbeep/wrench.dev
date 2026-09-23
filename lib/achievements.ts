@@ -68,6 +68,13 @@ export function checkAchievements(stats: {
   used_night_hours?: boolean;
   used_weekend?: boolean;
   account_created_at?: string | null;
+  // Roadmap item 1 (Skill-badges 2.0) — peer-эндорсементы (item 2) как
+  // "сложнее подделать" сигнал, см. подробный комментарий в
+  // lib/skill-endorsements.ts. endorsed_by_count — сколько РАЗНЫХ людей
+  // эндорснули хотя бы один навык; endorsed_skills_count — по скольким
+  // РАЗНЫМ навыкам есть хотя бы один эндорсемент.
+  endorsed_by_count?: number;
+  endorsed_skills_count?: number;
 }): string[] {
   const earned: string[] = [];
 
@@ -112,6 +119,10 @@ export function checkAchievements(stats: {
   // Привычки
   if (stats.used_night_hours) earned.push("insomniac");
   if (stats.used_weekend)     earned.push("weekend_warrior");
+
+  // Peer-эндорсементы (roadmap item 1 — сложнее подделать, чем "прошёл N задач")
+  if ((stats.endorsed_by_count ?? 0) >= 3)     earned.push("peer_endorsed");
+  if ((stats.endorsed_skills_count ?? 0) >= 3) earned.push("cross_endorsed");
 
   // Статус / прочее
   if (stats.isPro) earned.push("pro_member");
@@ -159,6 +170,12 @@ export const BADGES: Badge[] = [
   { id: "weekend_warrior", label: "Weekend Warrior", labelRu: "Герой выходных",           description: "Used a tool on a weekend",                          descriptionRu: "Пользовался инструментом в выходной",               icon: "target",    color: "orange" },
   { id: "over_engineer",   label: "Over-Engineer",   labelRu: "Оверинженер",              description: "Built 5 or more Workbenches — why use one when you can have five?", descriptionRu: "Собрал 5 и более рабочих столов — зачем один, если можно пять?", icon: "gear", color: "slate" },
   { id: "one_trick_pony",  label: "One-Trick Pony",  labelRu: "Мастер одного приёма",     description: "Used the same tool 20+ times recently",            descriptionRu: "Использовал один и тот же инструмент 20+ раз подряд", icon: "magnifier", color: "cyan" },
+
+  // ─── Skill-badges 2.0 (roadmap item 1) — peer-эндорсементы, "сложнее
+  // подделать" сигнал: гейт profile_views на уровне RLS не даёт
+  // эндорснуть кого попало, см. комментарий в lib/skill-endorsements.ts ───
+  { id: "peer_endorsed",  label: "Vouched For",     labelRu: "Подтверждён коллегами",      description: "Endorsed by 3 or more different members",  descriptionRu: "Эндорснут 3 и более разными участниками",          icon: "medal", color: "green" },
+  { id: "cross_endorsed", label: "Cross-Verified",  labelRu: "Разносторонне подтверждён",  description: "Endorsed on 3 or more different skills",   descriptionRu: "Подтверждён по 3 и более разным навыкам",          icon: "chart", color: "cyan" },
 ];
 
 export const BADGE_COLOR: Record<string, string> = {

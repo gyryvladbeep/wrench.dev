@@ -7,6 +7,7 @@ import { localePath, Locale } from "@/lib/i18n/config";
 import { ROLE_TAGS } from "@/lib/profile-roles";
 import { getBannerGradient } from "@/lib/profile-banners";
 import { checkAchievements } from "@/lib/achievements";
+import { EndorsementRow, countDistinctEndorsers, countDistinctEndorsedSkills } from "@/lib/skill-endorsements";
 import { calcWrenchScore, getLevel } from "@/lib/wrench-score";
 import { GameIcon } from "@/components/icons/GameIcons";
 import { PortfolioPreview, PortfolioPinnedChallenge } from "@/components/portfolio/PortfolioPreview";
@@ -60,7 +61,7 @@ interface PublicPortfolioViewProps {
 type ViewState =
   | { kind: "loading" }
   | { kind: "not-found" }
-  | { kind: "found"; profile: PublicPortfolioProfile; stats: Stats | null; toolsUsed: number; pinned: PortfolioPinnedChallenge[] };
+  | { kind: "found"; profile: PublicPortfolioProfile; stats: Stats | null; toolsUsed: number; pinned: PortfolioPinnedChallenge[]; endorsementRows: EndorsementRow[] };
 
 export function PublicPortfolioView({ locale, username }: PublicPortfolioViewProps) {
   const isRu = locale === "ru";
@@ -109,12 +110,15 @@ export function PublicPortfolioView({ locale, username }: PublicPortfolioViewPro
             });
         }
 
-        const [{ data: streak }, { count: toolsUsed }, pinnedResult] = await Promise.all([
+        const [{ data: streak }, { count: toolsUsed }, pinnedResult, { data: endorseRows }] = await Promise.all([
           supabase.from("user_streaks").select("total_solved, total_points, current_streak, longest_streak").eq("user_id", profile.id).single(),
           supabase.from("tool_history").select("id", { count: "exact", head: true }).eq("user_id", profile.id),
           profile.pinned_challenge_ids?.length
             ? supabase.from("challenges").select("id, title, title_ru, role, difficulty, points").in("id", profile.pinned_challenge_ids)
             : Promise.resolve({ data: [] as PortfolioPinnedChallenge[] }),
+          // Публично читаемо — тот же RLS, что и в PublicProfileView.tsx.
+          // roadmap item 1 (Skill-badges 2.0).
+          supabase.from("skill_endorsements").select("skill_tag, endorser_id").eq("endorsee_id", profile.id),
         ]);
 
         if (cancelled) return;
@@ -132,6 +136,7 @@ export function PublicPortfolioView({ locale, username }: PublicPortfolioViewPro
           stats: (streak as Stats) ?? null,
           toolsUsed: toolsUsed ?? 0,
           pinned,
+          endorsementRows: (endorseRows as EndorsementRow[]) ?? [],
         });
       });
 
@@ -160,14 +165,18 @@ export function PublicPortfolioView({ locale, username }: PublicPortfolioViewPro
     );
   }
 
-  const { profile, stats, toolsUsed, pinned } = state;
+  const { profile, stats, toolsUsed, pinned, endorsementRows } = state;
   const role = ROLE_TAGS.find((r) => r.id === profile.role_tag);
   const banner = getBannerGradient(profile.banner_gradient);
 
   // Тот же живой пересчёт достижений из публичной статистики, что уже
   // использует PublicProfileView.tsx — не отдельный запрос к таблице
   // achievements (её публичное чтение сюда специально не открывали).
-  const badges = stats ? checkAchievements({ ...stats, isPro: false }) : [];
+  const badges = stats ? checkAchievements({
+    ...stats, isPro: false,
+    endorsed_by_count: countDistinctEndorsers(endorsementRows),
+    endorsed_skills_count: countDistinctEndorsedSkills(endorsementRows),
+  }) : [];
   const score = stats ? calcWrenchScore({ ...stats, tools_used: toolsUsed, badges_count: badges.length }) : 0;
   const level = getLevel(score);
 

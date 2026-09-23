@@ -100,6 +100,26 @@ test.describe("checkAchievements — шуточные (точное совпад
   });
 });
 
+test.describe("checkAchievements — peer-эндорсементы (roadmap item 1, Skill-badges 2.0)", () => {
+  test("peer_endorsed — эндорснут 3+ разными людьми", () => {
+    expect(checkAchievements({ ...BASE, endorsed_by_count: 2 })).not.toContain("peer_endorsed");
+    expect(checkAchievements({ ...BASE, endorsed_by_count: 3 })).toContain("peer_endorsed");
+  });
+
+  test("cross_endorsed — эндорснут по 3+ разным навыкам, независимо от peer_endorsed", () => {
+    // Один и тот же человек эндорсит 3 разных навыка: cross_endorsed да,
+    // peer_endorsed нет — это разные метрики (людей vs навыков).
+    expect(checkAchievements({ ...BASE, endorsed_by_count: 1, endorsed_skills_count: 3 })).toEqual(
+      expect.arrayContaining(["cross_endorsed"])
+    );
+    expect(checkAchievements({ ...BASE, endorsed_by_count: 1, endorsed_skills_count: 3 })).not.toContain("peer_endorsed");
+  });
+
+  test("без эндорсементов — ни одного из двух", () => {
+    expect(checkAchievements(BASE)).not.toEqual(expect.arrayContaining(["peer_endorsed", "cross_endorsed"]));
+  });
+});
+
 test.describe("checkAchievements — founding_member (дата отсечки)", () => {
   test("аккаунт до отсечки — founding_member", () => {
     const before = new Date(FOUNDING_MEMBER_CUTOFF - 24 * 60 * 60 * 1000).toISOString();
@@ -133,6 +153,7 @@ test.describe("BADGES — целостность данных", () => {
       isPro: true, favorites_count: 25, workbench_count: 5, workbench_tools_count: 15,
       distinct_tools_used: 15, max_single_tool_uses: 20, used_night_hours: true, used_weekend: true,
       account_created_at: new Date(FOUNDING_MEMBER_CUTOFF - 1000).toISOString(),
+      endorsed_by_count: 3, endorsed_skills_count: 3,
     });
     const badgeIds = new Set(BADGES.map((b) => b.id));
     for (const id of generous) expect(badgeIds.has(id)).toBe(true);

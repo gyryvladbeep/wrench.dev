@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { groupEndorsementsByTag, isEndorsedByViewer, formatEndorserNames } from "@/lib/skill-endorsements";
+import { groupEndorsementsByTag, isEndorsedByViewer, formatEndorserNames, countDistinctEndorsers, countDistinctEndorsedSkills } from "@/lib/skill-endorsements";
 
 // ═══════════════════════════════════════════════════════════════
 // Чистая логика peer-эндорсементов (roadmap item 2) — без {page}
@@ -57,5 +57,38 @@ test.describe("formatEndorserNames", () => {
   test("больше 3 — первые 3 плюс 'и ещё N' (ru) / 'and N more' (en)", () => {
     expect(formatEndorserNames(["Аня", "Вася", "Игорь", "Петя", "Оля"], true)).toBe("Аня, Вася, Игорь и ещё 2");
     expect(formatEndorserNames(["Ann", "Bob", "Cid", "Dan"], false)).toBe("Ann, Bob, Cid and 1 more");
+  });
+});
+
+// roadmap item 1 (Skill-badges 2.0) — эти два счётчика идут прямо в
+// checkAchievements() (см. tests/achievements.spec.ts), см. комментарий
+// в lib/skill-endorsements.ts.
+test.describe("countDistinctEndorsers", () => {
+  test("считает уникальных эндорсеров, не строки", () => {
+    const rows = [
+      { skill_tag: "react", endorser_id: "a" },
+      { skill_tag: "node",  endorser_id: "a" }, // тот же человек, другой навык
+      { skill_tag: "react", endorser_id: "b" },
+    ];
+    expect(countDistinctEndorsers(rows)).toBe(2);
+  });
+
+  test("пустой список — 0", () => {
+    expect(countDistinctEndorsers([])).toBe(0);
+  });
+});
+
+test.describe("countDistinctEndorsedSkills", () => {
+  test("считает уникальные навыки, не строки", () => {
+    const rows = [
+      { skill_tag: "react", endorser_id: "a" },
+      { skill_tag: "react", endorser_id: "b" }, // тот же навык, другой человек
+      { skill_tag: "node",  endorser_id: "a" },
+    ];
+    expect(countDistinctEndorsedSkills(rows)).toBe(2);
+  });
+
+  test("пустой список — 0", () => {
+    expect(countDistinctEndorsedSkills([])).toBe(0);
   });
 });

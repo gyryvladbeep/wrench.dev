@@ -28,6 +28,23 @@ export function isEndorsedByViewer(rows: EndorsementRow[], viewerId: string | nu
   return rows.some((r) => r.endorser_id === viewerId);
 }
 
+// Roadmap item 1 (Skill-badges 2.0) — эти два счётчика идут в
+// checkAchievements() (lib/achievements.ts) как "сложнее подделать"
+// сигнал: сами эндорсементы уже защищены анти-спам гейтом
+// profile_views на уровне RLS (см. supabase/skill-endorsements-migration.sql
+// — эндорснуть можно только того, чей профиль реально открывал), так
+// что бейдж на их основе нельзя накрутить, прогнав задачи через AI, в
+// отличие от "прошёл N задач". distinct, а не rows.length — один и тот
+// же человек может эндорснуть несколько разных навыков, это не должно
+// считаться как несколько эндорсеров.
+export function countDistinctEndorsers(rows: EndorsementRow[]): number {
+  return new Set(rows.map((r) => r.endorser_id)).size;
+}
+
+export function countDistinctEndorsedSkills(rows: EndorsementRow[]): number {
+  return new Set(rows.map((r) => r.skill_tag)).size;
+}
+
 // Сколько имён показываем строкой текста, прежде чем свернуть остаток
 // в "и ещё N" — тот же потолок, что MAX_PINNED/MAX_STACK_TAGS в
 // остальном профиле: витрина конечная, не резиновая.

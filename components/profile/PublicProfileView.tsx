@@ -13,6 +13,7 @@ import { WrenchScorePanel } from "@/components/WrenchScorePanel";
 import { GameIcon, ExternalLinkIcon } from "@/components/icons/GameIcons";
 import { AvatarGlyph } from "@/components/profile/AvatarGlyph";
 import { SkillEndorsements } from "@/components/profile/SkillEndorsements";
+import { EndorsementRow, countDistinctEndorsers, countDistinctEndorsedSkills } from "@/lib/skill-endorsements";
 
 interface PublicProfile {
   id:                    string;
@@ -68,7 +69,7 @@ interface PublicProfileViewProps {
 type ViewState =
   | { kind: "loading" }
   | { kind: "not-found" }
-  | { kind: "found"; profile: PublicProfile; stats: Stats | null; toolsUsed: number; pinned: PinnedChallenge[] };
+  | { kind: "found"; profile: PublicProfile; stats: Stats | null; toolsUsed: number; pinned: PinnedChallenge[]; endorsementRows: EndorsementRow[] };
 
 export function PublicProfileView({ locale, username }: PublicProfileViewProps) {
   const isRu = locale === "ru";
@@ -97,12 +98,17 @@ export function PublicProfileView({ locale, username }: PublicProfileViewProps) 
         if (cancelled) return;
         if (error || !profile) { setState({ kind: "not-found" }); return; }
 
-        const [{ data: streak }, { count: toolsUsed }, pinnedResult] = await Promise.all([
+        const [{ data: streak }, { count: toolsUsed }, pinnedResult, { data: endorseRows }] = await Promise.all([
           supabase.from("user_streaks").select("total_solved, total_points, current_streak, longest_streak").eq("user_id", profile.id).single(),
           supabase.from("tool_history").select("id", { count: "exact", head: true }).eq("user_id", profile.id),
           profile.pinned_challenge_ids?.length
             ? supabase.from("challenges").select("id, title, title_ru, role, difficulty, points").in("id", profile.pinned_challenge_ids)
             : Promise.resolve({ data: [] as PinnedChallenge[] }),
+          // Публично читаемо — skill_endorsements_select_public (см.
+          // supabase/skill-endorsements-migration.sql) уже отдаёт эти
+          // строки анониму для is_public-профиля, тот же RLS, что и у
+          // SkillEndorsements.tsx ниже. roadmap item 1 (Skill-badges 2.0).
+          supabase.from("skill_endorsements").select("skill_tag, endorser_id").eq("endorsee_id", profile.id),
         ]);
 
         if (cancelled) return;
@@ -121,6 +127,7 @@ export function PublicProfileView({ locale, username }: PublicProfileViewProps) 
           stats: (streak as Stats) ?? null,
           toolsUsed: toolsUsed ?? 0,
           pinned,
+          endorsementRows: (endorseRows as EndorsementRow[]) ?? [],
         });
       });
 
@@ -149,7 +156,7 @@ export function PublicProfileView({ locale, username }: PublicProfileViewProps) 
     );
   }
 
-  const { profile, stats, toolsUsed, pinned } = state;
+  const { profile, stats, toolsUsed, pinned, endorsementRows } = state;
   const initials = (profile.display_name || profile.username || "?")[0].toUpperCase();
   const role = ROLE_TAGS.find((r) => r.id === profile.role_tag);
   const banner = getBannerGradient(profile.banner_gradient);
@@ -163,7 +170,11 @@ export function PublicProfileView({ locale, username }: PublicProfileViewProps) 
   // значит — открывать ещё одну публичную RLS-политику ради статуса
   // оплаты, которую на публичной странице показывать не обязательно.
   // Отложено, а не забыто.
-  const badges = stats ? checkAchievements({ ...stats, isPro: false }) : [];
+  const badges = stats ? checkAchievements({
+    ...stats, isPro: false,
+    endorsed_by_count: countDistinctEndorsers(endorsementRows),
+    endorsed_skills_count: countDistinctEndorsedSkills(endorsementRows),
+  }) : [];
 
   // Статус-бейдж (equipped_badge_id) — единственное, что публично видно
   // из "когда-либо заработанного" набора владельца (не только из этого
