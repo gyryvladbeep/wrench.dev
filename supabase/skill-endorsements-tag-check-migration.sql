@@ -28,14 +28,22 @@
 --
 -- Фикс: та же проверка теперь и в самой политике — skill_tag обязан
 -- входить в tech_stack эндорсируемого профиля на момент вставки.
+--
+-- auth.uid() обёрнут в (select auth.uid()) — тот же приём, что и в
+-- rls-performance-migration.sql (см. её шапку): без этого Postgres
+-- вызывает auth.uid() заново на КАЖДОЙ строке, которую проверяет CHECK,
+-- вместо одного вычисления на весь запрос (Supabase Performance Advisor,
+-- "Auth RLS Initialization Plan"). Эта политика новая и ещё не была
+-- выполнена ни разу, поэтому пишем сразу в оптимальном виде, а не
+-- чиним отдельной миграцией следом.
 DROP POLICY IF EXISTS "skill_endorsements_insert" ON skill_endorsements;
 
 CREATE POLICY "skill_endorsements_insert" ON skill_endorsements FOR INSERT WITH CHECK (
-  auth.uid() = endorser_id
+  (select auth.uid()) = endorser_id
   AND endorser_id <> endorsee_id
   AND EXISTS (
     SELECT 1 FROM profile_views v
-    WHERE v.viewer_id = auth.uid() AND v.viewed_user_id = skill_endorsements.endorsee_id
+    WHERE v.viewer_id = (select auth.uid()) AND v.viewed_user_id = skill_endorsements.endorsee_id
   )
   AND EXISTS (
     SELECT 1 FROM profiles p
