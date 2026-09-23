@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useAuth } from "@/lib/auth/auth-context";
 import { useSubscription } from "@/lib/hooks/useSubscription";
 import { useMockEndpoints, MockEndpoint, RouteInput } from "@/lib/hooks/useMockEndpoints";
+import { MAX_MOCK_RESPONSE_BODY_LENGTH } from "@/lib/tier-limits";
 import { localePath, Locale } from "@/lib/i18n/config";
 import { CopyButton } from "@/components/CopyButton";
 import { LayersIcon, CloseIcon, UploadIcon } from "@/components/icons/GameIcons";
@@ -211,6 +212,14 @@ function EndpointCard({
     }
     if (!Number.isInteger(delay) || delay < 0 || delay > 5000) {
       setSaveError(isRu ? "Задержка — от 0 до 5000мс." : "Delay must be between 0 and 5000ms.");
+      return;
+    }
+    if (form.response_body.length > MAX_MOCK_RESPONSE_BODY_LENGTH) {
+      setSaveError(
+        isRu
+          ? `Тело ответа не длиннее ${MAX_MOCK_RESPONSE_BODY_LENGTH} символов.`
+          : `Response body must be ${MAX_MOCK_RESPONSE_BODY_LENGTH} characters or fewer.`
+      );
       return;
     }
     setSaveError(null);

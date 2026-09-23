@@ -7,6 +7,7 @@ import { siteConfig } from "@/lib/seo";
 import {
   FREE_MAX_MOCK_ENDPOINTS, FREE_MAX_MOCK_ROUTES,
   PRO_MAX_MOCK_ENDPOINTS, PRO_MAX_MOCK_ROUTES,
+  MAX_MOCK_RESPONSE_BODY_LENGTH,
 } from "@/lib/tier-limits";
 
 // ═══════════════════════════════════════════════════════════════
@@ -107,6 +108,9 @@ export async function POST(req: NextRequest) {
       return validationError("`delay_ms` must be a number between 0 and 5000.");
     }
     const response_body = typeof raw.response_body === "string" ? raw.response_body : "{}";
+    if (response_body.length > MAX_MOCK_RESPONSE_BODY_LENGTH) {
+      return validationError(`\`response_body\` must be ${MAX_MOCK_RESPONSE_BODY_LENGTH} characters or fewer.`);
+    }
     routes.push({ method, path, status_code, delay_ms, response_body });
   }
 
