@@ -33,128 +33,182 @@
 -- файле (см. комментарий у каждого блока), с единственным изменением:
 -- auth.uid() → (select auth.uid()).
 --
--- api_tokens (supabase/api-tokens-migration.sql)
-DROP POLICY IF EXISTS "api_tokens_own_row" ON api_tokens;
-CREATE POLICY "api_tokens_own_row" ON api_tokens
-  FOR ALL USING ((select auth.uid()) = user_id) WITH CHECK ((select auth.uid()) = user_id);
+-- Первая версия этого файла падала целиком на первой же таблице,
+-- которой у тебя на проде ещё нет (ERROR: 42P01: relation "favorites"
+-- does not exist) — SQL Editor гоняет файл одним блоком и останавливается
+-- на первой ошибке, так что до всех таблиц ПОСЛЕ той, что отсутствует,
+-- дело просто не доходило. Раз готового списка "какие миграции у тебя
+-- реально накатаны" под рукой нет, и присылать по одной ошибке за раз —
+-- не дело, каждый блок ниже теперь сам проверяет, что таблица вообще
+-- существует (`to_regclass('public.<table>') IS NOT NULL`), и просто
+-- пропускает блок, если её нет — DDL внутри DO-блока в PL/pgSQL
+-- готовится (парсится/планируется) только когда до него реально
+-- доходит выполнение, а не заранее для всего блока целиком, поэтому
+-- ветка IF с несуществующей таблицей внутри не мешает остальным
+-- работать. Проверено локально на чистом Postgres 16 с частично
+-- отсутствующей схемой (без таблицы favorites) — файл проходит
+-- целиком, тот блок просто тихо пропускается.
+DO $$
+BEGIN
+  -- api_tokens (supabase/api-tokens-migration.sql)
+  IF to_regclass('public.api_tokens') IS NOT NULL THEN
+    DROP POLICY IF EXISTS "api_tokens_own_row" ON api_tokens;
+    CREATE POLICY "api_tokens_own_row" ON api_tokens
+      FOR ALL USING ((select auth.uid()) = user_id) WITH CHECK ((select auth.uid()) = user_id);
+  END IF;
 
--- challenge_attempts, user_streaks, subscriptions, ai_usage (supabase/challenges-schema.sql)
-DROP POLICY IF EXISTS "attempts_select" ON challenge_attempts;
-CREATE POLICY "attempts_select" ON challenge_attempts FOR SELECT USING ((select auth.uid()) = user_id);
-DROP POLICY IF EXISTS "attempts_insert" ON challenge_attempts;
-CREATE POLICY "attempts_insert" ON challenge_attempts FOR INSERT WITH CHECK ((select auth.uid()) = user_id);
-DROP POLICY IF EXISTS "attempts_update" ON challenge_attempts;
-CREATE POLICY "attempts_update" ON challenge_attempts FOR UPDATE USING ((select auth.uid()) = user_id);
+  -- challenge_attempts, user_streaks, subscriptions, ai_usage (supabase/challenges-schema.sql)
+  IF to_regclass('public.challenge_attempts') IS NOT NULL THEN
+    DROP POLICY IF EXISTS "attempts_select" ON challenge_attempts;
+    CREATE POLICY "attempts_select" ON challenge_attempts FOR SELECT USING ((select auth.uid()) = user_id);
+    DROP POLICY IF EXISTS "attempts_insert" ON challenge_attempts;
+    CREATE POLICY "attempts_insert" ON challenge_attempts FOR INSERT WITH CHECK ((select auth.uid()) = user_id);
+    DROP POLICY IF EXISTS "attempts_update" ON challenge_attempts;
+    CREATE POLICY "attempts_update" ON challenge_attempts FOR UPDATE USING ((select auth.uid()) = user_id);
+  END IF;
 
-DROP POLICY IF EXISTS "streaks_select" ON user_streaks;
-CREATE POLICY "streaks_select" ON user_streaks FOR SELECT USING ((select auth.uid()) = user_id);
-DROP POLICY IF EXISTS "streaks_upsert" ON user_streaks;
-CREATE POLICY "streaks_upsert" ON user_streaks FOR ALL USING ((select auth.uid()) = user_id);
+  IF to_regclass('public.user_streaks') IS NOT NULL THEN
+    DROP POLICY IF EXISTS "streaks_select" ON user_streaks;
+    CREATE POLICY "streaks_select" ON user_streaks FOR SELECT USING ((select auth.uid()) = user_id);
+    DROP POLICY IF EXISTS "streaks_upsert" ON user_streaks;
+    CREATE POLICY "streaks_upsert" ON user_streaks FOR ALL USING ((select auth.uid()) = user_id);
+  END IF;
 
-DROP POLICY IF EXISTS "subscriptions_select" ON subscriptions;
-CREATE POLICY "subscriptions_select" ON subscriptions FOR SELECT USING ((select auth.uid()) = user_id);
+  IF to_regclass('public.subscriptions') IS NOT NULL THEN
+    DROP POLICY IF EXISTS "subscriptions_select" ON subscriptions;
+    CREATE POLICY "subscriptions_select" ON subscriptions FOR SELECT USING ((select auth.uid()) = user_id);
+  END IF;
 
-DROP POLICY IF EXISTS "ai_usage_select" ON ai_usage;
-CREATE POLICY "ai_usage_select" ON ai_usage FOR SELECT USING ((select auth.uid()) = user_id);
-DROP POLICY IF EXISTS "ai_usage_insert" ON ai_usage;
-CREATE POLICY "ai_usage_insert" ON ai_usage FOR INSERT WITH CHECK ((select auth.uid()) = user_id);
-DROP POLICY IF EXISTS "ai_usage_update" ON ai_usage;
-CREATE POLICY "ai_usage_update" ON ai_usage FOR UPDATE USING ((select auth.uid()) = user_id);
+  IF to_regclass('public.ai_usage') IS NOT NULL THEN
+    DROP POLICY IF EXISTS "ai_usage_select" ON ai_usage;
+    CREATE POLICY "ai_usage_select" ON ai_usage FOR SELECT USING ((select auth.uid()) = user_id);
+    DROP POLICY IF EXISTS "ai_usage_insert" ON ai_usage;
+    CREATE POLICY "ai_usage_insert" ON ai_usage FOR INSERT WITH CHECK ((select auth.uid()) = user_id);
+    DROP POLICY IF EXISTS "ai_usage_update" ON ai_usage;
+    CREATE POLICY "ai_usage_update" ON ai_usage FOR UPDATE USING ((select auth.uid()) = user_id);
+  END IF;
 
--- favorites (supabase/favorites-schema.sql)
-DROP POLICY IF EXISTS "favorites_select" ON favorites;
-CREATE POLICY "favorites_select" ON favorites FOR SELECT USING ((select auth.uid()) = user_id);
-DROP POLICY IF EXISTS "favorites_insert" ON favorites;
-CREATE POLICY "favorites_insert" ON favorites FOR INSERT WITH CHECK ((select auth.uid()) = user_id);
-DROP POLICY IF EXISTS "favorites_delete" ON favorites;
-CREATE POLICY "favorites_delete" ON favorites FOR DELETE USING ((select auth.uid()) = user_id);
+  -- favorites (supabase/favorites-schema.sql)
+  IF to_regclass('public.favorites') IS NOT NULL THEN
+    DROP POLICY IF EXISTS "favorites_select" ON favorites;
+    CREATE POLICY "favorites_select" ON favorites FOR SELECT USING ((select auth.uid()) = user_id);
+    DROP POLICY IF EXISTS "favorites_insert" ON favorites;
+    CREATE POLICY "favorites_insert" ON favorites FOR INSERT WITH CHECK ((select auth.uid()) = user_id);
+    DROP POLICY IF EXISTS "favorites_delete" ON favorites;
+    CREATE POLICY "favorites_delete" ON favorites FOR DELETE USING ((select auth.uid()) = user_id);
+  END IF;
 
--- mock_endpoints, mock_routes (supabase/mock-api-migration.sql)
-DROP POLICY IF EXISTS "mock_endpoints_own_row" ON mock_endpoints;
-CREATE POLICY "mock_endpoints_own_row" ON mock_endpoints
-  FOR ALL USING ((select auth.uid()) = user_id) WITH CHECK ((select auth.uid()) = user_id);
+  -- mock_endpoints, mock_routes (supabase/mock-api-migration.sql)
+  IF to_regclass('public.mock_endpoints') IS NOT NULL THEN
+    DROP POLICY IF EXISTS "mock_endpoints_own_row" ON mock_endpoints;
+    CREATE POLICY "mock_endpoints_own_row" ON mock_endpoints
+      FOR ALL USING ((select auth.uid()) = user_id) WITH CHECK ((select auth.uid()) = user_id);
+  END IF;
 
-DROP POLICY IF EXISTS "mock_routes_own_endpoint" ON mock_routes;
-CREATE POLICY "mock_routes_own_endpoint" ON mock_routes
-  FOR ALL
-  USING (endpoint_id IN (SELECT id FROM mock_endpoints WHERE user_id = (select auth.uid())))
-  WITH CHECK (endpoint_id IN (SELECT id FROM mock_endpoints WHERE user_id = (select auth.uid())));
+  IF to_regclass('public.mock_routes') IS NOT NULL THEN
+    DROP POLICY IF EXISTS "mock_routes_own_endpoint" ON mock_routes;
+    CREATE POLICY "mock_routes_own_endpoint" ON mock_routes
+      FOR ALL
+      USING (endpoint_id IN (SELECT id FROM mock_endpoints WHERE user_id = (select auth.uid())))
+      WITH CHECK (endpoint_id IN (SELECT id FROM mock_endpoints WHERE user_id = (select auth.uid())));
+  END IF;
 
--- profiles, tool_history, achievements (supabase/profile-schema.sql)
-DROP POLICY IF EXISTS "profiles_select_own" ON profiles;
-CREATE POLICY "profiles_select_own" ON profiles FOR SELECT USING ((select auth.uid()) = id);
-DROP POLICY IF EXISTS "profiles_update_own" ON profiles;
-CREATE POLICY "profiles_update_own" ON profiles FOR UPDATE USING ((select auth.uid()) = id);
-DROP POLICY IF EXISTS "profiles_insert_own" ON profiles;
-CREATE POLICY "profiles_insert_own" ON profiles FOR INSERT WITH CHECK ((select auth.uid()) = id);
+  -- profiles, tool_history, achievements (supabase/profile-schema.sql)
+  IF to_regclass('public.profiles') IS NOT NULL THEN
+    DROP POLICY IF EXISTS "profiles_select_own" ON profiles;
+    CREATE POLICY "profiles_select_own" ON profiles FOR SELECT USING ((select auth.uid()) = id);
+    DROP POLICY IF EXISTS "profiles_update_own" ON profiles;
+    CREATE POLICY "profiles_update_own" ON profiles FOR UPDATE USING ((select auth.uid()) = id);
+    DROP POLICY IF EXISTS "profiles_insert_own" ON profiles;
+    CREATE POLICY "profiles_insert_own" ON profiles FOR INSERT WITH CHECK ((select auth.uid()) = id);
+  END IF;
 
-DROP POLICY IF EXISTS "tool_history_select" ON tool_history;
-CREATE POLICY "tool_history_select" ON tool_history FOR SELECT USING ((select auth.uid()) = user_id);
-DROP POLICY IF EXISTS "tool_history_insert" ON tool_history;
-CREATE POLICY "tool_history_insert" ON tool_history FOR INSERT WITH CHECK ((select auth.uid()) = user_id);
+  IF to_regclass('public.tool_history') IS NOT NULL THEN
+    DROP POLICY IF EXISTS "tool_history_select" ON tool_history;
+    CREATE POLICY "tool_history_select" ON tool_history FOR SELECT USING ((select auth.uid()) = user_id);
+    DROP POLICY IF EXISTS "tool_history_insert" ON tool_history;
+    CREATE POLICY "tool_history_insert" ON tool_history FOR INSERT WITH CHECK ((select auth.uid()) = user_id);
+  END IF;
 
-DROP POLICY IF EXISTS "achievements_select" ON achievements;
-CREATE POLICY "achievements_select" ON achievements FOR SELECT USING ((select auth.uid()) = user_id);
-DROP POLICY IF EXISTS "achievements_insert" ON achievements;
-CREATE POLICY "achievements_insert" ON achievements FOR INSERT WITH CHECK ((select auth.uid()) = user_id);
+  IF to_regclass('public.achievements') IS NOT NULL THEN
+    DROP POLICY IF EXISTS "achievements_select" ON achievements;
+    CREATE POLICY "achievements_select" ON achievements FOR SELECT USING ((select auth.uid()) = user_id);
+    DROP POLICY IF EXISTS "achievements_insert" ON achievements;
+    CREATE POLICY "achievements_insert" ON achievements FOR INSERT WITH CHECK ((select auth.uid()) = user_id);
+  END IF;
 
--- salary_submissions (supabase/salary-calculator-migration.sql)
-DROP POLICY IF EXISTS "salary_submissions_own_row" ON salary_submissions;
-CREATE POLICY "salary_submissions_own_row" ON salary_submissions
-  FOR ALL USING ((select auth.uid()) = user_id) WITH CHECK ((select auth.uid()) = user_id);
+  -- salary_submissions (supabase/salary-calculator-migration.sql)
+  IF to_regclass('public.salary_submissions') IS NOT NULL THEN
+    DROP POLICY IF EXISTS "salary_submissions_own_row" ON salary_submissions;
+    CREATE POLICY "salary_submissions_own_row" ON salary_submissions
+      FOR ALL USING ((select auth.uid()) = user_id) WITH CHECK ((select auth.uid()) = user_id);
+  END IF;
 
--- tool_usage_events (supabase/tool-usage-events-rls-migration.sql)
-DROP POLICY IF EXISTS "Users can insert own usage events" ON tool_usage_events;
-CREATE POLICY "Users can insert own usage events" ON tool_usage_events
-  FOR INSERT WITH CHECK (user_id IS NULL OR (select auth.uid()) = user_id);
-DROP POLICY IF EXISTS "Users can view own usage events" ON tool_usage_events;
-CREATE POLICY "Users can view own usage events" ON tool_usage_events
-  FOR SELECT USING ((select auth.uid()) = user_id);
+  -- tool_usage_events (supabase/tool-usage-events-rls-migration.sql)
+  IF to_regclass('public.tool_usage_events') IS NOT NULL THEN
+    DROP POLICY IF EXISTS "Users can insert own usage events" ON tool_usage_events;
+    CREATE POLICY "Users can insert own usage events" ON tool_usage_events
+      FOR INSERT WITH CHECK (user_id IS NULL OR (select auth.uid()) = user_id);
+    DROP POLICY IF EXISTS "Users can view own usage events" ON tool_usage_events;
+    CREATE POLICY "Users can view own usage events" ON tool_usage_events
+      FOR SELECT USING ((select auth.uid()) = user_id);
+  END IF;
 
--- trainer_progress (supabase/trainer-migration.sql)
-DROP POLICY IF EXISTS "trainer_progress_own_row" ON trainer_progress;
-CREATE POLICY "trainer_progress_own_row" ON trainer_progress
-  FOR ALL USING ((select auth.uid()) = user_id) WITH CHECK ((select auth.uid()) = user_id);
+  -- trainer_progress (supabase/trainer-migration.sql)
+  IF to_regclass('public.trainer_progress') IS NOT NULL THEN
+    DROP POLICY IF EXISTS "trainer_progress_own_row" ON trainer_progress;
+    CREATE POLICY "trainer_progress_own_row" ON trainer_progress
+      FOR ALL USING ((select auth.uid()) = user_id) WITH CHECK ((select auth.uid()) = user_id);
+  END IF;
 
--- webhook_bins, webhook_requests (supabase/webhook-inspector-migration.sql)
-DROP POLICY IF EXISTS "webhook_bins_own_row" ON webhook_bins;
-CREATE POLICY "webhook_bins_own_row" ON webhook_bins
-  FOR ALL USING ((select auth.uid()) = user_id) WITH CHECK ((select auth.uid()) = user_id);
+  -- webhook_bins, webhook_requests (supabase/webhook-inspector-migration.sql)
+  IF to_regclass('public.webhook_bins') IS NOT NULL THEN
+    DROP POLICY IF EXISTS "webhook_bins_own_row" ON webhook_bins;
+    CREATE POLICY "webhook_bins_own_row" ON webhook_bins
+      FOR ALL USING ((select auth.uid()) = user_id) WITH CHECK ((select auth.uid()) = user_id);
+  END IF;
 
-DROP POLICY IF EXISTS "webhook_requests_own_bin" ON webhook_requests;
-CREATE POLICY "webhook_requests_own_bin" ON webhook_requests
-  FOR ALL
-  USING (bin_id IN (SELECT id FROM webhook_bins WHERE user_id = (select auth.uid())))
-  WITH CHECK (bin_id IN (SELECT id FROM webhook_bins WHERE user_id = (select auth.uid())));
+  IF to_regclass('public.webhook_requests') IS NOT NULL THEN
+    DROP POLICY IF EXISTS "webhook_requests_own_bin" ON webhook_requests;
+    CREATE POLICY "webhook_requests_own_bin" ON webhook_requests
+      FOR ALL
+      USING (bin_id IN (SELECT id FROM webhook_bins WHERE user_id = (select auth.uid())))
+      WITH CHECK (bin_id IN (SELECT id FROM webhook_bins WHERE user_id = (select auth.uid())));
+  END IF;
 
--- workbenches (supabase/workbench-schema.sql) — workbenches_select_public
--- (supabase/workbench-freeform-migration.sql) уже не использует auth.uid()
--- (is_public = true), её не трогаем.
-DROP POLICY IF EXISTS "workbenches_select" ON workbenches;
-CREATE POLICY "workbenches_select" ON workbenches FOR SELECT USING ((select auth.uid()) = user_id);
-DROP POLICY IF EXISTS "workbenches_insert" ON workbenches;
-CREATE POLICY "workbenches_insert" ON workbenches FOR INSERT WITH CHECK ((select auth.uid()) = user_id);
-DROP POLICY IF EXISTS "workbenches_update" ON workbenches;
-CREATE POLICY "workbenches_update" ON workbenches FOR UPDATE USING ((select auth.uid()) = user_id);
-DROP POLICY IF EXISTS "workbenches_delete" ON workbenches;
-CREATE POLICY "workbenches_delete" ON workbenches FOR DELETE USING ((select auth.uid()) = user_id);
+  -- workbenches (supabase/workbench-schema.sql) — workbenches_select_public
+  -- (supabase/workbench-freeform-migration.sql) уже не использует auth.uid()
+  -- (is_public = true), её не трогаем.
+  IF to_regclass('public.workbenches') IS NOT NULL THEN
+    DROP POLICY IF EXISTS "workbenches_select" ON workbenches;
+    CREATE POLICY "workbenches_select" ON workbenches FOR SELECT USING ((select auth.uid()) = user_id);
+    DROP POLICY IF EXISTS "workbenches_insert" ON workbenches;
+    CREATE POLICY "workbenches_insert" ON workbenches FOR INSERT WITH CHECK ((select auth.uid()) = user_id);
+    DROP POLICY IF EXISTS "workbenches_update" ON workbenches;
+    CREATE POLICY "workbenches_update" ON workbenches FOR UPDATE USING ((select auth.uid()) = user_id);
+    DROP POLICY IF EXISTS "workbenches_delete" ON workbenches;
+    CREATE POLICY "workbenches_delete" ON workbenches FOR DELETE USING ((select auth.uid()) = user_id);
+  END IF;
 
--- profile_views, skill_endorsements (supabase/skill-endorsements-migration.sql)
--- skill_endorsements_insert НЕ трогаем здесь — она уже переопределяется
--- (в уже оптимальном виде) в skill-endorsements-tag-check-migration.sql;
--- если применяешь миграции по порядку, эта здесь была бы просто лишним
--- промежуточным шагом.
-DROP POLICY IF EXISTS "profile_views_select_own" ON profile_views;
-CREATE POLICY "profile_views_select_own" ON profile_views FOR SELECT USING ((select auth.uid()) = viewer_id);
-DROP POLICY IF EXISTS "profile_views_insert_own" ON profile_views;
-CREATE POLICY "profile_views_insert_own" ON profile_views FOR INSERT WITH CHECK ((select auth.uid()) = viewer_id);
-DROP POLICY IF EXISTS "profile_views_update_own" ON profile_views;
-CREATE POLICY "profile_views_update_own" ON profile_views
-  FOR UPDATE USING ((select auth.uid()) = viewer_id) WITH CHECK ((select auth.uid()) = viewer_id);
+  -- profile_views, skill_endorsements (supabase/skill-endorsements-migration.sql)
+  -- skill_endorsements_insert НЕ трогаем здесь — она уже переопределяется
+  -- (в уже оптимальном виде) в skill-endorsements-tag-check-migration.sql.
+  IF to_regclass('public.profile_views') IS NOT NULL THEN
+    DROP POLICY IF EXISTS "profile_views_select_own" ON profile_views;
+    CREATE POLICY "profile_views_select_own" ON profile_views FOR SELECT USING ((select auth.uid()) = viewer_id);
+    DROP POLICY IF EXISTS "profile_views_insert_own" ON profile_views;
+    CREATE POLICY "profile_views_insert_own" ON profile_views FOR INSERT WITH CHECK ((select auth.uid()) = viewer_id);
+    DROP POLICY IF EXISTS "profile_views_update_own" ON profile_views;
+    CREATE POLICY "profile_views_update_own" ON profile_views
+      FOR UPDATE USING ((select auth.uid()) = viewer_id) WITH CHECK ((select auth.uid()) = viewer_id);
+  END IF;
 
-DROP POLICY IF EXISTS "skill_endorsements_select_own" ON skill_endorsements;
-CREATE POLICY "skill_endorsements_select_own" ON skill_endorsements FOR SELECT USING (
-  (select auth.uid()) = endorser_id OR (select auth.uid()) = endorsee_id
-);
-DROP POLICY IF EXISTS "skill_endorsements_delete" ON skill_endorsements;
-CREATE POLICY "skill_endorsements_delete" ON skill_endorsements FOR DELETE USING ((select auth.uid()) = endorser_id);
+  IF to_regclass('public.skill_endorsements') IS NOT NULL THEN
+    DROP POLICY IF EXISTS "skill_endorsements_select_own" ON skill_endorsements;
+    CREATE POLICY "skill_endorsements_select_own" ON skill_endorsements FOR SELECT USING (
+      (select auth.uid()) = endorser_id OR (select auth.uid()) = endorsee_id
+    );
+    DROP POLICY IF EXISTS "skill_endorsements_delete" ON skill_endorsements;
+    CREATE POLICY "skill_endorsements_delete" ON skill_endorsements FOR DELETE USING ((select auth.uid()) = endorser_id);
+  END IF;
+END $$;
