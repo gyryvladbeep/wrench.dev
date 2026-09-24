@@ -52,8 +52,24 @@ function uniqueTestEmail(): string {
   return `qa-test-${Date.now()}-${Math.floor(Math.random() * 100000)}@wrench-test.dev`;
 }
 
-const PASSWORD = "TestPassword123!";
-const PASSWORD_AFTER_DUPLICATE_ATTEMPT = "AnotherPassword456!";
+// Раньше здесь были фиксированные строки "TestPassword123!" /
+// "AnotherPassword456!" — с тех пор как SignupForm.tsx начал сам
+// проверять пароль по базе утечек HaveIBeenPwned (lib/auth/check-
+// pwned-password.ts), такие очевидные "тестовые" пароли стабильно
+// проваливали регистрацию именно из-за этой проверки (они реально
+// встречаются в утечках), а не из-за настоящей ошибки в тесте — в том
+// числе PASSWORD_AFTER_DUPLICATE_ATTEMPT ниже, который тоже уходит
+// через ту же форму (проверка на утечку идёт раньше проверки "email
+// уже занят", так что тест на дубликат email спотыкался бы о
+// предыдущий шаг, а не проверял то, что должен). Случайный суффикс,
+// тот же принцип, что и у uniqueTestEmail() выше, делает коллизию с
+// базой утечек практически невозможной.
+function uniqueTestPassword(): string {
+  return `Wr3nch-${Date.now()}-${Math.floor(Math.random() * 1e9)}!Qz`;
+}
+
+const PASSWORD = uniqueTestPassword();
+const PASSWORD_AFTER_DUPLICATE_ATTEMPT = uniqueTestPassword();
 
 // Ждём один из двух возможных исходов сетевого auth-запроса и явно
 // говорим, какой из них случился — вместо того чтобы просто упасть по

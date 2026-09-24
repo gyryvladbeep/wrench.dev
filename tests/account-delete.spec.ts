@@ -46,7 +46,19 @@ function uniqueTestEmail(): string {
   return `account-delete-test-${Date.now()}-${Math.floor(Math.random() * 100000)}@wrench-test.dev`;
 }
 
-const PASSWORD = "TestPassword123!";
+// Раньше здесь была фиксированная строка "TestPassword123!" — с тех
+// пор как SignupForm.tsx начал сам проверять пароль по базе утечек
+// HaveIBeenPwned (lib/auth/check-pwned-password.ts), такой очевидный
+// "тестовый" пароль стабильно проваливал регистрацию именно из-за
+// этой проверки (он реально встречается в утечках), а не из-за
+// настоящей ошибки в тесте. Случайный суффикс, тот же принцип, что и
+// у uniqueTestEmail() выше, делает коллизию с базой утечек практически
+// невозможной.
+function uniqueTestPassword(): string {
+  return `Wr3nch-${Date.now()}-${Math.floor(Math.random() * 1e9)}!Qz`;
+}
+
+const PASSWORD = uniqueTestPassword();
 
 async function openAccountMenu(page: Page): Promise<void> {
   await page.getByRole("banner").getByRole("button", { name: "Account menu" }).click();
