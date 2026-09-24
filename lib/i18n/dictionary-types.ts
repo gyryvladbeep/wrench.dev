@@ -77,6 +77,8 @@ export interface Dictionary {
     signingUp: string;
     sending: string;
     passwordsNoMatch: string;
+    passwordTooShort: string;
+    passwordLeaked: string;
     checkEmail: string;
     emailAlreadyRegistered: string;
     profileHeading: string;

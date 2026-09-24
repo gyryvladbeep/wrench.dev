@@ -71,6 +71,8 @@ export const ru: Dictionary = {
     signingUp: "Создаём аккаунт…",
     sending: "Отправляем…",
     passwordsNoMatch: "Пароли не совпадают.",
+    passwordTooShort: "Пароль должен быть не короче 8 символов.",
+    passwordLeaked: "Этот пароль уже встречался в известных утечках данных. Пожалуйста, выберите другой.",
     checkEmail: "Проверьте почту — нужно подтвердить аккаунт.",
     emailAlreadyRegistered: "Аккаунт с таким email уже существует. Попробуйте войти вместо регистрации.",
     profileHeading: "Ваш профиль",

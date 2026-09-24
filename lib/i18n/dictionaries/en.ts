@@ -71,6 +71,8 @@ export const en: Dictionary = {
     signingUp: "Creating account…",
     sending: "Sending…",
     passwordsNoMatch: "Passwords don't match.",
+    passwordTooShort: "Password must be at least 8 characters.",
+    passwordLeaked: "This password has appeared in a known data breach. Please choose a different one.",
     checkEmail: "Check your email to confirm your account.",
     emailAlreadyRegistered: "An account with this email already exists. Try signing in instead.",
     profileHeading: "Your profile",

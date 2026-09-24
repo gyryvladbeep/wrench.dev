@@ -8,6 +8,7 @@ import { Dictionary } from "@/lib/i18n/dictionary-types";
 import { Locale, localePath } from "@/lib/i18n/config";
 import { Button } from "@/components/ui/button";
 import { OAuthButtons } from "./OAuthButtons";
+import { isPasswordPwned } from "@/lib/auth/check-pwned-password";
 
 export function SignupForm({ dict, locale }: { dict: Dictionary; locale: Locale }) {
   const [email, setEmail] = useState("");
@@ -22,8 +23,27 @@ export function SignupForm({ dict, locale }: { dict: Dictionary; locale: Locale 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (password !== confirm) { setError(t.passwordsNoMatch); return; }
+    // Дублируем minLength={8} с самого input'а здесь же — атрибут HTML
+    // защищает только форму в браузере, а не сам API-вызов ниже (его
+    // можно дёрнуть напрямую, в обход формы).
+    if (password.length < 8) { setError(t.passwordTooShort); return; }
     setLoading(true);
     setError("");
+
+    // Бесплатная замена Supabase "Leaked password protection" (эта
+    // функция там только на платном плане Pro) — см.
+    // lib/auth/check-pwned-password.ts. isPasswordPwned() отдаёт null,
+    // если сама проверка не удалась (сеть, недоступность API) — в этом
+    // случае намеренно НЕ блокируем регистрацию: это дополнительный
+    // слой защиты поверх обычной валидации, а не единственный, и
+    // падать с ошибкой из-за недоступности стороннего сервиса не стоит.
+    const pwned = await isPasswordPwned(password);
+    if (pwned) {
+      setError(t.passwordLeaked);
+      setLoading(false);
+      return;
+    }
+
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -57,8 +77,12 @@ export function SignupForm({ dict, locale }: { dict: Dictionary; locale: Locale 
       setError(t.emailAlreadyRegistered);
       setLoading(false);
     } else {
-      // Trigger confirmed automatically — redirect to home
-      router.push(localePath(locale, "/"));
+      // Trigger confirmed automatically — redirect to home. ?tour=1 —
+      // предлагает экскурсию по продукту (roadmap item 16, доработка,
+      // см. ProductTour.tsx) — тут мы ТОЧНО знаем, что это только что
+      // созданный аккаунт, в отличие от OAuth-варианта (см. комментарий
+      // в auth/callback/route.ts).
+      router.push(localePath(locale, "/?tour=1"));
       router.refresh();
     }
   }
