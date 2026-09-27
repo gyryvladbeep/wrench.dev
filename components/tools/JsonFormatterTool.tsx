@@ -6,6 +6,7 @@ import { Dictionary } from "@/lib/i18n/dictionary-types";
 import { ToolShell } from "./ToolShell";
 import { EmptyToolInput } from "@/components/EmptyState";
 import { CloseIcon } from "@/components/icons/GameIcons";
+import { PinCaseButton } from "@/components/vault/PinCaseButton";
 
 const SAMPLE = `{"name":"Ada Lovelace","born":1815,"skills":["math","programming"],"active":true}`;
 
@@ -45,6 +46,13 @@ export function JsonFormatterTool({ dict }: { dict: Dictionary }) {
             onClick={()=>{const b=new Blob([result.ok?result.value:""],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="formatted.json";a.click();}}>
             {dict.common.download}
           </Button>
+          {result.ok && result.value && (
+            <PinCaseButton
+              toolSlug="json-formatter"
+              isRu={isRu}
+              getCase={() => ({ input, output: result.value })}
+            />
+          )}
         </div>
       </>}
     >

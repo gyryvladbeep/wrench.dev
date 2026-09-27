@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { Dictionary } from "@/lib/i18n/dictionary-types";
+import { PinCaseButton } from "@/components/vault/PinCaseButton";
 
 interface MatchInfo { text: string; index: number; groups: (string | undefined)[]; }
 
@@ -98,10 +99,20 @@ export function RegexTesterTool({ dict }: { dict: Dictionary }) {
       {result.ok && (
         <>
           <div className="mt-4">
-            <span className="text-xs font-medium text-text-muted">
-              {t.matchCountPattern.replace("{count}", String(result.matches.length))}{" "}
-              {result.matches.length === 1 ? t.matchCountSuffix1 : t.matchCountSuffixN}
-            </span>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="text-xs font-medium text-text-muted">
+                {t.matchCountPattern.replace("{count}", String(result.matches.length))}{" "}
+                {result.matches.length === 1 ? t.matchCountSuffix1 : t.matchCountSuffixN}
+              </span>
+              <PinCaseButton
+                toolSlug="regex-tester"
+                isRu={isRu}
+                getCase={() => ({
+                  input: { pattern, flags, testString },
+                  output: result.matches.map((m) => ({ text: m.text, index: m.index, groups: m.groups })),
+                })}
+              />
+            </div>
             {highlighted && (
               <p className="code-surface mt-2 rounded-[10px] p-3 font-mono text-sm leading-relaxed text-text-primary">
                 {highlighted.map((part, i) =>

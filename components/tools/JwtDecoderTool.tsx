@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { CopyButton } from "@/components/CopyButton";
 import { Dictionary } from "@/lib/i18n/dictionary-types";
+import { PinCaseButton } from "@/components/vault/PinCaseButton";
 
 const SAMPLE_JWT =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkFkYSBMb3ZlbGFjZSIsImlhdCI6MTUxNjIzOTAyMn0.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
@@ -173,6 +174,16 @@ export function JwtDecoderTool({ dict }: { dict: Dictionary }) {
               })}
             </div>
           )}
+        </div>
+      )}
+
+      {decoded.ok && (
+        <div className="mt-4 flex justify-end">
+          <PinCaseButton
+            toolSlug="jwt-decoder"
+            isRu={dict.isRu}
+            getCase={() => ({ input: { token }, output: { header: decoded.header, payload: decoded.payload } })}
+          />
         </div>
       )}
 

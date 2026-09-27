@@ -30,3 +30,11 @@ export const WEBHOOK_REQUEST_RETENTION = 50;
 // расходу места в бесплатном тарифе Supabase — тот же порядок величины,
 // что и у настоящего API-ответа с реалистичным по объёму JSON.
 export const MAX_MOCK_RESPONSE_BODY_LENGTH = 20_000;
+
+// Test Vault (см. lib/hooks/usePinnedCases.ts) — единый потолок без
+// разделения free/Pro: сама фича не завязана на подписку (AI не
+// нужен, доступна и анонимно через localStorage), но без верхней
+// границы таблица pinned_cases росла бы неограниченно от одного и
+// того же пользователя — тот же класс защиты, что и у
+// MAX_MOCK_RESPONSE_BODY_LENGTH выше.
+export const MAX_PINNED_CASES = 200;

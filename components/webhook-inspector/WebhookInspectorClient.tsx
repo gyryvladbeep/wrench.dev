@@ -13,6 +13,95 @@ const FALLBACK_ORIGIN = "https://wrench-dev-lr29.vercel.app";
 // см. обоснование "поллинг вместо realtime" в lib/hooks/useWebhookBins.ts.
 const POLL_MS = 5000;
 
+// ───────────────────────────────────────────────────────────────────
+// I4: структурный diff между двумя вручную выбранными захватами
+// в одном бине — headers/query как есть (уже плоские объекты),
+// тело — разворачивается в dot-path, если похоже на JSON (как в
+// JsonDiffTool.tsx), иначе сравнивается целиком как одна строка.
+// ───────────────────────────────────────────────────────────────────
+type ReqDiffEntry = { key: string; type: "added" | "removed" | "changed" | "unchanged"; left?: unknown; right?: unknown };
+
+function flattenForDiff(obj: unknown, prefix = ""): Record<string, unknown> {
+  if (typeof obj !== "object" || obj === null) return { [prefix || "value"]: obj };
+  const result: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(obj as Record<string, unknown>)) {
+    const fullKey = prefix ? `${prefix}.${k}` : k;
+    if (typeof v === "object" && v !== null && !Array.isArray(v)) {
+      Object.assign(result, flattenForDiff(v, fullKey));
+    } else {
+      result[fullKey] = v;
+    }
+  }
+  return result;
+}
+
+function diffFlat(left: Record<string, unknown>, right: Record<string, unknown>): ReqDiffEntry[] {
+  const allKeys = new Set([...Object.keys(left), ...Object.keys(right)]);
+  const diffs: ReqDiffEntry[] = [];
+  for (const key of allKeys) {
+    const lv = left[key], rv = right[key];
+    if (!(key in left)) diffs.push({ key, type: "added", right: rv });
+    else if (!(key in right)) diffs.push({ key, type: "removed", left: lv });
+    else if (JSON.stringify(lv) !== JSON.stringify(rv)) diffs.push({ key, type: "changed", left: lv, right: rv });
+    else diffs.push({ key, type: "unchanged", left: lv, right: rv });
+  }
+  return diffs.sort((a, b) => a.key.localeCompare(b.key));
+}
+
+function bodyForDiff(body: string, contentType: string | null): Record<string, unknown> {
+  if (!body) return {};
+  const looksJson = (contentType ?? "").includes("json") || /^\s*[[{]/.test(body);
+  if (looksJson) {
+    try { return flattenForDiff(JSON.parse(body)); } catch { /* не парсится — сравним как одну строку ниже */ }
+  }
+  return { body };
+}
+
+function diffRequests(a: WebhookRequestRow, b: WebhookRequestRow) {
+  return {
+    headers: diffFlat(a.headers, b.headers),
+    query: diffFlat(a.query, b.query),
+    body: diffFlat(bodyForDiff(a.body, a.content_type), bodyForDiff(b.body, b.content_type)),
+  };
+}
+
+const REQ_DIFF_TYPE_STYLES: Record<string, string> = {
+  added: "bg-green-900/20 border-green-800/30",
+  removed: "bg-red-900/20 border-red-800/30",
+  changed: "bg-amber-900/20 border-amber-800/30",
+  unchanged: "bg-surface border-border opacity-50",
+};
+
+function ReqDiffSection({ title, entries }: { title: string; entries: ReqDiffEntry[]; isRu: boolean }) {
+  const changed = entries.filter((e) => e.type !== "unchanged");
+  if (changed.length === 0) return null;
+  return (
+    <div>
+      <p className="input-label">{title}</p>
+      <div className="space-y-1">
+        {changed.map((d, i) => (
+          <div key={i} className={`flex gap-3 rounded-lg border px-3 py-1.5 ${REQ_DIFF_TYPE_STYLES[d.type]}`}>
+            <span className="font-mono text-xs text-text-muted w-4">
+              {d.type === "added" ? "+" : d.type === "removed" ? "−" : "~"}
+            </span>
+            <span className="font-mono text-xs text-text-secondary w-40 shrink-0 truncate">{d.key}</span>
+            <div className="min-w-0 flex-1 space-y-0.5">
+              {d.type === "changed" && (
+                <>
+                  <p className="font-mono text-xs text-red-400 line-through truncate">{JSON.stringify(d.left)}</p>
+                  <p className="font-mono text-xs text-success truncate">{JSON.stringify(d.right)}</p>
+                </>
+              )}
+              {d.type === "added" && <p className="font-mono text-xs text-success truncate">{JSON.stringify(d.right)}</p>}
+              {d.type === "removed" && <p className="font-mono text-xs text-red-400 truncate">{JSON.stringify(d.left)}</p>}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function timeAgo(iso: string, isRu: boolean): string {
   const seconds = Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 1000));
   if (seconds < 60) return isRu ? `${seconds}с назад` : `${seconds}s ago`;
@@ -183,6 +272,24 @@ function BinCard({
 }) {
   const url = `${origin}/api/hook/${bin.slug}`;
   const [confirmClear, setConfirmClear] = useState(false);
+  const [compareIds, setCompareIds] = useState<string[]>([]);
+
+  function toggleCompare(id: string) {
+    setCompareIds((prev) => {
+      if (prev.includes(id)) return prev.filter((x) => x !== id);
+      if (prev.length >= 2) return prev;
+      return [...prev, id];
+    });
+  }
+
+  const comparePair = compareIds.length === 2
+    ? bin.webhook_requests.filter((r) => compareIds.includes(r.id))
+    : [];
+  // Более старый захват — слева, более новый — справа,
+  // независимо от того, в каком порядке их кликали.
+  const [reqOld, reqNew] = comparePair.length === 2
+    ? [...comparePair].sort((a, b) => new Date(a.received_at).getTime() - new Date(b.received_at).getTime())
+    : [undefined, undefined];
 
   return (
     <div className="rounded-lg border border-border bg-canvas p-4">
@@ -242,15 +349,65 @@ function BinCard({
       ) : (
         <div className="space-y-2">
           {bin.webhook_requests.map((req) => (
-            <RequestRow key={req.id} req={req} isRu={isRu} onDelete={() => onDeleteRequest(req.id)} />
+            <RequestRow
+              key={req.id}
+              req={req}
+              isRu={isRu}
+              onDelete={() => onDeleteRequest(req.id)}
+              compareSelected={compareIds.includes(req.id)}
+              onToggleCompare={() => toggleCompare(req.id)}
+              compareDisabled={compareIds.length >= 2 && !compareIds.includes(req.id)}
+            />
           ))}
+
+          {compareIds.length === 1 && (
+            <p className="text-xs text-text-muted">
+              {isRu ? "Выбран 1 захват — выбери ещё один, чтобы сравнить." : "1 request selected — pick one more to compare."}
+            </p>
+          )}
+
+          {reqOld && reqNew && (() => {
+            const d = diffRequests(reqOld, reqNew);
+            const totalChanged = [...d.headers, ...d.query, ...d.body].filter((e) => e.type !== "unchanged").length;
+            return (
+              <div className="space-y-3 rounded-lg border border-accent/30 bg-canvas p-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="text-sm font-semibold text-text-primary">
+                    {isRu ? "Сравнение захватов" : "Request comparison"}
+                  </p>
+                  <button onClick={() => setCompareIds([])} className="text-xs text-text-muted transition-colors hover:text-text-primary">
+                    {isRu ? "Сбросить выбор" : "Clear selection"}
+                  </button>
+                </div>
+                <p className="text-xs text-text-muted">
+                  {timeAgo(reqOld.received_at, isRu)} &rarr; {timeAgo(reqNew.received_at, isRu)}
+                </p>
+                {totalChanged === 0 ? (
+                  <p className="text-sm text-success">{isRu ? "Запросы идентичны" : "Requests are identical"}</p>
+                ) : (
+                  <>
+                    <ReqDiffSection title={isRu ? "Query-параметры" : "Query params"} entries={d.query} isRu={isRu} />
+                    <ReqDiffSection title={isRu ? "Заголовки" : "Headers"} entries={d.headers} isRu={isRu} />
+                    <ReqDiffSection title={isRu ? "Тело" : "Body"} entries={d.body} isRu={isRu} />
+                  </>
+                )}
+              </div>
+            );
+          })()}
         </div>
       )}
     </div>
   );
 }
 
-function RequestRow({ req, isRu, onDelete }: { req: WebhookRequestRow; isRu: boolean; onDelete: () => void }) {
+function RequestRow({ req, isRu, onDelete, compareSelected, onToggleCompare, compareDisabled }: {
+  req: WebhookRequestRow;
+  isRu: boolean;
+  onDelete: () => void;
+  compareSelected: boolean;
+  onToggleCompare: () => void;
+  compareDisabled: boolean;
+}) {
   const [open, setOpen] = useState(false);
   const bodyBytes = new TextEncoder().encode(req.body).length;
   const queryEntries = Object.entries(req.query);
@@ -268,6 +425,16 @@ function RequestRow({ req, isRu, onDelete }: { req: WebhookRequestRow; isRu: boo
           <span className="text-xs text-text-muted">{bodyBytes}B</span>
         </button>
         <span className="text-xs text-text-muted">{timeAgo(req.received_at, isRu)}</span>
+        <label className={`flex items-center gap-1 text-xs ${compareDisabled ? "text-text-disabled" : "text-text-muted"} cursor-pointer`}>
+          <input
+            type="checkbox"
+            checked={compareSelected}
+            disabled={compareDisabled}
+            onChange={onToggleCompare}
+            className="accent-accent"
+          />
+          {isRu ? "Сравнить" : "Compare"}
+        </label>
         <button
           onClick={onDelete}
           aria-label={isRu ? "Удалить запрос" : "Delete request"}

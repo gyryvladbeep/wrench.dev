@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth/auth-context";
 import { useSubscription } from "@/lib/hooks/useSubscription";
@@ -9,6 +9,7 @@ import { localePath, Locale } from "@/lib/i18n/config";
 import { CopyButton } from "@/components/CopyButton";
 import { LayersIcon, CloseIcon, UploadIcon } from "@/components/icons/GameIcons";
 import { ImportCollectionModal } from "@/components/mock-api/ImportCollectionModal";
+import { EDGE_CASE_LIBRARY } from "@/lib/mock-api/edge-cases";
 
 const METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE"] as const;
 const FALLBACK_ORIGIN = "https://wrench-dev-lr29.vercel.app";
@@ -189,6 +190,28 @@ function EndpointCard({
   const [form, setForm] = useState<RouteFormState>(DEFAULT_ROUTE_FORM);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const bodyTextareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Замена I3: вставляет готовое эдж-кейс значение в позицию курсора
+  // текстового поля тела ответа — без вызова какого-либо AI/сервиса,
+  // см. lib/mock-api/edge-cases.ts.
+  function insertEdgeCase(value: unknown) {
+    const text = JSON.stringify(value);
+    const el = bodyTextareaRef.current;
+    if (!el) {
+      setForm((f) => ({ ...f, response_body: f.response_body + text }));
+      return;
+    }
+    const start = el.selectionStart ?? el.value.length;
+    const end = el.selectionEnd ?? el.value.length;
+    const nextValue = el.value.slice(0, start) + text + el.value.slice(end);
+    setForm((f) => ({ ...f, response_body: nextValue }));
+    const cursor = start + text.length;
+    requestAnimationFrame(() => {
+      el.focus();
+      el.setSelectionRange(cursor, cursor);
+    });
+  }
 
   const bodyResult = useMemo(() => {
     try {
@@ -314,11 +337,19 @@ function EndpointCard({
         </div>
 
         <div>
-          <label className="input-label">{isRu ? "Тело ответа (JSON)" : "Response body (JSON)"}</label>
-          <textarea rows={5} value={form.response_body}
+          <div className="mb-1 flex items-center gap-2">
+            <label className="input-label mb-0 shrink-0">{isRu ? "Тело ответа (JSON)" : "Response body (JSON)"}</label>
+            <div className="ml-auto"><EdgeCasePicker isRu={isRu} onInsert={insertEdgeCase} /></div>
+          </div>
+          <textarea ref={bodyTextareaRef} rows={5} value={form.response_body}
             onChange={(e) => setForm((f) => ({ ...f, response_body: e.target.value }))}
             className={`code-surface w-full rounded-lg p-3 font-mono text-xs outline-none ${bodyResult.ok ? "text-text-primary" : "text-red-400"}`} />
           {!bodyResult.ok && <p className="mt-1 text-xs text-red-400">{bodyResult.message}</p>}
+          <p className="mt-1 text-[11px] text-text-muted">
+            {isRu
+              ? "Эдж-кейсы вставляются в позицию курсора — удобно подставить одно граничное значение в пример JSON."
+              : "Edge cases insert at the cursor position — handy for swapping in one boundary value inside your example JSON."}
+          </p>
         </div>
 
         <div>
@@ -479,5 +510,56 @@ function RouteLoadTestPanel({ url, method, isRu }: { url: string; method: string
         </div>
       )}
     </>
+  );
+}
+// Замена I3: детерминированная библиотека эдж-кейсов без AI (см.
+// lib/mock-api/edge-cases.ts) — кнопка открывает список категорий,
+// выбор вставляет значение в текстовое поле тела ответа.
+function EdgeCasePicker({ isRu, onInsert }: { isRu: boolean; onInsert: (value: unknown) => void }) {
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function onDocClick(e: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", onDocClick);
+    return () => document.removeEventListener("mousedown", onDocClick);
+  }, [open]);
+
+  return (
+    <div ref={containerRef} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="rounded border border-border px-2.5 py-1 text-xs text-text-secondary transition-colors hover:bg-surface-hover"
+      >
+        {isRu ? "⬚ Эдж-кейсы" : "⬚ Edge cases"}
+      </button>
+      {open && (
+        <div className="absolute right-0 top-full z-10 mt-1 w-72 max-h-80 overflow-y-auto rounded-lg border border-border bg-canvas p-2.5 shadow-lg">
+          {EDGE_CASE_LIBRARY.map((cat) => (
+            <div key={cat.id} className="mb-2.5 last:mb-0">
+              <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-text-muted">
+                {isRu ? cat.labelRu : cat.labelEn}
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {cat.options.map((opt) => (
+                  <button
+                    type="button"
+                    key={opt.id}
+                    onClick={() => { onInsert(opt.value); setOpen(false); }}
+                    className="rounded border border-border bg-surface px-2 py-1 text-[11px] text-text-secondary transition-colors hover:bg-surface-hover hover:text-text-primary"
+                  >
+                    {isRu ? opt.labelRu : opt.labelEn}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
