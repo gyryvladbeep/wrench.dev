@@ -44,7 +44,35 @@ function parseYaml(text: string): unknown {
         top.arr = arr;
         if (top.parent && top.key !== undefined) top.parent[top.key] = arr;
       }
-      top.arr.push(coerceScalar(itemText));
+
+      // ФИКС: элемент списка вида "- key: value" (список объектов, самый
+      // частый случай в реальном YAML — "servers:\n  - name: web1\n    port: 80")
+      // раньше целиком уходил в coerceScalar() как одна строка "name: web1",
+      // а последующая более отступленная "port: 80" писалась в осиротевший
+      // объект-placeholder родителя (тот, что чуть выше превратился в
+      // массив) — он больше ни на что не ссылается, так что port молча
+      // терялся. Теперь "- key: value" создаёт настоящий объект-элемент
+      // списка и кладёт на стек фрейм с тем же indent, что у "-" — все
+      // последующие ключи на отступе глубже (типичный многострочный
+      // элемент списка) продолжают писаться в этот же объект через
+      // обычную ветку "key:"/"key: value" ниже, а не в placeholder.
+      if (itemText.includes(":")) {
+        const colonIdx = itemText.indexOf(":");
+        const key = itemText.slice(0, colonIdx).trim();
+        const val = itemText.slice(colonIdx + 1).trim();
+        const itemObj: Record<string, unknown> = {};
+        top.arr.push(itemObj);
+        stack.push({ obj: itemObj, indent });
+        if (!val) {
+          const child: Record<string, unknown> = {};
+          itemObj[key] = child;
+          stack.push({ obj: child, indent: indent + 2, parent: itemObj, key });
+        } else {
+          itemObj[key] = coerceScalar(val);
+        }
+      } else {
+        top.arr.push(coerceScalar(itemText));
+      }
       continue;
     }
 
