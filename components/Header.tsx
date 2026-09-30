@@ -51,11 +51,11 @@ const ChevronIcon = ({ open }: { open: boolean }) => (
   </svg>
 );
 
-function NavLink({ href, children }: { href: string; children: React.ReactNode }) {
+function NavLink({ href, children, tourId }: { href: string; children: React.ReactNode; tourId?: string }) {
   const pathname = usePathname() ?? "";
   const active   = pathname === href || (href !== "/" && pathname.startsWith(href));
   return (
-    <Link href={href} className={`text-sm transition-colors duration-100 ${
+    <Link href={href} data-tour={tourId} className={`text-sm transition-colors duration-100 ${
       active ? "text-text-primary" : "text-text-muted hover:text-text-secondary"
     }`}>{children}</Link>
   );
@@ -65,11 +65,12 @@ function NavLink({ href, children }: { href: string; children: React.ReactNode }
 // используют одну и ту же механику открытия/закрытия (клик снаружи,
 // Esc), поэтому вынесено в один компонент вместо двух копий.
 function NavDropdown({
-  label, active, items,
+  label, active, items, tourId,
 }: {
   label: React.ReactNode;
   active: boolean;
   items: { key: string; href: string; icon?: React.ReactNode; label: string }[];
+  tourId?: string;
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -89,7 +90,7 @@ function NavDropdown({
   }, [open]);
 
   return (
-    <div ref={ref} className="relative">
+    <div ref={ref} data-tour={tourId} className="relative">
       <button
         onClick={() => setOpen((o) => !o)}
         className={`flex items-center gap-1 text-sm transition-colors duration-100 ${
@@ -172,7 +173,7 @@ function LearnDropdown({ locale }: { locale: Locale }) {
   ];
   const active = items.some((i) => pathname.startsWith(i.href));
   return (
-    <NavDropdown label={isRu ? "Обучение" : "Learn"} active={active} items={items} />
+    <NavDropdown label={isRu ? "Обучение" : "Learn"} active={active} items={items} tourId="nav-learn" />
   );
 }
 
@@ -277,6 +278,7 @@ function AvatarMenu() {
         onClick={() => setOpen((o) => !o)}
         title={user.email ?? ""}
         aria-label="Account menu"
+        data-tour="account"
         className="block rounded-full transition-opacity hover:opacity-80"
       >
         <AvatarGlyph
@@ -348,9 +350,9 @@ export function Header() {
           {/* Nav — 5 пунктов верхнего уровня вместо прежних 9-10, см.
               комментарий у CategoriesDropdown про то, почему. */}
           <nav className="hidden items-center gap-5 whitespace-nowrap lg:flex" aria-label="Main">
-            <NavLink href={localePath(locale, "/tools")}>{dict.nav.tools}</NavLink>
+            <NavLink href={localePath(locale, "/tools")} tourId="nav-tools">{dict.nav.tools}</NavLink>
             <CategoriesDropdown locale={locale} dict={dict} />
-            <NavLink href={localePath(locale, "/workbench")}>
+            <NavLink href={localePath(locale, "/workbench")} tourId="nav-workbench">
               <span className="flex items-center gap-1">
                 {isRu ? "Рабочий стол" : "Workbench"}
                 <span className="rounded bg-accent/20 px-1 py-px text-[9px] font-bold text-accent uppercase">New</span>

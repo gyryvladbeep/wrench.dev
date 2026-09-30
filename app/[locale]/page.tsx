@@ -11,6 +11,7 @@ import { ToolCard } from "@/components/ToolCard";
 import { RecentlyUsedSection } from "@/components/RecentlyUsedSection";
 import { ContinueWidget } from "@/components/ContinueWidget";
 import { DisciplineSectionsClient } from "@/components/DisciplineSectionsClient";
+import { ProductTour } from "@/components/onboarding/ProductTour";
 
 export async function generateMetadata(props: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const params = await props.params;
@@ -68,6 +69,11 @@ export default async function HomePage(props: { params: Promise<{ locale: string
 
   return (
     <div>
+      {/* Экскурсия по продукту сразу после регистрации (roadmap item 16,
+          доработка) — сама себя не показывает без ?tour=1 в URL, см.
+          комментарий в ProductTour.tsx. */}
+      <ProductTour />
+
       {/*
         ── Hero ──
         УРОК ПОЗИЦИОНИРОВАНИЯ (2-й раунд фидбека из Threads):
@@ -226,7 +232,7 @@ export default async function HomePage(props: { params: Promise<{ locale: string
       */}
       <section className="border-t border-border py-12">
         <div className="mx-auto max-w-5xl px-5">
-          <div className="rounded-xl border border-border bg-surface/50 p-6 sm:p-8">
+          <div data-tour="challenges" className="rounded-xl border border-border bg-surface/50 p-6 sm:p-8">
             <div className="flex flex-col sm:flex-row sm:items-center gap-6">
               <div className="flex-1">
                 <p className="text-xs font-semibold uppercase tracking-wider text-accent mb-2">
