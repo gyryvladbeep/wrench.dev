@@ -2,6 +2,7 @@ import { test, expect, Page } from "@playwright/test";
 import { SignupPage } from "./pages/SignupPage";
 import { WorkbenchPage } from "./pages/WorkbenchPage";
 import { PublicWorkbenchPage } from "./pages/PublicWorkbenchPage";
+import { cleanupTestAccount } from "./support/supabaseAdmin";
 
 /**
  * ═══════════════════════════════════════════════════════════════
@@ -57,12 +58,14 @@ const PASSWORD = uniqueTestPassword();
 test.describe.serial("Workbench: жизненный цикл рабочего стола", () => {
   let page: Page;
   let wb: WorkbenchPage;
+  let email: string | undefined;
 
   test.beforeAll(async ({ browser }) => {
     page = await browser.newPage();
+    email = uniqueTestEmail();
     const signup = new SignupPage(page);
     await signup.goto();
-    await signup.fillForm(uniqueTestEmail(), PASSWORD);
+    await signup.fillForm(email, PASSWORD);
     await signup.submit();
     // Успешная регистрация ведёт на главную (см. auth-flow.spec.ts) —
     // /workbench открываем отдельным переходом, как обычный пользователь
@@ -74,6 +77,7 @@ test.describe.serial("Workbench: жизненный цикл рабочего с
 
   test.afterAll(async () => {
     await page.close();
+    await cleanupTestAccount(email);
   });
 
   test("первый визит создаёт дефолтный рабочий стол 'My Workbench' и показывает пустое состояние", async () => {

@@ -1,7 +1,7 @@
 import { test, expect, Page, Locator } from "@playwright/test";
 import { SignupPage } from "./pages/SignupPage";
 import { LoginPage } from "./pages/LoginPage";
-import { hasServiceRoleKey } from "./support/supabaseAdmin";
+import { hasServiceRoleKey, cleanupTestAccount } from "./support/supabaseAdmin";
 
 /**
  * ═══════════════════════════════════════════════════════════════
@@ -106,6 +106,9 @@ test.describe.serial("Удаление аккаунта", () => {
     // здесь падает TypeError вместо чистого skip — именно так уже один раз
     // и было (см. workbench-pro.spec.ts — там та же защита не просто так).
     await page?.close();
+    // Если тест удаления дошёл до конца, аккаунта уже нет — cleanupTestAccount
+    // увидит это и ничего не сделает. Если упал раньше — удалит аккаунт сам.
+    await cleanupTestAccount(email);
   });
 
   test("подготовка — регистрация тестового аккаунта", async () => {

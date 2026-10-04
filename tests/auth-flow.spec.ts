@@ -1,6 +1,7 @@
 import { test, expect, Page, Locator } from "@playwright/test";
 import { SignupPage } from "./pages/SignupPage";
 import { LoginPage } from "./pages/LoginPage";
+import { cleanupTestAccount } from "./support/supabaseAdmin";
 
 /**
  * ═══════════════════════════════════════════════════════════════
@@ -129,6 +130,9 @@ test.describe.serial("Аккаунт: регистрация → сессия �
 
   test.afterAll(async () => {
     await page.close();
+    // Удаляем аккаунт, созданный в шаге 1, — независимо от того, прошли
+    // шаги или упали. Страховочная сетка: tests/global-teardown.ts.
+    await cleanupTestAccount(email);
   });
 
   test("шаг 1 — регистрация нового пользователя логинит его и ведёт на главную", async () => {

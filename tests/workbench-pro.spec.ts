@@ -1,7 +1,7 @@
 import { test, expect, Page } from "@playwright/test";
 import { SignupPage } from "./pages/SignupPage";
 import { WorkbenchPage } from "./pages/WorkbenchPage";
-import { hasServiceRoleKey, findUserIdByEmail, grantProPlan } from "./support/supabaseAdmin";
+import { hasServiceRoleKey, findUserIdByEmail, grantProPlan, cleanupTestAccount } from "./support/supabaseAdmin";
 
 /**
  * ═══════════════════════════════════════════════════════════════
@@ -48,6 +48,7 @@ const PASSWORD = uniqueTestPassword();
 test.describe.serial("Workbench (Pro): реордер вкладок рабочих столов", () => {
   let page: Page;
   let wb: WorkbenchPage;
+  let email: string | undefined;
 
   test.beforeAll(async ({ browser }) => {
     test.skip(
@@ -57,7 +58,7 @@ test.describe.serial("Workbench (Pro): реордер вкладок рабоч�
     );
 
     page = await browser.newPage();
-    const email = uniqueTestEmail();
+    email = uniqueTestEmail();
     const signup = new SignupPage(page);
     await signup.goto();
     await signup.fillForm(email, PASSWORD);
@@ -83,6 +84,9 @@ test.describe.serial("Workbench (Pro): реордер вкладок рабоч�
 
   test.afterAll(async () => {
     await page?.close();
+    // email остаётся undefined, если beforeAll скипнулся (нет ключа) —
+    // cleanupTestAccount в этом случае ничего не делает.
+    await cleanupTestAccount(email);
   });
 
   test("Pro-аккаунту доступно больше одного рабочего стола", async () => {

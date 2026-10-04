@@ -2,6 +2,7 @@ import path from "node:path";
 import { test, expect, Page } from "@playwright/test";
 import { SignupPage } from "./pages/SignupPage";
 import { MockApiPage } from "./pages/MockApiPage";
+import { cleanupTestAccount } from "./support/supabaseAdmin";
 
 /**
  * ═══════════════════════════════════════════════════════════════
@@ -70,12 +71,14 @@ const UPDATE_FIXTURE = path.join(FIXTURES, "postman-update-collection.json");
 test.describe.serial("Mock API: импорт коллекции", () => {
   let page: Page;
   let mockApi: MockApiPage;
+  let email: string | undefined;
 
   test.beforeAll(async ({ browser }) => {
     page = await browser.newPage();
+    email = uniqueTestEmail();
     const signup = new SignupPage(page);
     await signup.goto();
-    await signup.fillForm(uniqueTestEmail(), PASSWORD);
+    await signup.fillForm(email, PASSWORD);
     await signup.submit();
     await page.waitForURL((url) => url.pathname === "/" || url.pathname === "/en", { timeout: 15_000 });
     mockApi = new MockApiPage(page);
@@ -84,6 +87,7 @@ test.describe.serial("Mock API: импорт коллекции", () => {
 
   test.afterAll(async () => {
     await page.close();
+    await cleanupTestAccount(email);
   });
 
   test("кнопка импорта видна авторизованному пользователю", async () => {
