@@ -72,6 +72,17 @@ const SERVICE_ROLE_KEY  = env.SUPABASE_SERVICE_ROLE_KEY;
  *  тестами, чтобы аккуратно себя скипнуть, если ключа нет. */
 export const hasServiceRoleKey = Boolean(SUPABASE_URL && SERVICE_ROLE_KEY);
 
+// Realtime-клиент supabase-js создаётся вместе с обычным и на Node < 22
+// падает ещё в createClient ("native WebSocket not found") — на CI Node 20.
+// Этому клиенту realtime не нужен вообще (только Admin API и REST), поэтому
+// отдаём заглушку вместо настоящего WebSocket: соединение всё равно ни разу
+// не открывается.
+class NoRealtimeWebSocket {
+  constructor() {
+    throw new Error("Realtime не используется админ-клиентом");
+  }
+}
+
 let adminClient: SupabaseClient | null = null;
 
 function getAdminClient(): SupabaseClient {
@@ -85,6 +96,7 @@ function getAdminClient(): SupabaseClient {
   if (!adminClient) {
     adminClient = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
       auth: { autoRefreshToken: false, persistSession: false },
+      realtime: { transport: NoRealtimeWebSocket as never },
     });
   }
   return adminClient;

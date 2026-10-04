@@ -45,8 +45,17 @@ export function getSupabaseAdmin(): SupabaseClient {
   }
 
   if (!adminClient) {
+    // Realtime этому клиенту не нужен (только Admin API и REST), а на Node < 22
+    // createClient без WebSocket падает сразу при создании ("native WebSocket
+    // not found") — отдаём заглушку, соединение всё равно не открывается.
+    class NoRealtimeWebSocket {
+      constructor() {
+        throw new Error("Realtime is not used by the admin client");
+      }
+    }
     adminClient = createClient(url, key, {
       auth: { autoRefreshToken: false, persistSession: false },
+      realtime: { transport: NoRealtimeWebSocket as never },
     });
   }
   return adminClient;

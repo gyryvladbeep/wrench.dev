@@ -2,6 +2,7 @@ import { test, expect, Page, Locator } from "@playwright/test";
 import { SignupPage } from "./pages/SignupPage";
 import { LoginPage } from "./pages/LoginPage";
 import { cleanupTestAccount } from "./support/supabaseAdmin";
+import { dismissProductTour } from "./support/productTour";
 
 /**
  * ═══════════════════════════════════════════════════════════════
@@ -147,6 +148,11 @@ test.describe.serial("Аккаунт: регистрация → сессия �
       (url) => url.pathname === "/" || url.pathname === "/en",
       "Регистрация"
     );
+
+    // Сразу после регистрации главная показывает модалку-согласие на тур по
+    // продукту (?tour=1, см. ProductTour.tsx) — она перекрывает шапку, без
+    // закрытия клик по меню аккаунта не проходит.
+    await dismissProductTour(page);
 
     await openAccountMenu(page);
     await expect(page.getByRole("banner").getByRole("button", { name: "Sign out" })).toBeVisible({ timeout: 10_000 });
