@@ -18,6 +18,7 @@ test.describe("Главная страница", () => {
     await expect(homePage.heading).toBeVisible();
     // ─────────────────────────────────────────────────────────
     // УРОК: тест сломался не из-за бага, а из-за смены контента.
+    // (Обновлено: заголовок теперь "The IT Space" / "Пространство IT".)
     // Заголовок обновили в рамках работы над позиционированием
     // (см. фидбек из Threads) — "Developer & QA tools" заменили на
     // task-centric "Stop keeping ten tabs open for ten tiny tools".
@@ -29,7 +30,7 @@ test.describe("Главная страница", () => {
     // Хорошая практика — проверять не весь текст целиком (он может
     // ещё не раз поменяться), а ключевое, устойчивое слово из него.
     // ─────────────────────────────────────────────────────────
-    await homePage.expectHeadingContains("tabs");
+    await homePage.expectHeadingContains("IT Space");
   });
 
   test("кнопка 'Browse tools' ведёт на страницу инструментов", async ({ page }) => {
@@ -40,9 +41,9 @@ test.describe("Главная страница", () => {
   test("переключатель языка меняет язык интерфейса", async ({ page }) => {
     await homePage.switchToRussian();
     await expect(page).toHaveURL(/\/ru/);
-    // Тот же принцип — "вкладок" достаточно устойчивое слово в новом
+    // Тот же принцип — "Пространство" достаточно устойчивое слово в новом
     // русском заголовке, не завязываемся на всю фразу целиком.
-    await homePage.expectHeadingContains("вкладок");
+    await homePage.expectHeadingContains("Пространство");
   });
 
 });

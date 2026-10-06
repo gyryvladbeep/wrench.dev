@@ -17,7 +17,10 @@ export async function generateMetadata(props: { params: Promise<{ locale: string
   const params = await props.params;
   const locale = isLocale(params.locale) ? params.locale : defaultLocale;
   const dict   = getDictionary(locale);
-  return buildPageMetadata(locale, "/", `${siteConfig.name} — ${siteConfig.tagline}`, dict.site.description);
+  const title  = locale === "ru"
+    ? `${siteConfig.name} — Пространство IT для QA и разработчиков`
+    : `${siteConfig.name} — The IT Space for QA and Developers`;
+  return buildPageMetadata(locale, "/", title, dict.site.description);
 }
 
 // Соц-proof на главной обновляется раз в час (ISR), не при каждом
@@ -124,14 +127,17 @@ export default async function HomePage(props: { params: Promise<{ locale: string
           </div>
 
           <h1 className="mt-4 text-3xl font-semibold tracking-tight text-text-primary md:text-4xl">
-            {isRu
-              ? "Хватит держать десять вкладок\nради десяти мелких тулз"
-              : "Stop keeping ten tabs open\nfor ten tiny tools"}
+            {isRu ? "Пространство IT" : "The IT Space"}
           </h1>
-          <p className="mt-3 max-w-xl text-text-secondary text-sm leading-relaxed">
+          {/* Заголовок "Пространство IT" — название места, а не задача, поэтому
+              вся конкретика (что здесь можно делать и чем это полезно) живёт в
+              подзаголовке: инструменты, рабочий стол, практика, знания, рынок
+              труда, профиль. Раньше здесь были три примера тулз, и платформа
+              читалась как каталог. */}
+          <p className="mt-3 max-w-2xl text-text-secondary text-sm leading-relaxed">
             {isRu
-              ? "«Online JSON formatter», «regex tester», «uuid generator» — каждый раз новый безымянный сайт, непонятно кому доверяющий твои данные. Wrench — одно место для QA, фронтенда, бэкенда и DevOps, где всё считается прямо в браузере."
-              : "\"Online JSON formatter\", \"regex tester\", \"uuid generator\" — a different anonymous site every time, no idea who's handling your data. Wrench is one place for QA, frontend, backend and DevOps engineers, where everything runs client-side."}
+              ? "Всё, что нужно айтишнику для работы и роста, в одном месте. Инструменты для QA, фронтенда, бэкенда и DevOps, которые считают прямо в браузере. Свой рабочий стол из тех тулз, которыми пользуешься каждый день. Задачи дня и тренажёры, чтобы держать форму. База знаний и калькулятор зарплат, чтобы понимать рынок. Mock API и Webhook Inspector для тестов. И публичный профиль с рейтингом Wrench Score: он показывает, что ты умеешь, а не только где работал."
+              : "Everything an IT professional needs to work and grow, in one place. Tools for QA, frontend, backend and DevOps that run right in your browser. Your own workbench of the tools you use every day. Daily challenges and trainers to stay sharp. A knowledge base and a salary calculator to understand the market. Mock API and Webhook Inspector for testing. And a public profile with a Wrench Score that shows what you can do, not just where you worked."}
           </p>
 
           <div className="mt-6 flex flex-wrap gap-3">

@@ -5,7 +5,7 @@ export const en: Dictionary = {
   site: {
     tagline: "Essential tools for Developers, QA Engineers and DevOps",
     description:
-      "Fast, free developer tools for formatting, encoding, generating and debugging — JSON, Base64, JWT, UUIDs and more. No signup, nothing leaves your browser.",
+      "The IT Space: browser-based tools for QA and developers, your own workbench, daily challenges, trainers, a knowledge base, salary data and a scored profile.",
   },
   nav: {
     tools: "Tools",

@@ -32,22 +32,36 @@ function buildAlternates(locale: Locale, path: string) {
 }
 
 export function buildPageMetadata(locale: Locale, path: string, title: string, description: string): Metadata {
-  return { title, description, alternates: buildAlternates(locale, path) };
+  // openGraph задаём явно: иначе страница наследует og:url и og:title из
+  // layout.tsx — у /ru/... они указывали бы на корень сайта и название бренда.
+  const url = `${siteConfig.url}${localePath(locale, path)}`;
+  return {
+    title, description,
+    alternates: buildAlternates(locale, path),
+    openGraph: { title, description, url, siteName: siteConfig.name, type: "website" },
+    twitter: { card: "summary", title, description },
+  };
 }
 
 export function buildToolMetadata(tool: Tool, locale: Locale): Metadata {
-  const title = `${tool.name} — ${siteConfig.name}`;
+  // Бренд в <title> добавляет шаблон из app/[locale]/layout.tsx
+  // ("%s | Wrench-Branch") — раньше здесь он дописывался вручную ещё раз, и
+  // заголовок получался "JSON Formatter — Wrench-Branch | Wrench-Branch".
+  // В og:title/twitter:title шаблон не применяется, поэтому там бренд
+  // добавляем сами.
+  const title = tool.name;
+  const socialTitle = `${tool.name} | ${siteConfig.name}`;
   const path  = `/tools/${tool.slug}`;
   return {
     title,
     description: tool.metaDescription,
     alternates:  buildAlternates(locale, path),
     openGraph: {
-      title, description: tool.metaDescription,
+      title: socialTitle, description: tool.metaDescription,
       url: `${siteConfig.url}${localePath(locale, path)}`,
       siteName: siteConfig.name, type: "website",
     },
-    twitter: { card: "summary", title, description: tool.metaDescription },
+    twitter: { card: "summary", title: socialTitle, description: tool.metaDescription },
     keywords: tool.keywords,
   };
 }
@@ -58,7 +72,9 @@ export function buildCategoryMetadata(locale: Locale, categorySlug: string, titl
 
 export function buildArticleMetadata(article: Article, locale: Locale): Metadata {
   const isRu  = locale === "ru";
-  const title = `${isRu ? article.titleRu : article.title} — ${siteConfig.name}`;
+  // Бренд в <title> добавляет шаблон из layout.tsx — см. buildToolMetadata.
+  const title = isRu ? article.titleRu : article.title;
+  const socialTitle = `${title} | ${siteConfig.name}`;
   const desc  = isRu ? article.summaryRu : article.summary;
   const path  = `/knowledge/${article.slug}`;
   return {
@@ -66,11 +82,11 @@ export function buildArticleMetadata(article: Article, locale: Locale): Metadata
     description: desc,
     alternates:  buildAlternates(locale, path),
     openGraph: {
-      title, description: desc,
+      title: socialTitle, description: desc,
       url: `${siteConfig.url}${localePath(locale, path)}`,
       siteName: siteConfig.name, type: "article",
     },
-    twitter: { card: "summary", title, description: desc },
+    twitter: { card: "summary", title: socialTitle, description: desc },
     keywords: article.tags,
   };
 }
