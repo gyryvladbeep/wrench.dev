@@ -1,0 +1,13 @@
+feat(mobile): партия 2 - еще 5 инструментов для мобильного тестирования
+
+- Android and iOS Version Reference: Android 8-17 с уровнями API и iOS 13-27, изменения для тестировщика, поиск
+- AndroidManifest Analyzer: разрешения (runtime/особые), exported-компоненты, debuggable, deep link, замечания
+- Push Payload Validator: APNs (4096/5120 байт, ключи aps) и FCM HTTP v1 (data только строки, зарезервированные ключи, TTL)
+- Localization Strings Diff: strings.xml и Localizable.strings, пропущенные ключи, подстановки, апострофы
+- Touch Target Size Checker: Apple 44pt, Material 48dp, WCAG 2.2 AA 24px (с исключением по расстоянию), WCAG 2.1 AAA 44px
+
+Общий FindingsList для результатов проверки, чистая логика в lib/mobile.
+Тесты Playwright и page object для каждого инструмента. Убран закоммиченный временный файл сообщения.
+
+Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01Wcj3SbPZKrwLMPNBj7Ph8c

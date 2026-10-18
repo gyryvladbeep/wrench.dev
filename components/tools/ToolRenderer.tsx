@@ -102,6 +102,11 @@ import { AdbCommandBuilderTool } from "./AdbCommandBuilderTool";
 import { SimctlCommandBuilderTool } from "./SimctlCommandBuilderTool";
 import { DeepLinkBuilderTool } from "./DeepLinkBuilderTool";
 import { PseudoLocalizationTool } from "./PseudoLocalizationTool";
+import { OsVersionReferenceTool } from "./OsVersionReferenceTool";
+import { AndroidManifestAnalyzerTool } from "./AndroidManifestAnalyzerTool";
+import { PushPayloadValidatorTool } from "./PushPayloadValidatorTool";
+import { StringsDiffTool } from "./StringsDiffTool";
+import { TouchTargetCheckerTool } from "./TouchTargetCheckerTool";
 
 // ── Тяжёлые тулы — через next/dynamic ────────────────────────────────────────
 // Эти три тянут за собой самые крупные из используемых на сайте библиотек
@@ -208,6 +213,11 @@ export function ToolRenderer({
     case "simctl-command-builder":     return <SimctlCommandBuilderTool dict={dict} />;
     case "deep-link-builder":          return <DeepLinkBuilderTool dict={dict} />;
     case "pseudo-localization-generator": return <PseudoLocalizationTool dict={dict} />;
+    case "android-ios-version-reference": return <OsVersionReferenceTool dict={dict} />;
+    case "android-manifest-analyzer": return <AndroidManifestAnalyzerTool dict={dict} />;
+    case "push-payload-validator":   return <PushPayloadValidatorTool dict={dict} />;
+    case "localization-strings-diff": return <StringsDiffTool dict={dict} />;
+    case "touch-target-checker":     return <TouchTargetCheckerTool dict={dict} />;
     // ── API ─────────────────────────────────────────────────────────────────
     case "curl-generator":            return <CurlGeneratorTool dict={dict} />;
     case "rest-request-builder":      return <RestRequestBuilderTool dict={dict} />;
