@@ -97,6 +97,11 @@ import { A11yCheckerTool }          from "./A11yCheckerTool";
 import { HarAnalyzerTool }          from "./HarAnalyzerTool";
 import { QaTestPlanGeneratorTool }  from "./QaTestPlanGeneratorTool";
 import { WebhookSignatureVerifierTool } from "./WebhookSignatureVerifierTool";
+import { DpPxConverterTool } from "./DpPxConverterTool";
+import { AdbCommandBuilderTool } from "./AdbCommandBuilderTool";
+import { SimctlCommandBuilderTool } from "./SimctlCommandBuilderTool";
+import { DeepLinkBuilderTool } from "./DeepLinkBuilderTool";
+import { PseudoLocalizationTool } from "./PseudoLocalizationTool";
 
 // ── Тяжёлые тулы — через next/dynamic ────────────────────────────────────────
 // Эти три тянут за собой самые крупные из используемых на сайте библиотек
@@ -197,6 +202,12 @@ export function ToolRenderer({
     case "a11y-checker":               return <A11yCheckerTool dict={dict} />;
     case "har-analyzer":               return <HarAnalyzerTool dict={dict} />;
     case "qa-test-plan-generator":     return <QaTestPlanGeneratorTool dict={dict} />;
+    // ── Mobile ──────────────────────────────────────────────────────────────
+    case "dp-px-converter":            return <DpPxConverterTool dict={dict} />;
+    case "adb-command-builder":        return <AdbCommandBuilderTool dict={dict} />;
+    case "simctl-command-builder":     return <SimctlCommandBuilderTool dict={dict} />;
+    case "deep-link-builder":          return <DeepLinkBuilderTool dict={dict} />;
+    case "pseudo-localization-generator": return <PseudoLocalizationTool dict={dict} />;
     // ── API ─────────────────────────────────────────────────────────────────
     case "curl-generator":            return <CurlGeneratorTool dict={dict} />;
     case "rest-request-builder":      return <RestRequestBuilderTool dict={dict} />;

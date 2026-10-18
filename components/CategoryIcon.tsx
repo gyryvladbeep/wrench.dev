@@ -65,6 +65,12 @@ const icons: Record<string, (p: IconProps) => JSX.Element> = {
       <path d="M5 4l-3 4 3 4M11 4l3 4-3 4M9 2l-2 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
     </svg>
   ),
+  mobile: ({ className = "", size = 16 }) => (
+    <svg width={size} height={size} viewBox="0 0 16 16" fill="none" className={className} aria-hidden>
+      <rect x="4.5" y="1.5" width="7" height="13" rx="1.6" stroke="currentColor" strokeWidth="1.4"/>
+      <path d="M7 12.4h2" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+    </svg>
+  ),
   gamedev: ({ className = "", size = 16 }) => (
     <svg width={size} height={size} viewBox="0 0 16 16" fill="none" className={className} aria-hidden>
       <path d="M4.5 5.5h7a2.5 2.5 0 012.4 3.2l-.5 1.8a1.6 1.6 0 01-2.7.7L9.4 10H6.6l-1.3 1.2a1.6 1.6 0 01-2.7-.7l-.5-1.8A2.5 2.5 0 014.5 5.5z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/>

@@ -8,7 +8,8 @@ export type ToolCategory =
   | "web"
   | "datetime"
   | "generators"
-  | "gamedev";
+  | "gamedev"
+  | "mobile";
 
 export interface CategoryMeta {
   slug: ToolCategory;

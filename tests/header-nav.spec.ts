@@ -60,16 +60,17 @@ test.describe("Шапка сайта — навигация", () => {
     await expect(page.getByText(/Sign up to save/i)).toBeVisible();
   });
 
-  test("дропдаун 'Categories' открывается и содержит ссылки на все 10 категорий", async () => {
+  test("дропдаун 'Categories' открывается и содержит ссылки на все 11 категорий", async () => {
     await header.openCategories();
-    // 10 — это количество записей в lib/tools-registry.ts → categories.
+    // 11 — это количество записей в lib/tools-registry.ts → categories
+    // (добавлена "mobile", 2026-10: категория мобильного QA).
     // Было 10, стало 11 после добавления "gamedev" (2026-09), затем снова
     // 10 после удаления пустой категории "data" (e44e8f0 — реальный
     // инструмент уже жил под Generators). Если кто-то добавит или уберёт
     // категорию, этот тест — сигнал обновить и число здесь, и проверить,
     // что новая категория реально кликабельна из шапки, а не только
     // существует в реестре.
-    await expect(header.dropdownLinks()).toHaveCount(10);
+    await expect(header.dropdownLinks()).toHaveCount(11);
   });
 
   test("клик по категории в дропдауне ведёт на страницу этой категории", async ({ page }) => {
@@ -115,7 +116,7 @@ test.describe("Шапка сайта — навигация", () => {
     // openCategories() уже проверяет, что панель видна — здесь важно,
     // что она РОВНО ОДНА, а не что где-то осталась старая от Learn.
     await expect(header.openDropdownPanel).toHaveCount(1);
-    await expect(header.dropdownLinks()).toHaveCount(10); // это уже категории, не Learn
+    await expect(header.dropdownLinks()).toHaveCount(11); // это уже категории, не Learn
   });
 
   test("поиск открывается по клику на кнопку", async () => {
