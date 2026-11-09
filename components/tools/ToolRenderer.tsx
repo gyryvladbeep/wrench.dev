@@ -123,6 +123,21 @@ import { TestFileGeneratorTool } from "./TestFileGeneratorTool";
 import { TestImageGeneratorTool } from "./TestImageGeneratorTool";
 import { ChatHistoryGeneratorTool } from "./ChatHistoryGeneratorTool";
 import { VideoCompressorTool } from "./VideoCompressorTool";
+import { UnreadCounterSimulatorTool } from "./UnreadCounterSimulatorTool";
+import { VirtualListCalculatorTool } from "./VirtualListCalculatorTool";
+import { MessageSendStatusValidatorTool } from "./MessageSendStatusValidatorTool";
+import { MentionSearchSimulatorTool } from "./MentionSearchSimulatorTool";
+import { EmojiSequenceAnalyzerTool } from "./EmojiSequenceAnalyzerTool";
+import { ReadReceiptsCalculatorTool } from "./ReadReceiptsCalculatorTool";
+import { LinkUnfurlMetaCheckerTool } from "./LinkUnfurlMetaCheckerTool";
+import { TextWrapOverflowLabTool } from "./TextWrapOverflowLabTool";
+import { PlaywrightWebsocketMockGeneratorTool } from "./PlaywrightWebsocketMockGeneratorTool";
+import { ChatScenarioMatrixGeneratorTool } from "./ChatScenarioMatrixGeneratorTool";
+import { BrowserStorageQuotaProbeTool } from "./BrowserStorageQuotaProbeTool";
+import { MessageGroupingCalculatorTool } from "./MessageGroupingCalculatorTool";
+import { ShortcutConflictCheckerTool } from "./ShortcutConflictCheckerTool";
+import { FileTypeSnifferTool } from "./FileTypeSnifferTool";
+import { PluralFormsCheckerTool } from "./PluralFormsCheckerTool";
 
 // ── Тяжёлые тулы — через next/dynamic ────────────────────────────────────────
 // Эти три тянут за собой самые крупные из используемых на сайте библиотек
@@ -250,6 +265,21 @@ export function ToolRenderer({
     case "test-image-generator": return <TestImageGeneratorTool dict={dict} />;
     case "chat-history-generator": return <ChatHistoryGeneratorTool dict={dict} />;
     case "video-compressor": return <VideoCompressorTool dict={dict} />;
+    case "unread-counter-simulator": return <UnreadCounterSimulatorTool dict={dict} />;
+    case "virtual-list-calculator": return <VirtualListCalculatorTool dict={dict} />;
+    case "message-send-status-validator": return <MessageSendStatusValidatorTool dict={dict} />;
+    case "mention-search-simulator": return <MentionSearchSimulatorTool dict={dict} />;
+    case "emoji-sequence-analyzer": return <EmojiSequenceAnalyzerTool dict={dict} />;
+    case "read-receipts-calculator": return <ReadReceiptsCalculatorTool dict={dict} />;
+    case "link-unfurl-meta-checker": return <LinkUnfurlMetaCheckerTool dict={dict} />;
+    case "text-wrap-overflow-lab": return <TextWrapOverflowLabTool dict={dict} />;
+    case "playwright-websocket-mock-generator": return <PlaywrightWebsocketMockGeneratorTool dict={dict} />;
+    case "chat-scenario-matrix-generator": return <ChatScenarioMatrixGeneratorTool dict={dict} />;
+    case "browser-storage-quota-probe": return <BrowserStorageQuotaProbeTool dict={dict} />;
+    case "message-grouping-calculator": return <MessageGroupingCalculatorTool dict={dict} />;
+    case "shortcut-conflict-checker": return <ShortcutConflictCheckerTool dict={dict} />;
+    case "file-type-sniffer": return <FileTypeSnifferTool dict={dict} />;
+    case "plural-forms-checker": return <PluralFormsCheckerTool dict={dict} />;
     // ── API ─────────────────────────────────────────────────────────────────
     case "curl-generator":            return <CurlGeneratorTool dict={dict} />;
     case "rest-request-builder":      return <RestRequestBuilderTool dict={dict} />;

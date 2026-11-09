@@ -31,6 +31,13 @@ export interface ChangelogEntry {
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
     date: "2026-11-09", tag: "feature",
+    titleEn: "Messenger QA, part two: 15 more tools for the chat front end",
+    titleRu: "QA мессенджера, часть вторая: ещё 15 инструментов для фронтенда чата",
+    descriptionEn: "Unread counter and badge simulator, virtual list calculator, send-status validator, mention search with layout fix, emoji sequence analyzer, read receipts calculator, link unfurl meta checker, text wrap overflow lab, Playwright WebSocket mock generator, pairwise scenario matrix, browser storage quota probe, message grouping calculator, shortcut conflict checker, file type sniffer and plural forms checker. All in the Messenger QA category, all run in the browser.",
+    descriptionRu: "Симулятор счётчика непрочитанных и бейджа, калькулятор виртуального списка, валидатор статусов отправки, поиск упоминаний с исправлением раскладки, анализатор эмодзи-последовательностей, калькулятор статусов прочтения, проверка метаданных превью ссылок, лаборатория переноса текста, генератор моков WebSocket для Playwright, pairwise-матрица сценариев, замер квоты хранилища браузера, калькулятор группировки сообщений, проверка конфликтов горячих клавиш, определитель типа файла и проверка форм множественного числа. Все в категории QA мессенджера, всё работает в браузере.",
+  },
+  {
+    date: "2026-11-09", tag: "feature",
     titleEn: "Messenger QA: 15 tools for testing a chat UI, plus a video compressor",
     titleRu: "QA мессенджера: 15 инструментов для тестирования интерфейса чата и сжатие видео",
     descriptionEn: "A new Messenger QA category: stress and unicode text, formatting and injection corpus, link edge cases, timestamp and timezone checks, message ID decoder, realtime frame decoder, event sequence validator, reconnect backoff, debounce simulator, keyboard and IME inspector, paste and drop inspector, test files and images, and a seeded chat history generator. Also new: a video compressor that fits screen recordings under a size limit such as 5 MB.",
