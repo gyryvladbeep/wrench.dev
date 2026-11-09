@@ -65,6 +65,12 @@ const icons: Record<string, (p: IconProps) => JSX.Element> = {
       <path d="M5 4l-3 4 3 4M11 4l3 4-3 4M9 2l-2 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
     </svg>
   ),
+  messenger: ({ className = "", size = 16 }) => (
+    <svg width={size} height={size} viewBox="0 0 16 16" fill="none" className={className} aria-hidden>
+      <path d="M2.5 3.5a1.5 1.5 0 011.5-1.5h8a1.5 1.5 0 011.5 1.5v5.2a1.5 1.5 0 01-1.5 1.5H7.2L4.4 13v-2.8H4a1.5 1.5 0 01-1.5-1.5V3.5z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/>
+      <path d="M5.5 5.6h5M5.5 7.6h3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+    </svg>
+  ),
   mobile: ({ className = "", size = 16 }) => (
     <svg width={size} height={size} viewBox="0 0 16 16" fill="none" className={className} aria-hidden>
       <rect x="4.5" y="1.5" width="7" height="13" rx="1.6" stroke="currentColor" strokeWidth="1.4"/>

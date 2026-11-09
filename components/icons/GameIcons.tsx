@@ -31,7 +31,7 @@ interface IconProps {
 export type GameIconId =
   | "wrench" | "gear" | "rocket" | "star" | "sparkle" | "crown"
   | "lightning" | "fire" | "flag" | "diamond" | "target"
-  | "trophy" | "magnifier" | "palette" | "medal" | "flask" | "brackets" | "gamepad" | "chart" | "qr" | "phone";
+  | "trophy" | "magnifier" | "palette" | "medal" | "flask" | "brackets" | "gamepad" | "chart" | "qr" | "phone" | "chat";
 
 const icons: Record<GameIconId, (p: IconProps) => JSX.Element> = {
   wrench: ({ className = "", size = 16 }) => (
@@ -161,6 +161,12 @@ const icons: Record<GameIconId, (p: IconProps) => JSX.Element> = {
   // QR — раздел "QR-код" в конструкторе портфолио (Profile → Портфолио).
   // Три угловых "глазка" QR-паттерна — тот же узнаваемый минимум, что и
   // у настоящего QR-кода, без попытки нарисовать весь код целиком.
+  chat: ({ className = "", size = 16 }) => (
+    <svg width={size} height={size} viewBox="0 0 16 16" fill="none" className={className} aria-hidden>
+      <path d="M2.5 3.5a1.5 1.5 0 011.5-1.5h8a1.5 1.5 0 011.5 1.5v5.2a1.5 1.5 0 01-1.5 1.5H7.2L4.4 13v-2.8H4a1.5 1.5 0 01-1.5-1.5V3.5z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/>
+      <path d="M5.5 5.6h5M5.5 7.6h3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+    </svg>
+  ),
   phone: ({ className = "", size = 16 }) => (
     <svg width={size} height={size} viewBox="0 0 16 16" fill="none" className={className} aria-hidden>
       <rect x="4.5" y="1.5" width="7" height="13" rx="1.6" stroke="currentColor" strokeWidth="1.4"/>

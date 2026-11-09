@@ -107,6 +107,22 @@ import { AndroidManifestAnalyzerTool } from "./AndroidManifestAnalyzerTool";
 import { PushPayloadValidatorTool } from "./PushPayloadValidatorTool";
 import { StringsDiffTool } from "./StringsDiffTool";
 import { TouchTargetCheckerTool } from "./TouchTargetCheckerTool";
+import { ChatStressTextGeneratorTool } from "./ChatStressTextGeneratorTool";
+import { UnicodeTextInspectorTool } from "./UnicodeTextInspectorTool";
+import { MessageFormattingCorpusTool } from "./MessageFormattingCorpusTool";
+import { UrlAutolinkEdgeCasesTool } from "./UrlAutolinkEdgeCasesTool";
+import { ChatTimestampEdgeCasesTool } from "./ChatTimestampEdgeCasesTool";
+import { MessageIdDecoderTool } from "./MessageIdDecoderTool";
+import { RealtimeFrameDecoderTool } from "./RealtimeFrameDecoderTool";
+import { ChatEventSequenceValidatorTool } from "./ChatEventSequenceValidatorTool";
+import { ReconnectBackoffCalculatorTool } from "./ReconnectBackoffCalculatorTool";
+import { DebounceThrottleSimulatorTool } from "./DebounceThrottleSimulatorTool";
+import { KeyboardImeEventInspectorTool } from "./KeyboardImeEventInspectorTool";
+import { PasteDropInspectorTool } from "./PasteDropInspectorTool";
+import { TestFileGeneratorTool } from "./TestFileGeneratorTool";
+import { TestImageGeneratorTool } from "./TestImageGeneratorTool";
+import { ChatHistoryGeneratorTool } from "./ChatHistoryGeneratorTool";
+import { VideoCompressorTool } from "./VideoCompressorTool";
 
 // ── Тяжёлые тулы — через next/dynamic ────────────────────────────────────────
 // Эти три тянут за собой самые крупные из используемых на сайте библиотек
@@ -218,6 +234,22 @@ export function ToolRenderer({
     case "push-payload-validator":   return <PushPayloadValidatorTool dict={dict} />;
     case "localization-strings-diff": return <StringsDiffTool dict={dict} />;
     case "touch-target-checker":     return <TouchTargetCheckerTool dict={dict} />;
+    case "chat-stress-text-generator": return <ChatStressTextGeneratorTool dict={dict} />;
+    case "unicode-text-inspector": return <UnicodeTextInspectorTool dict={dict} />;
+    case "message-formatting-corpus": return <MessageFormattingCorpusTool dict={dict} />;
+    case "url-autolink-edge-cases": return <UrlAutolinkEdgeCasesTool dict={dict} />;
+    case "chat-timestamp-edge-cases": return <ChatTimestampEdgeCasesTool dict={dict} />;
+    case "message-id-decoder": return <MessageIdDecoderTool dict={dict} />;
+    case "realtime-frame-decoder": return <RealtimeFrameDecoderTool dict={dict} />;
+    case "chat-event-sequence-validator": return <ChatEventSequenceValidatorTool dict={dict} />;
+    case "reconnect-backoff-calculator": return <ReconnectBackoffCalculatorTool dict={dict} />;
+    case "debounce-throttle-simulator": return <DebounceThrottleSimulatorTool dict={dict} />;
+    case "keyboard-ime-event-inspector": return <KeyboardImeEventInspectorTool dict={dict} />;
+    case "paste-drop-inspector": return <PasteDropInspectorTool dict={dict} />;
+    case "test-file-generator": return <TestFileGeneratorTool dict={dict} />;
+    case "test-image-generator": return <TestImageGeneratorTool dict={dict} />;
+    case "chat-history-generator": return <ChatHistoryGeneratorTool dict={dict} />;
+    case "video-compressor": return <VideoCompressorTool dict={dict} />;
     // ── API ─────────────────────────────────────────────────────────────────
     case "curl-generator":            return <CurlGeneratorTool dict={dict} />;
     case "rest-request-builder":      return <RestRequestBuilderTool dict={dict} />;

@@ -30,6 +30,34 @@ export interface ChangelogEntry {
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    date: "2026-11-09", tag: "feature",
+    titleEn: "Messenger QA: 15 tools for testing a chat UI, plus a video compressor",
+    titleRu: "QA мессенджера: 15 инструментов для тестирования интерфейса чата и сжатие видео",
+    descriptionEn: "A new Messenger QA category: stress and unicode text, formatting and injection corpus, link edge cases, timestamp and timezone checks, message ID decoder, realtime frame decoder, event sequence validator, reconnect backoff, debounce simulator, keyboard and IME inspector, paste and drop inspector, test files and images, and a seeded chat history generator. Also new: a video compressor that fits screen recordings under a size limit such as 5 MB.",
+    descriptionRu: "Новая категория QA мессенджера: стресс-тексты и юникод, корпус форматирования и инъекций, крайние случаи ссылок, проверка времени и часовых поясов, декодер ID сообщений, декодер realtime-кадров, проверка последовательности событий, backoff переподключения, симулятор debounce, инспектор клавиатуры и IME, инспектор вставки и перетаскивания, тестовые файлы и изображения и генератор истории чата с seed. Также новое: компрессор видео, который вписывает записи экрана в лимит, например 5 МБ.",
+  },
+  {
+    date: "2026-10-18", tag: "feature",
+    titleEn: "Mobile QA: 10 new tools",
+    titleRu: "Мобильное тестирование: 10 новых инструментов",
+    descriptionEn: "A new Mobile category: dp/px converter, ADB and iOS simctl command builders, deep link builder, pseudo-localization, Android and iOS version reference, AndroidManifest analyzer, push payload validator, strings diff and touch target checker.",
+    descriptionRu: "Новая категория для мобильного QA: конвертер dp/px, конструкторы команд ADB и iOS simctl, конструктор deep link, псевдолокализация, справочник версий Android и iOS, анализатор AndroidManifest, валидатор push-пейлоадов, сравнение файлов локализации и проверка touch-целей.",
+  },
+  {
+    date: "2026-10-06", tag: "improvement",
+    titleEn: "The home page is now \"The IT Space\"",
+    titleRu: "Главная страница теперь \"Пространство IT\"",
+    descriptionEn: "A new headline and description that explain the whole platform, plus cleaner page titles and link previews for search engines and social networks.",
+    descriptionRu: "Новый заголовок и описание, которые объясняют всю платформу, а также более чистые заголовки страниц и превью ссылок для поисковиков и соцсетей.",
+  },
+  {
+    date: "2026-09-30", tag: "feature",
+    titleEn: "A short product tour for new accounts",
+    titleRu: "Короткая экскурсия по продукту для новых аккаунтов",
+    descriptionEn: "After signing up you get a quick guided tour of the workbench, daily challenges and the tool catalog, and you can skip it at any time.",
+    descriptionRu: "После регистрации вы получаете короткую экскурсию по рабочему столу, задачам дня и каталогу инструментов, её можно пропустить в любой момент.",
+  },
+  {
     date: "2026-09-20", tag: "feature",
     titleEn: "Trainer: real-project-scale exercises",
     titleRu: "Тренажёр: упражнения в масштабе реального проекта",

@@ -9,7 +9,7 @@ import type { GameIconId } from "@/components/icons/GameIcons";
  * the existing category system — it doesn't change tool data, routing,
  * or SEO category pages, only how the homepage organizes tools visually.
  */
-export type Discipline = "qa" | "frontend" | "backend" | "utilities" | "gamedev" | "mobile";
+export type Discipline = "qa" | "frontend" | "backend" | "utilities" | "gamedev" | "mobile" | "messenger";
 
 export interface DisciplineMeta {
   id: Discipline;
@@ -83,6 +83,16 @@ export const DISCIPLINES: DisciplineMeta[] = [
     icon: "phone",
     color: "#5bb5c9",
     categories: ["mobile"],
+  },
+  {
+    id: "messenger",
+    labelEn: "Messenger QA",
+    labelRu: "QA мессенджера",
+    taglineEn: "Chat text, unicode, links, timestamps, realtime frames, test files",
+    taglineRu: "Тексты для чата, юникод, ссылки, время, realtime-кадры, тестовые файлы",
+    icon: "chat",
+    color: "#7c8fd6",
+    categories: ["messenger"],
   },
 ];
 
