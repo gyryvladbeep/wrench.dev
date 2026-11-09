@@ -1,4 +1,5 @@
 import { Page, Locator } from "@playwright/test";
+import { waitForHydration } from "./hydration";
 import { readFileSync } from "fs";
 
 /** Page Object для /tools/chat-history-generator (components/tools/ChatHistoryGeneratorTool.tsx). */
@@ -21,6 +22,7 @@ export class ChatHistoryGeneratorPage {
 
   async goto() {
     await this.page.goto("/en/tools/chat-history-generator");
+    await waitForHydration(this.count);
   }
 
   stat(name: "count" | "threads" | "attachments" | "size"): Locator {

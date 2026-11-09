@@ -1,4 +1,5 @@
 import { Page, Locator, Download } from "@playwright/test";
+import { waitForHydration } from "./hydration";
 import { readFileSync } from "fs";
 
 /** Page Object для /tools/test-file-generator (components/tools/TestFileGeneratorTool.tsx). */
@@ -31,6 +32,7 @@ export class TestFileGeneratorPage {
 
   async goto() {
     await this.page.goto("/en/tools/test-file-generator");
+    await waitForHydration(this.size);
   }
 
   async setSize(size: string, unit: "B" | "KB" | "MB") {

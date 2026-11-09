@@ -1,4 +1,5 @@
 import { Page, Locator } from "@playwright/test";
+import { waitForHydration } from "./hydration";
 
 /** Page Object для /tools/chat-stress-text-generator (components/tools/ChatStressTextGeneratorTool.tsx). */
 export class ChatStressTextGeneratorPage {
@@ -18,6 +19,7 @@ export class ChatStressTextGeneratorPage {
 
   async goto() {
     await this.page.goto("/en/tools/chat-stress-text-generator");
+    await waitForHydration(this.preset);
   }
 
   /** Значение счётчика: utf16, codepoints, graphemes, utf8, lines. */

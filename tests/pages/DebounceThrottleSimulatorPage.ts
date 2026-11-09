@@ -1,4 +1,5 @@
 import { Page, Locator } from "@playwright/test";
+import { waitForHydration } from "./hydration";
 
 /** Page Object для /tools/debounce-throttle-simulator (components/tools/DebounceThrottleSimulatorTool.tsx). */
 export class DebounceThrottleSimulatorPage {
@@ -22,6 +23,7 @@ export class DebounceThrottleSimulatorPage {
 
   async goto() {
     await this.page.goto("/en/tools/debounce-throttle-simulator");
+    await waitForHydration(this.events);
   }
 
   stat(name: "events-count" | "fires-count" | "saved"): Locator {

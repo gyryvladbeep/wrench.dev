@@ -1,4 +1,5 @@
 import { Page, Locator } from "@playwright/test";
+import { waitForHydration } from "./hydration";
 
 /** Page Object для /tools/chat-timestamp-edge-cases (components/tools/ChatTimestampEdgeCasesTool.tsx). */
 export class ChatTimestampEdgeCasesPage {
@@ -26,6 +27,7 @@ export class ChatTimestampEdgeCasesPage {
 
   async goto() {
     await this.page.goto("/en/tools/chat-timestamp-edge-cases");
+    await waitForHydration(this.message);
   }
 
   zoneRow(zone: string): Locator {

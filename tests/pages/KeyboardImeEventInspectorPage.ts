@@ -1,4 +1,5 @@
 import { Page, Locator } from "@playwright/test";
+import { waitForHydration } from "./hydration";
 
 /** Page Object для /tools/keyboard-ime-event-inspector (components/tools/KeyboardImeEventInspectorTool.tsx). */
 export class KeyboardImeEventInspectorPage {
@@ -20,6 +21,7 @@ export class KeyboardImeEventInspectorPage {
 
   async goto() {
     await this.page.goto("/en/tools/keyboard-ime-event-inspector");
+    await waitForHydration(this.field);
   }
 
   /** Строки журнала для события заданного типа. */

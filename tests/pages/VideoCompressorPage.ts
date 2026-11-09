@@ -1,4 +1,5 @@
 import { Page, Locator } from "@playwright/test";
+import { waitForHydration } from "./hydration";
 
 /** Page Object для /tools/video-compressor (components/tools/VideoCompressorTool.tsx). */
 export class VideoCompressorPage {
@@ -40,6 +41,7 @@ export class VideoCompressorPage {
 
   async goto() {
     await this.page.goto("/en/tools/video-compressor");
+    await waitForHydration(this.target);
   }
 
   stat(name: "video-kbps" | "audio-out" | "total-kbps" | "expected"): Locator {

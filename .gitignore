@@ -39,4 +39,4 @@ test-results/
 
 # Файлы, которые десктоп-клиент Claude сохраняет сюда при отправке в чат —
 # рабочая папка чата, не часть проекта.
-Claude outputs/
+Claude outputs/.commit-msg-*.txt

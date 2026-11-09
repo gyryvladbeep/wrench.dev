@@ -1,0 +1,58 @@
+{
+  "info": {
+    "name": "Orders API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Orders",
+      "item": [
+        {
+          "name": "Get order by id",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/orders/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["orders", ":id"],
+              "variable": [{ "key": "id", "value": "42" }]
+            }
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {
+                "url": { "raw": "{{baseUrl}}/orders/42", "path": ["orders", "42"] }
+              },
+              "code": 200,
+              "body": "{\n  \"id\": 42,\n  \"status\": \"shipped\"\n}"
+            },
+            {
+              "name": "404 Not Found",
+              "code": 404,
+              "body": "{\"error\":\"not found\"}"
+            }
+          ]
+        },
+        {
+          "name": "Create order",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{baseUrl}}/orders", "path": ["orders"] }
+          }
+        },
+        {
+          "name": "Ping",
+          "request": "https://api.example.com/ping"
+        },
+        {
+          "name": "Preflight",
+          "request": {
+            "method": "OPTIONS",
+            "url": { "raw": "{{baseUrl}}/orders", "path": ["orders"] }
+          }
+        }
+      ]
+    }
+  ]
+}

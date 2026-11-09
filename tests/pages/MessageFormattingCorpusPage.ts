@@ -1,4 +1,5 @@
 import { Page, Locator } from "@playwright/test";
+import { waitForHydration } from "./hydration";
 
 /** Page Object для /tools/message-formatting-corpus (components/tools/MessageFormattingCorpusTool.tsx). */
 export class MessageFormattingCorpusPage {
@@ -16,6 +17,7 @@ export class MessageFormattingCorpusPage {
 
   async goto() {
     await this.page.goto("/en/tools/message-formatting-corpus");
+    await waitForHydration(this.search);
   }
 
   tab(id: "markdown" | "links" | "mentions" | "injection" | "layout"): Locator {

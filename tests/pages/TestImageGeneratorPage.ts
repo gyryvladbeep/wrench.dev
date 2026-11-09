@@ -1,4 +1,5 @@
 import { Page, Locator } from "@playwright/test";
+import { waitForHydration } from "./hydration";
 import { readFileSync } from "fs";
 
 /** Page Object для /tools/test-image-generator (components/tools/TestImageGeneratorTool.tsx). */
@@ -25,6 +26,7 @@ export class TestImageGeneratorPage {
 
   async goto() {
     await this.page.goto("/en/tools/test-image-generator");
+    await waitForHydration(this.width);
   }
 
   preset(label: string): Locator {

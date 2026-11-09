@@ -1,4 +1,5 @@
 import { Page, Locator } from "@playwright/test";
+import { waitForHydration } from "./hydration";
 
 /** Page Object для /tools/chat-event-sequence-validator (components/tools/ChatEventSequenceValidatorTool.tsx). */
 export class ChatEventSequenceValidatorPage {
@@ -24,6 +25,7 @@ export class ChatEventSequenceValidatorPage {
 
   async goto() {
     await this.page.goto("/en/tools/chat-event-sequence-validator");
+    await waitForHydration(this.events);
   }
 
   stat(name: "total" | "groups" | "issues"): Locator {

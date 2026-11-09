@@ -1,4 +1,5 @@
 import { Page, Locator } from "@playwright/test";
+import { waitForHydration } from "./hydration";
 
 /** Page Object для /tools/url-autolink-edge-cases (components/tools/UrlAutolinkEdgeCasesTool.tsx). */
 export class UrlAutolinkEdgeCasesPage {
@@ -16,6 +17,7 @@ export class UrlAutolinkEdgeCasesPage {
 
   async goto() {
     await this.page.goto("/en/tools/url-autolink-edge-cases");
+    await waitForHydration(this.text);
   }
 
   sample(id: string): Locator {

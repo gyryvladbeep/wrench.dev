@@ -1,4 +1,5 @@
 import { Page, Locator } from "@playwright/test";
+import { waitForHydration } from "./hydration";
 
 /** Page Object для /tools/unicode-text-inspector (components/tools/UnicodeTextInspectorTool.tsx). */
 export class UnicodeTextInspectorPage {
@@ -18,6 +19,7 @@ export class UnicodeTextInspectorPage {
 
   async goto() {
     await this.page.goto("/en/tools/unicode-text-inspector");
+    await waitForHydration(this.text);
   }
 
   stat(name: "graphemes" | "codepoints" | "utf16" | "utf8" | "lines"): Locator {

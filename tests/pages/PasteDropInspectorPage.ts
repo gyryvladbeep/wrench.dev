@@ -1,4 +1,5 @@
 import { Page, Locator } from "@playwright/test";
+import { waitForHydration } from "./hydration";
 
 /** Page Object для /tools/paste-drop-inspector (components/tools/PasteDropInspectorTool.tsx). */
 export class PasteDropInspectorPage {
@@ -26,6 +27,7 @@ export class PasteDropInspectorPage {
 
   async goto() {
     await this.page.goto("/en/tools/paste-drop-inspector");
+    await waitForHydration(this.zone);
   }
 
   /** Имитирует вставку: ClipboardEvent с заполненным DataTransfer. */

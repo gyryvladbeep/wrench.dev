@@ -1,4 +1,5 @@
 import { Page, Locator } from "@playwright/test";
+import { waitForHydration } from "./hydration";
 
 /** Page Object для /tools/reconnect-backoff-calculator (components/tools/ReconnectBackoffCalculatorTool.tsx). */
 export class ReconnectBackoffCalculatorPage {
@@ -26,6 +27,7 @@ export class ReconnectBackoffCalculatorPage {
 
   async goto() {
     await this.page.goto("/en/tools/reconnect-backoff-calculator");
+    await waitForHydration(this.base);
   }
 
   row(attempt: number): Locator {
